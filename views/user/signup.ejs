@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Signup Page</title>
+  <style>
+    .error-message {
+        color: red;
+        font-size: 0.75rem;
+        display: none;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background-color: #f8f8f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      display: flex;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 900px;
+      max-width: 95%;
+    }
+
+    .left {
+      width: 55%;
+      padding: 40px;
+    }
+
+    .left h2 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f5f5f5;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 25px;
+    }
+
+    .google-btn img {
+      height: 20px;
+      margin-right: 10px;
+    }
+
+    .separator {
+      display: flex;
+      align-items: center;
+      margin-bottom: 25px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .separator::before,
+    .separator::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #ccc;
+    }
+
+    .separator::before {
+      margin-right: 10px;
+    }
+
+    .separator::after {
+      margin-left: 10px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input {
+      padding: 12px 14px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .signup-btn {
+      background-color: #a8cdda;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 5px;
+    }
+
+    .login {
+      margin-top: 15px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .login a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+      margin-left: 5px;
+    }
+
+    .right {
+      width: 45%;
+      background: url('../img/signup.png') no-repeat center center;
+      background-size: cover;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .left, .right {
+        width: 100%;
+        padding: 30px;
+      }
+
+      .right {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <h2>Create Account</h2>
+
+      <a href="/auth/google" class="google-btn" style="color: black;text-decoration: none;">
+        <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google Icon" />
+        Signup with Google
+      </a>
+
+      <div class="separator">or</div>
+
+      <% if (typeof message !== 'undefined' && message) { %>
+        <div style="color: red; margin-bottom: 10px; font-weight: bold;">
+          <%= message %>
+        </div>
+      <% } %>
+      
+
+      <form id="signform" method="post" action="/signup">
+        <input type="text" placeholder="Full Name" name="name" id="name"  /> <div id="error1" class="error-message"></div>
+        <input type="text" placeholder="Email" name="email" id="email" /> <div id="error2" class="error-message"></div>
+        <input type="tel" placeholder="Phone" name="phone" id="phone"  /> <div id="error3" class="error-message"></div>
+        <input type="text" placeholder="Referral Code (optional)" name="refcode" id="refcode" /> <div id="error4" class="error-message"></div>
+        <input type="password" placeholder="Password" name="password" id="password"  /> <div id="error5" class="error-message"></div>
+        <input type="password" placeholder="Confirm Password" name="cpassword" id="cpassword"  /> <div id="error6" class="error-message"></div>
+        <button class="signup-btn" type="submit">Sign Up</button>
+      </form>
+
+      <div class="login">
+        Already have account ? <a href="/login">Login now..!</a>
+      </div>
+    </div>
+
+    <div class="right"></div>
+  </div>
+</body>
+</html>
+
+
+<script>
+
+    const nameid = document.getElementById("name");
+    const emailid = document.getElementById("email");
+    const phoneid = document.getElementById("phone");
+    const refid = document.getElementById("refcode");
+    const passwordid = document.getElementById("password");
+    const cpasswordid = document.getElementById("cpassword");
+
+    const error1 = document.getElementById("error1");
+    const error2 = document.getElementById("error2");
+    const error3 = document.getElementById("error3");
+    const error4 = document.getElementById("error4");
+    const error5 = document.getElementById("error5");    
+    const error6 = document.getElementById("error6");
+
+    const signform = document.getElementById("signform");
+
+
+    function nameValidateChecking(e){
+        const nameval = nameid.value;
+        const namePattern = /^[A-Za-z\s]+$/;
+
+        if(nameval.trim() === "" ){
+            error1.style.display = "block";
+            error1.innerHTML = "Please Enter Name";
+        }else if(!namePattern.test(nameval)){
+            error1.style.display = "block";
+            error1.innerHTML = "Name can contains alphabets and spaces only";
+        }else{
+            error1.style.display = "none";
+            error1.innerHTML = "";
+        }
+    }
+
+    function emailValidateChecking(e){
+        const emailval = emailid.value;
+        const emailPattern = /^[a-zA-Z0-9]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if(emailval.trim() === ""){
+            error2.style.display = "block";
+            error2.innerHTML = "Please Enter EmailD";
+        }else if(!emailPattern.test(emailval)){
+            error2.style.display = "block";
+            error2.innerHTML = "Invalid Format"
+        }else{
+            error2.style.display = "none";
+            error2.innerHTML = "";
+        }
+    }
+
+
+    function phoneValidateChecking(e){
+        const phoneval = phoneid.value;
+        const phonePattern = /^[6-9]\d{9}$/;
+
+        if(phoneval.trim() === "" ){
+            error3.style.display = "block";
+            error3.innerHTML = "Please Enter Phone Number";
+        }else if(!phonePattern.test(phoneval)){
+            error3.style.display = "block";
+            error3.innerHTML = "Invalid Phone Number";
+        }else{
+            error3.style.display = "none";
+            error3.innerHTML = "";
+        }
+    }
+
+
+    function passwordValidateChecking(e){
+        const passwordval = passwordid.value;
+        const cpasswordval = cpasswordid.value;
+        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!]).{8,}$/;
+
+        if(passwordval.trim() === "" ){
+            error5.style.display = "block";
+            error5.innerHTML = "Please Enter Password";
+        }else if(cpasswordval.trim() === "" ){
+            error6.style.display = "block";
+            error6.innerHTML = "Please Enter Confirm Password";
+        }else if(!passwordPattern.test(passwordval)){
+            error6.style.display = "block";
+            error6.innerHTML = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+        }else if(passwordval !== cpasswordval){
+            error6.style.display = "block";
+            error6.innerHTML = "Password and Confirm Password do not match";
+        }else{
+            error5.style.display = "none";
+            error5.innerHTML = "";
+            error6.style.display = "none";
+            error6.innerHTML = "";
+        }
+    }
+
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+        signform.addEventListener("submit", (e) => {
+            nameValidateChecking(e);
+            emailValidateChecking(e);
+            phoneValidateChecking(e);
+            passwordValidateChecking(e);
+
+            if(!nameid || !emailid || !phoneid || !refid || !passwordid || !cpasswordid ||
+                !error1 || !error2 || !error3 || !error4 || !error5 || !error6 || !signform){
+                    console.log("One or more elements not found");
+                }
+
+            if(error1.innerHTML || error2.innerHTML || error3.innerHTML || error4.innerHTML || error5.innerHTML || error6.innerHTML){
+                e.preventDefault();
+            }
+        })
+    })
+
+
+
+</script>
