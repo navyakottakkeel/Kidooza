@@ -8,17 +8,9 @@ const categorySchema = new Schema({
         required : true,
         unique : true
     },
-    description : {
-        type : String,
-        required : true
-    },
-    isListed : {
+    isDeleted : {
         type : Boolean,
-        default : true
-    },
-    categoryOffer : {
-        type : Number,
-        default : 0
+        default : false
     },
     createdAt : {
         type : Date,
