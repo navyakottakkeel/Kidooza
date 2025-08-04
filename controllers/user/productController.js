@@ -138,7 +138,7 @@ const loadBoysPage = async (req, res) => {
         // Group products by category
         const categorizedProducts = {};
         categories.forEach(cat => {
-            console.log("Processing category:", cat.name);
+            //console.log("Processing category:", cat.name);
             categorizedProducts[cat._id] = allProducts.filter(prod => {
               if (!prod.category || !prod.category._id) {
                 console.log("Missing category in product:", prod.productName);

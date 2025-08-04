@@ -6,7 +6,7 @@ const categoryInfo = async (req,res) =>{
         
         let search = req.query.search || "";
         let page = parseInt(req.query.page) || 1; 
-        const limit = 3;
+        const limit = 6;
 
         const query = {
             isDeleted : false,

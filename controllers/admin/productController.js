@@ -98,9 +98,117 @@ const loadAddProduct = async (req, res) => {
 
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
 
+
+const loadProducts = async (req, res) => {
+  try {
+    const search = req.query.search || "";
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+
+    const matchStage = {
+      $or: [
+        { productName: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+        { "categoryData.name": { $regex: search, $options: "i" } }
+      ]
+    };
+
+    const products = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category',
+          foreignField: '_id',
+          as: 'categoryData'
+        }
+      },
+      { $unwind: "$categoryData" },
+      { $match: search ? matchStage : {} },
+      { $sort: { _id: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit }
+    ]);
+
+    const countAggregate = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category',
+          foreignField: '_id',
+          as: 'categoryData'
+        }
+      },
+      { $unwind: "$categoryData" },
+      { $match: search ? matchStage : {} },
+      { $count: "total" }
+    ]);
+
+    const total = countAggregate[0] ? countAggregate[0].total : 0;
+
+    res.render("list-products", {
+      data: products,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      search
+    });
+
+  } catch (error) {
+    console.log("error", error);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+const updateProduct = async (req, res) => {
+  try {
+    const { _id, productName, description, category, brand, basePrice, salePrice, status } = req.body;
+
+    const categoryData = await Category.findOne({ name: category });
+    if (!categoryData) {
+      return res.json({ success: false, message: 'Invalid category name' });
+    }
+
+    await Product.findByIdAndUpdate(_id, {
+      productName,
+      description,
+      brand,
+      basePrice,
+      salePrice,
+      category: categoryData._id,
+      status
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Product update error:', error);
+    res.json({ success: false, message: 'Server error' });
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+const softDeleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Product.findByIdAndUpdate(id, { isBlock: true });
+    res.json({ success: true, message: "Product deleted (soft delete)" });
+  } catch (error) {
+    console.error("Soft delete error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
   addProduct,
-  loadAddProduct
+  loadAddProduct,
+  loadProducts,
+  updateProduct,
+  softDeleteProduct
 }

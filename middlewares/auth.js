@@ -11,7 +11,7 @@ const adminAuth = (req,res,next) => {
         }
     })
     .catch(error => {
-        consoe.log("Error in adminauth middleware",error);
+        console.log("Error in adminauth middleware",error);
         res.status(500).send("Internal Server error");
     })
 }

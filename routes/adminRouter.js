@@ -33,10 +33,12 @@ router.get('/unblockCustomer', customerController.customerUnblocked);
 
  router.get('/category/delete', categoryController.softDeleteCategory);
 
-//router.get('/addProducts',productController.addProducts);
-
+router.get('/products',productController.loadProducts);
 router.get('/products/add', productController.loadAddProduct);
+router.post('/products/update', upload.array('updatedImages'), productController.updateProduct);
 router.post('/products/add', upload.array('productImage', 5), productController.addProduct);
+router.patch('/products/delete/:id', productController.softDeleteProduct);
+
 
 
 

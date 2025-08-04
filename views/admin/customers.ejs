@@ -38,6 +38,7 @@
             <table class="table align-middle text-center table-bordered mb-0" style="width: 100%;">
                 <thead class="text-white" style="background-color: #000;">
                     <tr>
+                        <th>Sl.No</th>
                         <th>Customer</th>
                         <th>Email ID</th>
                         <th>Orders</th>
@@ -50,6 +51,7 @@
                 <tbody>
                     <%for( let i=0; i < data.length; i++){%>
                         <tr>
+                            <td><%= (currentPage - 1) * 6 + i + 1 %></td>
                             <td class="d-flex align-items-center gap-2 justify-content-center py-3">
                                 <%=data[i].name%>
                             </td>
