@@ -1,0 +1,258 @@
+<%-include("../../views/partials/user/header") %>
+
+
+<style>
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.page-item .page-link {
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: #333;
+  border: 1px solid #ccc;
+  background-color: white;
+  transition: all 0.2s ease-in-out;
+}
+
+.page-item.active .page-link {
+  background-color: #8fcf7c;
+  border-color: #8fcf7c;
+  color: white;
+}
+
+.page-item.disabled .page-link {
+  color: #bbb;
+  pointer-events: none;
+  background-color: #f5f5f5;
+}
+
+</style>
+
+
+<div class="container-fluid" style="margin-top:220px">
+    <div class="row" >
+      <!-- Sidebar Start -->
+      <div class="col-lg-3">
+        <!-- Search and Clear -->
+        <form action="/boys" method="GET" class="mb-4">
+          <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="Search products..." value="<%= search || '' %>">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+            <a href="/boys" class="btn btn-outline-danger">Clear</a>
+          </div>
+        </form>
+  
+        <!-- Sort Dropdown -->
+        <div class="mb-4">
+          <label for="sort" class="form-label fw-bold">Sort By</label>
+          <select id="sort" name="sort" class="form-select" onchange="location.href='?sort=' + this.value">
+            <option value="">Default</option>
+            <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
+            <option value="price-desc" <%= sort === 'price-desc' ? 'selected' : '' %>>Price: High to Low</option>
+            <option value="name-asc" <%= sort === 'name-asc' ? 'selected' : '' %>>Name: A-Z</option>
+            <option value="name-desc" <%= sort === 'name-desc' ? 'selected' : '' %>>Name: Z-A</option>
+          </select>
+        </div>
+  
+        <!-- Filter Section -->
+        <div class="accordion" id="filtersAccordion">
+          <!-- Brand -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingBrand">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBrand">
+                Brand
+              </button>
+            </h2>
+            <div id="collapseBrand" class="accordion-collapse collapse" data-bs-parent="#filtersAccordion">
+              <div class="accordion-body">
+                <% brands.forEach(brand => { %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="brand" value="<%= brand %>">
+                    <label class="form-check-label"><%= brand %></label>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Age -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingAge">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAge">
+                Age
+              </button>
+            </h2>
+            <div id="collapseAge" class="accordion-collapse collapse" data-bs-parent="#filtersAccordion">
+              <div class="accordion-body">
+                <% ['0-3 month', '3-6 month', '6-12 month', '1-2 year', '2-3 year'].forEach(age => { %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="age" value="<%= age %>">
+                    <label class="form-check-label"><%= age %></label>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Price -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingPrice">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrice">
+                Price
+              </button>
+            </h2>
+            <div id="collapsePrice" class="accordion-collapse collapse" data-bs-parent="#filtersAccordion">
+              <div class="accordion-body">
+                <input type="range" class="form-range" min="0" max="3000" id="priceRange">
+                <div class="d-flex justify-content-between">
+                  <span>₹0</span>
+                  <span>₹3000+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Category -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingCategory">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCategory">
+                Category
+              </button>
+            </h2>
+            <div id="collapseCategory" class="accordion-collapse collapse" data-bs-parent="#filtersAccordion">
+              <div class="accordion-body">
+                <% categories.forEach(cat => { %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="category" value="<%= cat.name %>">
+                    <label class="form-check-label"><%= cat.name %></label>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Color -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingColor">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseColor">
+                Color
+              </button>
+            </h2>
+            <div id="collapseColor" class="accordion-collapse collapse" data-bs-parent="#filtersAccordion">
+              <div class="accordion-body">
+                <% ['Red', 'Blue', 'Yellow', 'Green', 'Black', 'White'].forEach(color => { %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="color" value="<%= color %>">
+                    <label class="form-check-label"><%= color %></label>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      <!-- Sidebar End -->
+  
+      <!-- Main Content (Already Included) -->
+      <div class="col-lg-9">
+        <!-- your right side product card code already exists here -->
+     
+
+
+<div >  
+    <!-- Fruits Shop Start-->
+    <div class="container-fluid fruite py-5">
+        <div class="container py-5">
+            <div class="tab-class text-center">
+                <div class="row g-4">
+                    <div class="col-lg-4 text-start">
+                        <h1>Boys Fashion</h1>
+                    </div>
+                   
+                </div>
+
+                <div class="tab-content">
+                    <!-- All Products Tab Content -->
+                    <div id="tab-all" class="tab-pane fade show p-0 active">
+                        <div class="row g-4">
+                            <% allProducts.forEach(product => { %>
+                                <div class="col-md-6 col-lg-4 col-xl-4">
+                                    <div class="rounded position-relative fruite-item">
+                                        <div class="fruite-img">
+                                            <% if (product.productImage && product.productImage.length > 0) { %>
+                                                <img src="<%= product.productImage[0] %>" class="img-fluid w-100 rounded-top" alt="">
+                                              <% } else { %>
+                                                <img src="/img/1.jpg" class="img-fluid w-100 rounded-top" alt="No image">
+                                              <% } %>
+                                                                                      </div>
+                                        
+                                        <div class="p-4 border border-secondary border-top-0 rounded-bottom">
+                                            <h4><%= product.productName %></h4>
+                                            <p class="text-truncate"><%= product.description %></p>
+                                            <div class="d-flex justify-content-between flex-lg-wrap">
+                                                <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice %></p>
+                                                <p class="text-dark fs-5 fw-bold mb-0" ><s style="color:grey;font-size: small;">₹<%= product.basePrice %></s></p>
+                                                <a href="#" class="btn border border-secondary rounded-pill px-3 text-primary">
+                                                    <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+
+               
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Fruits Shop End-->
+</div>
+
+ </div>
+    </div>
+  </div>
+  
+
+<nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+  
+      <% if (currentPage > 1) { %>
+        <li class="page-item">
+          <a class="page-link" href="?page=<%= currentPage - 1 %>">&laquo; Prev</a>
+        </li>
+      <% } else { %>
+        <li class="page-item disabled">
+          <span class="page-link">&laquo; Prev</span>
+        </li>
+      <% } %>
+  
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <li class="page-item <%= currentPage == i ? 'active' : '' %>">
+          <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+        </li>
+      <% } %>
+  
+      <% if (currentPage < totalPages) { %>
+        <li class="page-item">
+          <a class="page-link" href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
+        </li>
+      <% } else { %>
+        <li class="page-item disabled">
+          <span class="page-link">Next &raquo;</span>
+        </li>
+      <% } %>
+  
+    </ul>
+  </nav>
+  
+
+
+<%-include("../../views/partials/user/footer") %>

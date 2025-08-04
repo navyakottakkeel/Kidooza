@@ -1,4 +1,6 @@
 const User = require('../../models/userSchema');
+const Product = require('../../models/productSchema');
+const Category = require('../../models/categorySchema');
 const nodemailer = require("nodemailer");
 const env = require("dotenv").config();
 const bcrypt = require("bcrypt");
@@ -11,17 +13,37 @@ const loadHomepage = async (req, res) => {
         let user = null;
 
         if (req.user) {
-            // User came via Google / Passport
             user = req.user;
         } else if (req.session.user) {
-            // User came via manual login
             user = await User.findById(req.session.user);
         }
 
+        // Fetch categories (only not deleted)
+        const categories = await Category.find({ isDeleted: false });
+
+        // Fetch products (only not deleted)
+        const allProducts = await Product.find({ isBlock: false })
+        .sort({ createdAt: -1 }) 
+        .limit(4); 
+    
+        // Group products by category
+        const categorizedProducts = {};
+        categories.forEach(category => {
+            categorizedProducts[category._id] = allProducts.filter(
+                product => product.category.toString() === category._id.toString()
+            );
+        });
+
         res.locals.user = user;
-        res.render("home");
+
+        res.render("home", {
+            categories,
+            allProducts,
+            categorizedProducts
+        });
+
     } catch (error) {
-        console.log("Home page not found");
+        console.error("Error loading all products:", error);
         res.status(500).send("Server error");
     }
 };

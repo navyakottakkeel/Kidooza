@@ -1,0 +1,177 @@
+<%-include("../../views/partials/user/header") %>
+
+
+<style>
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.page-item .page-link {
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: #333;
+  border: 1px solid #ccc;
+  background-color: white;
+  transition: all 0.2s ease-in-out;
+}
+
+.page-item.active .page-link {
+  background-color: #8fcf7c;
+  border-color: #8fcf7c;
+  color: white;
+}
+
+.page-item.disabled .page-link {
+  color: #bbb;
+  pointer-events: none;
+  background-color: #f5f5f5;
+}
+
+
+</style>
+
+
+<div style="margin-top:180px">  
+    <!-- Fruits Shop Start-->
+    <div class="container-fluid fruite py-5">
+        <div class="container py-5">
+            <div class="tab-class text-center">
+                <div class="row g-4">
+                    <div class="col-lg-4 text-start">
+                        <h1>All Products</h1>
+                    </div>
+                    <div class="col-lg-8 text-end">
+                        <ul class="nav nav-pills d-inline-flex text-center mb-5">
+                            <!-- All Products Tab -->
+                            <li class="nav-item">
+                                <a class="d-flex m-2 py-2 bg-light rounded-pill active" data-bs-toggle="pill" href="#tab-all">
+                                    <span class="text-dark" style="width: 130px;">All Products</span>
+                                </a>
+                            </li>
+
+                            <!-- Category Tabs -->
+                            <% categories.forEach((category) => { %>
+                                <li class="nav-item">
+                                    <a class="d-flex m-2 py-2 bg-light rounded-pill" data-bs-toggle="pill" href="#tab-<%= category._id %>">
+                                        <span class="text-dark" style="width: 130px;"><%= category.name %></span>
+                                    </a>
+                                </li>
+                            <% }) %>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="tab-content">
+                    <!-- All Products Tab Content -->
+                    <div id="tab-all" class="tab-pane fade show p-0 active">
+                        <div class="row g-4">
+                            <% allProducts.forEach(product => { %>
+                                <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="rounded position-relative fruite-item">
+                                        <div class="fruite-img">
+                                            <% if (product.productImage && product.productImage.length > 0) { %>
+                                                <img src="<%= product.productImage[0] %>" class="img-fluid w-100 rounded-top" alt="">
+                                              <% } else { %>
+                                                <img src="/img/1.jpg" class="img-fluid w-100 rounded-top" alt="No image">
+                                              <% } %>
+                                                                                      </div>
+                                        <div class="text-white bg-secondary px-3 py-1 rounded position-absolute" style="top: 10px; left: 10px;">
+                                            <%= product.category?.name || 'All Products' %>
+                                        </div>
+                                        <div class="p-4 border border-secondary border-top-0 rounded-bottom">
+                                            <h4><%= product.productName %></h4>
+                                            <p class="text-truncate"><%= product.description %></p>
+                                            <div class="d-flex justify-content-between flex-lg-wrap">
+                                              <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice %></p>
+                                                <p class="text-dark fs-5 fw-bold mb-0" ><s style="color:grey;font-size: small;">₹<%= product.basePrice %></s></p>
+                                                <a href="#" class="btn border border-secondary rounded-pill px-3 text-primary">
+                                                    <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+
+                    <!-- Category-specific Tabs -->
+                    <% categories.forEach((category) => { %>
+                        <div id="tab-<%= category._id %>" class="tab-pane fade show p-0">
+                            <div class="row g-4">
+                                <% (categorizedProducts[category._id] || []).forEach(product => { %>
+                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                        <div class="rounded position-relative fruite-item">
+                                            <div class="fruite-img">
+                                                <% if (product.productImage && product.productImage.length > 0) { %>
+                                                    <img src="<%= product.productImage[0] %>" class="img-fluid w-100 rounded-top" alt="">
+                                                  <% } else { %>
+                                                    <img src="/img/1.jpg" class="img-fluid w-100 rounded-top" alt="No image">
+                                                  <% } %>
+                                                                                              </div>
+                                            <div class="text-white bg-secondary px-3 py-1 rounded position-absolute" style="top: 10px; left: 10px;">
+                                                <%= category.name %>
+                                            </div>
+                                            <div class="p-4 border border-secondary border-top-0 rounded-bottom">
+                                                <h4><%= product.productName %></h4>
+                                                <p class="text-truncate"><%= product.description %></p>
+                                                <div class="d-flex justify-content-between flex-lg-wrap">
+                                                    <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice %></p>
+                                                    <p class="text-dark fs-5 fw-bold mb-0" ><s style="color:grey;font-size: small;">₹<%= product.basePrice %></s></p>
+
+                                                    <a href="#" class="btn border border-secondary rounded-pill px-3 text-primary">
+                                                        <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Fruits Shop End-->
+</div>
+
+<nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+  
+      <% if (currentPage > 1) { %>
+        <li class="page-item">
+          <a class="page-link" href="?page=<%= currentPage - 1 %>">&laquo; Prev</a>
+        </li>
+      <% } else { %>
+        <li class="page-item disabled">
+          <span class="page-link">&laquo; Prev</span>
+        </li>
+      <% } %>
+  
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <li class="page-item <%= currentPage == i ? 'active' : '' %>">
+          <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+        </li>
+      <% } %>
+  
+      <% if (currentPage < totalPages) { %>
+        <li class="page-item">
+          <a class="page-link" href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
+        </li>
+      <% } else { %>
+        <li class="page-item disabled">
+          <span class="page-link">Next &raquo;</span>
+        </li>
+      <% } %>
+  
+    </ul>
+  </nav>
+  
+
+
+<%-include("../../views/partials/user/footer") %>

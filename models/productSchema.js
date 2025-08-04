@@ -15,11 +15,12 @@ const productSchema = new Schema({
         type : String,
         required : true
     },
-    category : {
-        type : String, 
-        required : true
+    category: {
+        type: Schema.Types.ObjectId,
+        ref: "Category",
+        required: true
     },
-    regularPrice : {
+    basePrice : {
         type : Number,
         required : true
     },
@@ -31,14 +32,14 @@ const productSchema = new Schema({
         type : Number,
         default : 0
     },
-    quantity : {
-        type : Number,
-        default : true
-    },
-    color : {
-        type : String,
-        required : true
-    },
+    // quantity : {
+    //     type : Number,
+    //     default : true
+    // },
+    // color : {
+    //     type : String,
+    //     required : true
+    // },
     productImage : {
         type : [String],
         required : true
@@ -52,7 +53,11 @@ const productSchema = new Schema({
         enum : ["Available", "Out of stock"],
         required : true,
         default : "Available"
-    }
+    },
+    createdAt : {
+        type : Date,
+        default : Date.now
+    },
 },{timestamps : true})
 
 

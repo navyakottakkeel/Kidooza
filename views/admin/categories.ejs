@@ -37,7 +37,7 @@
     <div class="col-3" style="float:left ;">
          <!-- Category Add Form -->
         <div class="card p-3" style="max-width: 300px;">
-            <form action="/admin/category/add" method="POST">
+            <form action="/admin/category" method="POST">
                 <div class="mb-3">
                     <label for="categoryName" class="form-label">Name</label>
                     <input type="text" class="form-control" id="categoryName" name="name" />
@@ -47,6 +47,8 @@
           </form>
          </div>
     </div>
+
+    
 
 
     <div class="col-9" style="float: left;margin-left: 5px;width: 74%;">
@@ -140,8 +142,8 @@
                         Swal.showValidationMessage('Name cannot be empty');
                         return false;
                     }
-                    return fetch(`/admin/category/edit`, {
-                        method: 'POST',
+                    return fetch(`/admin/category`, {
+                        method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json'
                         },
