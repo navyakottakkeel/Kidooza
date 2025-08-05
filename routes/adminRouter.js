@@ -5,6 +5,8 @@ const { userAuth, adminAuth } = require('../middlewares/auth');
 const customerController = require('../controllers/admin/customerController');
 const categoryController = require('../controllers/admin/categoryController');
 const productController = require('../controllers/admin/productController');
+const varientController = require('../controllers/admin/varientController');
+
 const upload = require('../middlewares/multer');
 const Category = require('../models/categorySchema');
 
@@ -35,9 +37,18 @@ router.get('/unblockCustomer', customerController.customerUnblocked);
 
 router.get('/products',productController.loadProducts);
 router.get('/products/add', productController.loadAddProduct);
-router.post('/products/update', upload.array('updatedImages'), productController.updateProduct);
+router.put('/products/update', upload.array('updatedImages'), productController.updateProduct);
 router.post('/products/add', upload.array('productImage', 5), productController.addProduct);
 router.patch('/products/delete/:id', productController.softDeleteProduct);
+
+
+router.route('/varients')
+.get(varientController.loadVarient)
+.post(varientController.addVarient)
+.put(varientController.updateVarient)
+
+
+router.delete('/varients/:id',varientController.deleteVarient);
 
 
 

@@ -1,215 +1,216 @@
-
-
- <%-include("../../views/partials/admin/main") %>
+<%-include("../../views/partials/admin/main") %>
 
 
 
 
- <div class="container-fluid" style="width:100% ;">
-     <div class="d-flex justify-content-between align-items-center mb-3" style="    padding-left: 50px;">
-         <div style="    width: 50%;margin-top: 30px;">
-             <h2 class="fw-bold">Categories</h2>
-         </div>
+    <div class="container-fluid" style="width:100% ;">
+        <div class="d-flex justify-content-between align-items-center mb-3" style="    padding-left: 50px;">
+            <div style="    width: 50%;margin-top: 30px;">
+                <h2 class="fw-bold">Categories</h2>
+            </div>
 
 
-         <form method="GET" action="/admin/category" class="d-flex gap-2 justify-content-end mb-3" style="float:right;padding-right: 50px;margin-bottom: 20px;margin-top: 30px;">
-             <input 
-                 type="text" 
-                 name="search" 
-                 value="<%= search %>" 
-                 class="form-control rounded-pill ps-4 pe-5" 
-                 placeholder="Search here" 
-                 style="width: 240px; height: 38px;"
-             >
-         
-             <button type="submit" class="btn"  style="height:38px;width:115px;background-color:black;color:white">Search
-                 <i class="fas fa-search"style="padding-left: 10px; "></i></button>
-         
-             <% if (search) { %>
-                 <a href="/admin/category" class="btn btn-outline-secondary" style="height: 38px;">Clear</a>
-             <% } %>
-         </form>
-         
-         
-</div >
-  
-<div>
-    <div class="col-3" style="float:left ;">
-         <!-- Category Add Form -->
-        <div class="card p-3" style="max-width: 300px;">
-            <form action="/admin/category" method="POST">
-                <div class="mb-3">
-                    <label for="categoryName" class="form-label">Name</label>
-                    <input type="text" class="form-control" id="categoryName" name="name" />
+            <form method="GET" action="/admin/category" class="d-flex gap-2 justify-content-end mb-3"
+                style="float:right;padding-right: 50px;margin-bottom: 20px;margin-top: 30px;">
+                <input type="text" name="search" value="<%= search %>" class="form-control rounded-pill ps-4 pe-5"
+                    placeholder="Search here" style="width: 240px; height: 38px;">
+
+                <button type="submit" class="btn"
+                    style="height:38px;width:115px;background-color:black;color:white">Search
+                    <i class="fas fa-search" style="padding-left: 10px; "></i></button>
+
+                <% if (search) { %>
+                    <a href="/admin/category" class="btn btn-outline-secondary" style="height: 38px;">Clear</a>
+                    <% } %>
+            </form>
+
+
+        </div>
+
+        <div>
+            <div class="col-3" style="float:left ;">
+                <!-- Category Add Form -->
+                <div class="card p-3" style="max-width: 300px;">
+                    <form action="/admin/category" method="POST">
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="categoryName" name="name" />
+                        </div>
+                        <button class="btn" type="submit"
+                            style="height:38px;width:230px;background-color:black;color:white;margin-bottom: 10px;">Add
+                            New Category
+                            <i class="fas fa-add" style="padding-left: 10px; "></i></button>
+                    </form>
                 </div>
-                <button class="btn" type="submit"  style="height:38px;width:230px;background-color:black;color:white;margin-bottom: 10px;">Add New Category
-                 <i class="fas fa-add"style="padding-left: 10px; "></i></button>
-          </form>
-         </div>
-    </div>
-
-    
+            </div>
 
 
-    <div class="col-9" style="float: left;margin-left: 5px;width: 74%;">
-     <!-- Table -->
-     <div class="table-responsive rounded-4 shadow-sm">
-        <table class="table align-middle text-center table-bordered mb-0" style="width: 100%;">
-            <thead class="text-white" style="background-color: #000;">
-                <tr>
-                    <th>Sl.No</th>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <%for( let i=0; i < data.length; i++){%>
-                    <tr>
-                        <td><%= (currentPage - 1) * 6 + i + 1 %></td>
-                        <td class="d-flex align-items-center gap-2 justify-content-center py-3">
-                            <%=data[i].name%>
-                        </td>
-                        
-                        <td>
-                            <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">
-                               <%if(data[i].isDeleted === false){%>
-                                <i style="color: green ;">Available</i>
-                                <%}else{%>
-                                    <i style="color:red ;">Not Available</i>
-                                    <%}%>
-                            </span>
-                        </td>
-                        <td>
-                            <button onclick="confirmDelete('<%= data[i]._id %>')" class="btn btn-sm" style="height:38px;width:100px;background-color:red;color:white">Delete</button>
-                        </td>
-                        <td>
-                            <button style="height:38px;width:100px;background-color:black;color:white" class="btn edit-btn"  
-                            data-id="<%= data[i]._id %>" data-name="<%= data[i].name %>">Edit</button>
-                        </td>
-                    </tr>
-                    <%}%>
-            </tbody>
-        </table>
 
 
-    </div>
+            <div class="col-9" style="float: left;margin-left: 5px;width: 74%;">
+                <!-- Table -->
+                <div class="table-responsive rounded-4 shadow-sm">
+                    <table class="table align-middle text-center table-bordered mb-0" style="width: 100%;">
+                        <thead class="text-white" style="background-color: #000;">
+                            <tr>
+                                <th>Sl.No</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <%for( let i=0; i < data.length; i++){%>
+                                <tr>
+                                    <td>
+                                        <%= (currentPage - 1) * 6 + i + 1 %>
+                                    </td>
+                                    <td class="d-flex align-items-center gap-2 justify-content-center py-3">
+                                        <%=data[i].name%>
+                                    </td>
 
-      
-<div class="container">
-    <nav class="mt-3 d-flex justify-content-center">
-        <ul class="pagination">
-            <% for (let i = 1; i <= totalPages; i++) { %>
-                <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-                    <a class="page-link" href="/admin/category?page=<%= i %><%= search ? '&search=' + search : '' %>"><%= i %></a>
-                </li>
-            <% } %>
-        </ul>
-    </nav>
-  </div>
-
-  
-</div>
-
-
- 
-  
-
-        
- </div>
-
-
- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">
+                                            <%if(data[i].isDeleted===false){%>
+                                                <i style="color: green ;">Available</i>
+                                                <%}else{%>
+                                                    <i style="color:red ;">Not Available</i>
+                                                    <%}%>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button onclick="confirmDelete('<%= data[i]._id %>')" class="btn btn-sm"
+                                            style="height:38px;width:100px;background-color:red;color:white">Delete</button>
+                                    </td>
+                                    <td>
+                                        <button style="height:38px;width:100px;background-color:black;color:white"
+                                            class="btn edit-btn" data-id="<%= data[i]._id %>"
+                                            data-name="<%= data[i].name %>">Edit</button>
+                                    </td>
+                                </tr>
+                                <%}%>
+                        </tbody>
+                    </table>
 
 
- <script>
-     document.addEventListener('DOMContentLoaded', function () {
+                </div>
 
-        const editButtons = document.querySelectorAll('.edit-btn');
 
-    editButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const catId = this.dataset.id;
-            const catName = this.dataset.name;
+                <div class="container">
+                    <nav class="mt-3 d-flex justify-content-center">
+                        <ul class="pagination">
+                            <% for (let i=1; i <=totalPages; i++) { %>
+                                <li class="page-item <%= currentPage == i ? 'active' : '' %>">
+                                    <a class="page-link"
+                                        href="/admin/category?page=<%= i %><%= search ? '&search=' + search : '' %>">
+                                        <%= i %>
+                                    </a>
+                                </li>
+                                <% } %>
+                        </ul>
+                    </nav>
+                </div>
 
-            Swal.fire({
-                title: 'Edit Category',
-                input: 'text',
-                inputLabel: 'Category Name',
-                inputValue: catName,
-                showCancelButton: true,
-                confirmButtonText: 'Update',
-                preConfirm: (newName) => {
-                    if (!newName.trim()) {
-                        Swal.showValidationMessage('Name cannot be empty');
-                        return false;
-                    }
-                    return fetch(`/admin/category`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ id: catId, name: newName.trim() })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.success) {
-                            throw new Error(data.message || 'Update failed');
-                        }
-                        return data;
-                    })
-                    .catch(err => {
-                        Swal.showValidationMessage(err.message);
+
+            </div>
+
+
+
+
+
+
+        </div>
+
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+
+                const editButtons = document.querySelectorAll('.edit-btn');
+
+                editButtons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const catId = this.dataset.id;
+                        const catName = this.dataset.name;
+
+                        Swal.fire({
+                            title: 'Edit Category',
+                            input: 'text',
+                            inputLabel: 'Category Name',
+                            inputValue: catName,
+                            showCancelButton: true,
+                            confirmButtonText: 'Update',
+                            preConfirm: (newName) => {
+                                if (!newName.trim()) {
+                                    Swal.showValidationMessage('Name cannot be empty');
+                                    return false;
+                                }
+                                return fetch(`/admin/category`, {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ id: catId, name: newName.trim() })
+                                })
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (!data.success) {
+                                            throw new Error(data.message || 'Update failed');
+                                        }
+                                        return data;
+                                    })
+                                    .catch(err => {
+                                        Swal.showValidationMessage(err.message);
+                                    });
+                            }
+                        }).then(result => {
+                            if (result.isConfirmed && result.value.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Updated Successfully',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    window.location.reload(); // reload to see updated data
+                                });
+                            }
+                        });
                     });
-                }
-            }).then(result => {
-                if (result.isConfirmed && result.value.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Updated Successfully',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload(); // reload to see updated data
-                    });
-                }
+                });
+
+
             });
-        });
-    });
-
-    
-     });
 
 
-     function confirmDelete(id) {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: "You want to delete this category?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#aaa',
-      confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.location.href = `/admin/category/delete?id=${id}`;
-      }
-    });
-  }
+            function confirmDelete(id) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You want to delete this category?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#aaa',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = `/admin/category/delete?id=${id}`;
+                    }
+                });
+            }
 
 
- </script>
-
- 
-<% if (msg) { %>
-    <script>
-      Swal.fire({
-        icon: "<%= msg.includes('success') ? 'success' : 'error' %>",
-        title: "<%= msg %>",
-        showConfirmButton: false,
-        timer: 2000
-      });
-    </script>
-  <% } %>
+        </script>
 
 
+        <% if (msg) { %>
+            <script>
+                Swal.fire({
+                    icon: "<%= msg.includes('success') ? 'success' : 'error' %>",
+                    title: "<%= msg %>",
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            </script>
+            <% } %>

@@ -102,39 +102,21 @@
                                  <%}%>
                          </td>
 
-                         
-                         <!-- <td>
-                             <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">
-                                <%if(data[i].isBlocked === false){%>
-                                 <i style="color: green ;">Active</i>
-                                 <%}else{%>
-                                     <i style="color:red ;">Blocked</i>
-                                     <%}%>
-                             </span>
-                         </td> -->
-                         <!-- <td>
-                             <span >
-                                <%if(data[i].isBlocked === false){%>
-                                 <button  style="height:38px;width:100px;background-color:red;color:white"
-                                      class="block-btn" data-id="<%= data[i]._id %>">
-                                     Block
-                                 </button>
-                                
-                                 <%}else{%>
-                                     <button style="height:38px;width:100px;background-color:green;color:white" 
-                                         class="unblock-btn" data-id="<%= data[i]._id %>">Unblock</button>
-                                     <%}%>
-                             </span>
-                         </td> -->
                          <td>
                              <button style="background-color:rgb(54, 120, 81);color:white" class="btn view-btn"
                              data-product='<%- JSON.stringify(data[i]) %>'>Edit / View Details</button>
                          </td>
                          <td>
-                            <button style="height:38px;width:100px;background-color:red;color:white" class="btn btn-success del-btn">Delete</button>
+                            <button style="height:38px;width:100px;background-color:red;color:white" class="btn btn-success del-btn" onclick="confirmDelete('<%= data[i]._id %>')">Delete</button>
                         </td>
                         <td>
-                            <button style="background-color:rgb(9, 70, 86);color:white" class="btn btn-success">Add / View Varients</button>
+                            <form action="/admin/varients" method="GET">
+                                <input type="hidden" name="productId" value="<%= data[i]._id %>">
+                                <input type="hidden" name="productName" value="<%= data[i].productName %>">
+                                <button style="background-color:rgb(9, 70, 86);color:white" class="btn btn-success">
+                                  Add / View Varients
+                                </button>
+                              </form>
                         </td>
                      </tr>
                      <%}%>
@@ -159,31 +141,15 @@
  </div>
 
 
+ <script>
+  const allCategories = <%- JSON.stringify(categories || []) %>;
+</script>
+
  
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
  <script>
      document.addEventListener('DOMContentLoaded', function () {
-         const deleteButtons = document.querySelectorAll('.del-btn');
- 
-         deleteButtons.forEach(button => {
-             button.addEventListener('click', function () {
-                 const userId = this.dataset.id;
-                 Swal.fire({
-                     title: 'Are you sure?',
-                     text: "You want to delete this customer",
-                     icon: 'warning',
-                     showCancelButton: true,
-                     confirmButtonColor: '#d33',
-                     cancelButtonColor: '#3085d6',
-                     confirmButtonText: 'Yes, block'
-                 }).then((result) => {
-                     if (result.isConfirmed) {
-                        // window.location.href = `/admin/blockCustomer?id=${userId}`;
-                     }
-                 });
-             });
-         });
 
 
          const viewButtons = document.querySelectorAll('.view-btn');
@@ -194,6 +160,12 @@
             const imageGallery = product.productImage.map(img =>
                 `<img src="${img}" style="height:185px;width:185px;object-fit:cover;border-radius:8px;margin:4px;">`
             ).join('');
+
+            const categoryOptions = allCategories.map(cat => {
+  const selected = cat.name === (product.categoryData?.name || '') ? 'selected' : '';
+  return `<option value="${cat.name}" ${selected}>${cat.name}</option>`;
+}).join('');
+
 
             Swal.fire({
                 title: 'Product Details',
@@ -225,10 +197,14 @@
 
 <!-- Two-column grid for rest -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-  <div>
-    <label>Category:</label><br>
-    <input id="category" class="swal2-input" style="width:80%" value="${product.categoryData?.name || ''}">
-  </div>
+ 
+    <div>
+  <label>Category:</label><br>
+  <select id="category" class="swal2-input" style="width: 80%;">
+    ${categoryOptions}
+  </select>
+</div>
+
   
 
   <div>
@@ -279,7 +255,7 @@
             }).then(result => {
                 if (result.isConfirmed) {
                     fetch('/admin/products/update', {
-                        method: 'POST',
+                        method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json'
                         },
@@ -334,6 +310,48 @@
  
     
      });
- </script>
+
+     function confirmDelete(id) {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You want to delete this product?",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#aaa',
+    confirmButtonText: 'Yes, delete it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(`/admin/products/delete/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(res => res.json()).then(response => {
+        if (response.success) {
+          Swal.fire('Deleted!', 'Product deleted successfully.', 'success')
+            .then(() => location.reload());
+        } else {
+          Swal.fire('Error', response.message || 'Delete failed', 'error');
+        }
+      });
+    }
+  });
+}
+
+
+        </script>
+
+
+        <% if (typeof msg !=='undefined' && msg) { %>
+            <script>
+                Swal.fire({
+                    icon: "<%= msg.includes('success') ? 'success' : 'error' %>",
+                    title: "<%= msg %>",
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            </script>
+            <% } %>
 
 
