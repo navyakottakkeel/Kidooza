@@ -1,0 +1,573 @@
+
+<%-include("../../views/partials/user/header") %>
+
+
+<style>
+    .thumbnail-img {
+      width: 80px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border 0.3s;
+    }
+  
+    .thumbnail-img.active {
+      border: 2px solid #f27c1f; /* Highlight color */
+    }
+
+    .zoom-container {
+  position: relative;
+  width: 480px;
+  height: auto;
+  overflow: hidden;
+}
+
+.zoom-image {
+  width: 100%;
+  display: block;
+}
+
+.zoom-lens {
+  position: absolute;
+  border: 1px solid #000;
+  width: 200px;
+  height: 200px;
+  visibility: hidden;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: 800px 800px; /* Should be double the original for smoother zoom */
+  z-index: 10;
+}
+.breadcrumbs a {
+  color: #007bff;
+  text-decoration: none;
+}
+.breadcrumbs span {
+  color: #333;
+}
+.product-rating {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #f5a623; /* golden yellow */
+  }
+
+  .product-rating .review-count {
+    color: #555;
+    font-size: 0.95rem;
+    margin-left: 8px;
+  }
+
+  .review-section {
+    border-top: 1px solid #ccc;
+    margin-top: 20px;
+    padding-top: 15px;
+  }
+
+  .review {
+    background: #f8f8f8;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 5px;
+  }
+
+  .review strong {
+    font-size: 1rem;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+
+  .review span {
+    color: #f5a623;
+    margin-left: 5px;
+  }
+  .product-price {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .selling-price {
+    font-weight: bold;
+    color: #222;
+    font-size: 1.4rem;
+  }
+
+  .original-price {
+    color: #999;
+    font-size: 1rem;
+  }
+
+  .discount-tag {
+    background-color:#5d8355;
+    color: #fff;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+  }
+  .size-selection-wrapper {
+    margin: 20px 0;
+  }
+
+  .size-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .size-chart-link {
+    font-size: 0.9rem;
+    color: #f16522; /* Orange like in screenshot */
+    text-decoration: none;
+  }
+
+  .size-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .size-btn {
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    background-color: white;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+    min-width: 70px;
+    text-align: center;
+  }
+
+  .size-btn.selected {
+    border-color: #f16522;
+    background-color: #fff2eb;
+    font-weight: 600;
+    color: #f16522;
+  }
+
+  .size-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .quick-actions {
+    margin: 15px 0;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 1.15rem;
+    cursor: pointer;
+  }
+
+  /* Quantity Selector */
+  .quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .quantity-selector button {
+    background: #eee;
+    border: none;
+    padding: 5px 10px;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+
+  .quantity-selector input {
+    width: 40px;
+    text-align: center;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    border-radius: 5px;
+  }
+
+  /* Cart Buttons */
+  .cart-actions button {
+    display: block;
+    width: 60%;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 1rem;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+  }
+
+  .btn-add-to-cart {
+    background-color: #5d8255; /* navy blue */
+    color: #fff;
+  }
+
+  .btn-buy-now {
+    background-color: #fa5d63; /* red-pink */
+    color: #fff;
+  }
+
+  .recommended-section {
+    margin-top: 60px;
+    padding: 20px;
+    background: #fefefe;
+  }
+
+  .recommended-section h2 {
+    font-family: 'Caveat', cursive;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #5c4c32;
+  }
+
+  .recommended-products {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .product-card {
+    background: #fff;
+    border-radius: 12px;
+    width: 180px;
+    text-align: center;
+    padding: 10px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .image-wrapper {
+    position: relative;
+  }
+
+  .product-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+  }
+
+  .discount-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #1d0e49;
+    color: #fff;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+  }
+
+  .product-name {
+    margin: 10px 0 5px;
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  .product-price {
+    font-weight: bold;
+    color: #e84a5f;
+  }
+
+  .original-price {
+    font-weight: normal;
+    text-decoration: line-through;
+    font-size: 0.85rem;
+    color: #888;
+    margin-left: 5px;
+  }
+
+  </style>
+  
+
+
+<div style="margin-top: 170px;">
+     
+    <div class="container my-5">
+        
+    <div class="breadcrumbs">
+        <a href="/">Home</a> /
+        <a href="/boys">Boys</a> /
+        <span><%= product.productName %></span>
+      </div>
+      <br>
+      <div class="row">
+        <div class="col-md-6">
+            <div style="display: flex; gap: 20px;">
+                <!-- Thumbnail list -->
+                <div>
+                    <% product.productImage.forEach((image, index) => { %>
+                      <img src="<%= image %>"
+                           class="thumbnail-img <%= index === 0 ? 'active' : '' %>"
+                           data-index="<%= index %>"
+                           onclick="changeMainImage(this, '<%= image %>')" /><br>
+                    <% }); %>
+                  </div>
+                  
+              
+                <!-- Main Image -->
+                <div>
+                    <div class="zoom-container">
+                        <img id="mainImage" src="<%= product.productImage[0] %>" class="zoom-image" alt="Product Image" />
+                        <div class="zoom-lens" id="zoomLens"></div>
+                      </div>
+                      
+                </div>
+              </div>
+                      </div>
+        <div class="col-md-6">
+          <h2><%= product.productName %></h2>
+          <p><%= product.description %></p>
+
+          <div class="product-rating">
+            <span class="stars">★★★★☆</span> <!-- 4 out of 5 -->
+            <span class="review-count">(2 review)</span>
+          </div>
+
+          
+
+          <div class="product-price">
+            <span class="selling-price">₹<%= product.salePrice %></span>
+            
+            <% if (product.basePrice  > product.salePrice) { %>
+              <span class="original-price"><del>₹<%= product.basePrice %></del></span>
+              <span class="discount-tag"><%= discountPercent %>% OFF</span>
+            <% } %>
+          </div>
+
+          
+
+          <!-- <h4>₹<%= product.salePrice %> <s style="color:gray; font-size:small;">₹<%= product.basePrice %></s></h4>
+          <p><strong>Category:</strong> <%= product.category?.name || 'N/A' %></p> -->
+    
+          <% if (colours && colours.length > 0) { %>
+
+            <div class="mt-3">
+              <h5>Available Colours:</h5>
+                <% colours.forEach(colour => { %>
+                  <span class="badge bg-secondary me-1"><%= colour %></span>
+                <% }) %>
+            </div>
+    
+
+            <div class="size-selection-wrapper">
+                <div class="size-header">
+                  <strong>Size</strong>
+                </div>
+                
+                <div class="size-options">
+                  <% sizes.forEach(function(size, index) { %>
+                    <button type="button" class="size-btn <%= index === 0 ? 'selected' : '' %>" onclick="selectSize(this)">
+                      <%= size %>
+                    </button>
+                  <% }) %>
+                </div>
+              
+                <input type="hidden" id="selectedSize" name="selectedSize" value="<%= sizes[0] %>">
+              </div>
+
+              <div id="stock-info" class="font-semibold text-green-700" style="color: green;font-weight: bolder;font-family: cursive;"></div>
+              <div id="stock-info2" class="font-semibold text-green-700" style="color: red;font-weight: bolder;font-family: cursive;"></div>
+
+
+
+          <% } %>
+
+          <div class="quick-actions">
+            <button class="action-btn">♡ Add to wishlist</button>
+            <!-- <button class="action-btn">⇄ Add to compare</button>
+            <button class="action-btn">🔗 Share</button> -->
+          </div>
+
+          
+          <!-- Add to Cart & Buy Now Buttons -->
+          <div class="cart-actions">
+            <button class="btn-add-to-cart">Add To Cart</button>
+            <!-- <button class="btn-buy-now">Buy It Now</button> -->
+          </div>
+          
+
+
+          <div class="review-section">
+            <h4>Customer Reviews</h4>
+            <div class="review">
+              <strong>John</strong> - <span>⭐⭐⭐⭐☆</span>
+              <p>Great quality product, really satisfied with the material and fit!</p>
+
+              <strong>Alen Thoms</strong> - <span>⭐⭐⭐⭐☆</span>
+              <p>Great quality product, really satisfied with the material and fit!</p>
+
+            </div>
+          </div>
+
+          
+
+        </div>
+      </div>
+
+
+      <!-- Recommended Products Section -->
+<div class="recommended-section">
+    <h2>Recommended Products</h2>
+    <div class="recommended-products">
+      <% relatedProducts.forEach(prod => { %>
+        <div class="product-card">
+            <div class="image-wrapper">
+                <% if (prod.productImage && prod.productImage.length > 0) { %>
+                  <img src="<%= prod.productImage[0] %>" alt="<%= prod.productName %>">
+                <% } else { %>
+                  <img src="/images/default-product.jpg" alt="No Image">
+                <% } %>
+              
+                <% if (discountPercent) { %>
+                  <span class="discount-badge">OFF <%= discountPercent %>%</span>
+                <% } %>
+              </div>
+              
+          <p class="product-name"><%= prod.productName %></p>
+          <p class="product-price">
+            ₹<%= prod.salePrice %> 
+            <span class="original-price">₹<%= prod.basePrice %></span>
+          </p>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  
+
+    </div>    
+
+
+</div>
+
+<script>
+    const variants = <%- JSON.stringify(variants) %>;
+  </script>
+
+
+<script>
+
+    //////////////////////////////////////////////////////////////////////
+    
+    function changeMainImage(clickedThumbnail, imageUrl) {
+      // Change the main image source
+      document.getElementById('mainImage').src = imageUrl;
+  
+      // Remove 'active' class from all thumbnails
+      const thumbnails = document.querySelectorAll('.thumbnail-img');
+      thumbnails.forEach(thumb => thumb.classList.remove('active'));
+  
+      // Add 'active' class to the clicked one
+      clickedThumbnail.classList.add('active');
+    }
+
+    ///////////////////////////////////////////////////////////////
+
+  const zoomContainer = document.querySelector('.zoom-container');
+  const mainImage = document.getElementById('mainImage');
+  const zoomLens = document.getElementById('zoomLens');
+
+  mainImage.addEventListener('mouseenter', () => {
+    zoomLens.style.visibility = 'visible';
+    zoomLens.style.backgroundImage = `url('${mainImage.src}')`;
+  });
+
+  mainImage.addEventListener('mousemove', (e) => {
+    const bounds = mainImage.getBoundingClientRect();
+    const x = e.pageX - bounds.left - window.scrollX;
+    const y = e.pageY - bounds.top - window.scrollY;
+
+    const lensSize = zoomLens.offsetWidth / 2;
+
+    let lensX = x - lensSize;
+    let lensY = y - lensSize;
+
+    if (lensX < 0) lensX = 0;
+    if (lensY < 0) lensY = 0;
+    if (lensX > bounds.width - zoomLens.offsetWidth) lensX = bounds.width - zoomLens.offsetWidth;
+    if (lensY > bounds.height - zoomLens.offsetHeight) lensY = bounds.height - zoomLens.offsetHeight;
+
+    zoomLens.style.left = `${lensX}px`;
+    zoomLens.style.top = `${lensY}px`;
+
+    const zoomLevel = 2;
+    zoomLens.style.backgroundPosition = `-${x * zoomLevel - lensSize}px -${y * zoomLevel - lensSize}px`;
+  });
+
+  mainImage.addEventListener('mouseleave', () => {
+    zoomLens.style.visibility = 'hidden';
+  });
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  function selectSize(button) {
+
+    document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
+
+    button.classList.add('selected');
+
+    const selectedSize = button.innerText.trim();
+    document.getElementById('selectedSize').value = selectedSize;
+
+    const stock = getStockForSize(selectedSize);
+    console.log("stock: ",stock);
+    
+    const stockInfo = document.getElementById('stock-info');
+    const stockInfo2 = document.getElementById('stock-info2');
+
+    if (stock > 0) {
+      stockInfo.textContent = `In Stock: ${stock}`;
+      stockInfo2.textContent = "";
+      stockInfo.classList.remove("text-red-600");
+      stockInfo.classList.add("text-green-700");
+    } else {
+      stockInfo2.textContent = "Out of Stock";
+      stockInfo.textContent = "";
+
+      stockInfo2.classList.remove("text-green-700");
+      stockInfo2.classList.add("text-red-600");
+    }
+  }
+
+  function getStockForSize(size) {
+    const selectedVariant = variants.find(v => v.size === size);
+    return selectedVariant ? selectedVariant.stock : 0;
+  }
+
+  // Run once for the default selected size on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    const defaultSize = document.getElementById('selectedSize').value;
+    const stock = getStockForSize(defaultSize);
+    const stockInfo = document.getElementById('stock-info');
+    const stockInfo2 = document.getElementById('stock-info2');
+
+    if (stock > 0) {
+      stockInfo.textContent = `In Stock: ${stock}`;
+      stockInfo2.textContent = "";
+    } else {
+      stockInfo2.textContent = "Out of Stock";
+      stockInfo.textContent = "";
+
+    }
+  });
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+  </script>
+  
+  
+
+     
+
+<%-include("../../views/partials/user/footer") %>

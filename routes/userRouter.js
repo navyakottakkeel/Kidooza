@@ -37,6 +37,10 @@ router.post('/changepassword', userController.changepassword)
 router.get('/allProducts', productController.loadAllProducts);
 router.get('/newArrivals', productController.loadNewArrivals);
 router.get('/boys', productController.loadBoysPage);
+router.get("/productDetail/:id", productController.loadProductDetail);
+
+
+  
 
 
 

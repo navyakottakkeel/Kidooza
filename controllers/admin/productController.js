@@ -4,6 +4,7 @@ const Category = require('../../models/categorySchema');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
 
 
@@ -119,7 +120,7 @@ const loadProducts = async (req, res) => {
         }] : [])
       ]
     };
-    
+
 
 
     const products = await Product.aggregate([
@@ -176,55 +177,6 @@ const loadProducts = async (req, res) => {
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-const updateProduct = async (req, res) => {
-  try {
-    const { _id, productName, description, category, brand, basePrice, salePrice, status } = req.body;
-
-    // Validate required fields
-    if (!_id || !productName || !description || !category || !brand || !basePrice || !salePrice) {
-      return res.json({ success: false, message: 'All fields are required.' });
-    }
-
-    // Validate numeric prices
-    const base = parseFloat(basePrice);
-    const sale = parseFloat(salePrice);
-
-    if (isNaN(base) || isNaN(sale)) {
-      return res.json({ success: false, message: 'Base and sale price must be valid numbers.' });
-    }
-
-    if (sale >= base) {
-      return res.json({ success: false, message: 'Sale price must be less than base price.' });
-    }
-
-    // Find category by name
-    const categoryData = await Category.findOne({ name: category });
-    if (!categoryData) {
-      return res.json({ success: false, message: 'Invalid category name.' });
-    }
-
-    // Update product
-    await Product.findByIdAndUpdate(_id, {
-      productName,
-      description,
-      brand,
-      basePrice: base,
-      salePrice: sale,
-      category: categoryData._id,
-      status
-    });
-
-    res.json({ success: true });
-
-  } catch (error) {
-    console.error('Product update error:', error);
-    res.json({ success: false, message: 'Server error' });
-  }
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-
 
 const softDeleteProduct = async (req, res) => {
   try {
@@ -241,13 +193,210 @@ const softDeleteProduct = async (req, res) => {
 };
 
 
-
 ///////////////////////////////////////////////////////////////////////////////////////
 
+const updateProductImage = async (req, res) => {
+  try {
+    const { productId, index } = req.body;
+
+    if (!productId || typeof index === 'undefined' || !req.file) {
+      return res.json({ success: false, message: 'Invalid data.' });
+    }
+
+    // Find product
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.json({ success: false, message: 'Product not found.' });
+    }
+
+    // Store old image path for deletion
+    const oldImagePath = product.productImage[index]
+      ? path.join(__dirname, '../public', product.productImage[index])
+      : null;
+
+    // Save new image from buffer
+    const fileName = `${uuidv4()}.png`;
+    const filePath = path.join(process.cwd(), 'public', 'uploads', 'products', fileName);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    // Update the product image path in DB
+    product.productImage[index] = `/uploads/products/${fileName}`;
+    await product.save();
+
+    // Delete old file if it exists
+    if (oldImagePath && fs.existsSync(oldImagePath)) {
+      fs.unlinkSync(oldImagePath);
+    }
+
+    res.json({ success: true, message: 'Image updated successfully', imageUrl: `/uploads/products/${fileName}` });
+
+  } catch (error) {
+    console.error('Error updating image:', error.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+const loadEditProduct = async (req, res) => {
+  try {
+
+    const productId = req.query.id; // Pass ID in query like ?id=xyz
+
+    const product = await Product.findById(productId).lean().populate('category');
+    const categories = await Category.find().lean();
+
+
+    if (!product) {
+      return res.redirect('/admin/products'); // or handle gracefully
+    }
+
+    res.render('edit-product', {
+      product,
+      categories,
+
+    });
+
+  } catch (error) {
+    res.redirect('/pageerror');
+  }
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const editProduct = async (req, res) => {
+  try {
+    const { _id, productName, description, basePrice, salePrice, brand, category } = req.body;
+
+    if (!_id) {
+      const categories = await Category.find();
+      return res.render('edit-product', {
+        product: null,
+        categories,
+        error: 'Product ID is missing.'
+      });
+    }
+
+    const product = await Product.findById(_id);
+
+    if (!product) {
+      return res.render('edit-product', {
+        product: null,
+        categories,
+        error: 'Product not found.'
+      });
+    }
+ 
+
+    // Update fields only (no image handling)
+    product.productName = productName;
+    product.description = description;
+    product.basePrice = basePrice;
+    product.salePrice = salePrice;
+    product.brand = brand;
+    product.category = category;
+
+    await product.save();
+
+    const updatedProduct = await Product.findById(_id).populate('category').lean();
+    const categories = await Category.find().lean();
+
+    return res.render('edit-product', {
+      product: updatedProduct,
+      categories,
+      success: 'Product updated successfully!'
+    });
+
+  } catch (error) {
+    console.error("Error updating product:", error.message);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+const deleteProductImage = async (req, res) => {
+  try {
+    const { productId, imageIndex } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) return res.json({ success: false, message: 'Product not found' });
+
+    const index = parseInt(imageIndex);
+    if (isNaN(index) || index < 0 || index >= product.productImage.length) {
+      return res.json({ success: false, message: 'Invalid image index' });
+    }
+
+    const removedImage = product.productImage.splice(index, 1)[0];
+
+    // Optionally delete from filesystem / cloud:
+    // Example for local filesystem:
+    // const fs = require('fs');
+    // const path = require('path');
+    // fs.unlink(path.join(__dirname, '../public/' + removedImage), (err) => {});
+
+    await product.save();
+
+    res.json({ success: true, message: 'Image deleted successfully' });
+
+  } catch (error) {
+    console.error('Error deleting image:', error.message);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+const addProductImage = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    if (!productId || !req.file) {
+      return res.json({ success: false, message: 'Invalid data.' });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.json({ success: false, message: 'Product not found.' });
+    }
+
+    const fileName = `${uuidv4()}.jpeg`;
+    const filePath = path.join(process.cwd(), 'public', 'uploads', 'products', fileName);
+
+    // Resize and save
+    await sharp(req.file.buffer)
+      .resize(500, 500)
+      .toFormat('jpeg')
+      .jpeg({ quality: 90 })
+      .toFile(filePath);
+
+    const imageUrl = `/uploads/products/${fileName}`;
+    product.productImage.push(imageUrl);
+    await product.save();
+
+    res.json({ success: true, message: 'Image added successfully', imageUrl });
+  } catch (error) {
+    console.error('Error adding image:', error.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////////////
 module.exports = {
   addProduct,
   loadAddProduct,
   loadProducts,
-  updateProduct,
-  softDeleteProduct
+  softDeleteProduct,
+  loadEditProduct,
+  editProduct,
+  deleteProductImage,
+  updateProductImage,
+  addProductImage
+
 }

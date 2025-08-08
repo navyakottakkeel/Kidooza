@@ -37,9 +37,23 @@ router.get('/unblockCustomer', customerController.customerUnblocked);
 
 router.get('/products',productController.loadProducts);
 router.get('/products/add', productController.loadAddProduct);
-router.put('/products/update', upload.array('updatedImages'), productController.updateProduct);
+//router.put('/products/update', upload.array('updatedImages'), productController.updateProduct);
 router.post('/products/add', upload.array('productImage', 5), productController.addProduct);
 router.patch('/products/delete/:id', productController.softDeleteProduct);
+
+
+router.get('/products/edit',productController.loadEditProduct);
+router.post('/products/edit',productController.editProduct)
+router.post('/products/delete-image', productController.deleteProductImage);
+router.post('/products/update-image', upload.single('image'), productController.updateProductImage);
+router.post('/products/add-image', upload.single('image'), productController.addProductImage);
+
+
+
+
+
+
+// router.post('/products/edit-images', upload.any(), productController.updateProductImages);
 
 
 router.route('/varients')

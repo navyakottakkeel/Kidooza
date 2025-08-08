@@ -1,6 +1,10 @@
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
 const User = require('../../models/userSchema');
+const Varient = require('../../models/varientSchema');
+const url = require("url");
+
+
 
 
 const loadAllProducts = async (req, res) => {
@@ -59,16 +63,30 @@ const loadAllProducts = async (req, res) => {
 
 const loadBoysPage = async (req, res) => {
     try {
+
+        productQuery = { isBlock: false }
+
+        const products = await Product.find(productQuery);
+
         const perPage = 6;
         const page = parseInt(req.query.page) || 1;
 
-        const {
+        let {
             search = '',
             sort = '',
             category,
             minPrice,
             maxPrice
         } = req.query;
+
+        if (Array.isArray(sort)) {
+            sort = sort[0];
+        }
+        sort = sort.trim();
+
+        if (Array.isArray(search)) {
+            search = search.filter(s => s.trim() !== '')[0] || ''; // Take first non-empty string or ''
+        }
 
         let user = null;
         if (req.user) {
@@ -77,12 +95,11 @@ const loadBoysPage = async (req, res) => {
             user = await User.findById(req.session.user);
         }
 
-        // ✅ Static values for sidebar filters (used only for rendering UI)
         const brands = await Product.distinct("brand");
-        const staticAges = ['0-2', '3-5', '6-8', '9-12'];
-        const staticColors = ['Red', 'Blue', 'Green', 'Black', 'White'];
+        const colours = await Varient.distinct("colour");
+        const size = await Varient.distinct("size");
 
-        // ✅ Only apply filters that actually exist in Product model
+
         const filter = { isBlock: false };
 
         if (search) {
@@ -100,11 +117,49 @@ const loadBoysPage = async (req, res) => {
         }
 
 
-        if (minPrice || maxPrice) {
-            filter.salePrice = {};
-            if (minPrice) filter.salePrice.$gte = Number(minPrice);
-            if (maxPrice) filter.salePrice.$lte = Number(maxPrice);
+        // Brand filter
+        if (req.query.brand) {
+            const brands = Array.isArray(req.query.brand) ? req.query.brand : [req.query.brand];
+            filter.brand = { $in: brands };
         }
+
+        // Handle variant-based filters: colour and size
+        let variantColourProductIds = null;
+        let variantSizeProductIds = null;
+
+        const selectedColours = req.query.colour ? (Array.isArray(req.query.colour) ? req.query.colour : [req.query.colour]) : [];
+        const selectedSizes = req.query.size ? (Array.isArray(req.query.size) ? req.query.size : [req.query.size]) : [];
+
+        let variantFilteredIds = null;
+
+        // Apply variant filters
+        if (selectedColours.length > 0 || selectedSizes.length > 0) {
+            const variantFilter = {};
+
+            if (selectedColours.length > 0) {
+                variantFilter.colour = { $in: selectedColours };
+            }
+
+            if (selectedSizes.length > 0) {
+                variantFilter.size = { $in: selectedSizes };
+            }
+
+            const variantProductIds = await Varient.find(variantFilter).distinct("productId");
+
+            // If no matching variants, set filter to empty array to return no products
+            if (variantProductIds.length === 0) {
+                filter._id = { $in: [] }; // No matches
+            } else {
+                filter._id = { $in: variantProductIds };
+            }
+        }
+
+        if (!isNaN(minPrice) || !isNaN(maxPrice)) {
+            filter.salePrice = {};
+            if (!isNaN(minPrice)) filter.salePrice.$gte = parseInt(minPrice);
+            if (!isNaN(maxPrice)) filter.salePrice.$lte = parseInt(maxPrice);
+        }
+
 
         // Sorting
         let sortOption = {};
@@ -125,6 +180,8 @@ const loadBoysPage = async (req, res) => {
                 sortOption.createdAt = -1;
         }
 
+
+
         const totalProducts = await Product.countDocuments(filter);
 
         const allProducts = await Product.find(filter)
@@ -138,32 +195,44 @@ const loadBoysPage = async (req, res) => {
         // Group products by category
         const categorizedProducts = {};
         categories.forEach(cat => {
-            //console.log("Processing category:", cat.name);
             categorizedProducts[cat._id] = allProducts.filter(prod => {
-              if (!prod.category || !prod.category._id) {
-                console.log("Missing category in product:", prod.productName);
-                return false;
-              }
-              return prod.category._id.toString() === cat._id.toString();
+                if (!prod.category || !prod.category._id) {
+                    console.log("Missing category in product:", prod.productName);
+                    return false;
+                }
+                return prod.category._id.toString() === cat._id.toString();
             });
-          });
-          
+        });
 
 
         res.locals.user = user;
+
+        const queryObj = { ...req.query };
+        delete queryObj.page;
+
+        const baseQuery = new URLSearchParams(queryObj).toString();
+
 
         res.render("boys", {
             categories,
             allProducts,
             categorizedProducts,
             brands,
-            ages: staticAges,
-            colors: staticColors,
+            colours,
+            size,
             currentPage: page,
             totalPages: Math.ceil(totalProducts / perPage),
             search,
             sort,
-            filters: { category, minPrice, maxPrice } // Only send real filters
+            baseQuery,
+            filters: {
+                category,
+                brand: req.query.brand,
+                size: req.query.size,
+                colour: selectedColours,
+                minPrice,
+                maxPrice
+            }
         });
 
     } catch (error) {
@@ -173,8 +242,8 @@ const loadBoysPage = async (req, res) => {
 };
 
 
-
 ///////////////////////////////////////////////////////////
+
 
 const loadNewArrivals = async (req, res) => {
     try {
@@ -224,9 +293,69 @@ const loadNewArrivals = async (req, res) => {
 }
 
 
+///////////////////////////////////////////////////////////////////////
+
+const loadProductDetail = async (req, res) => {
+    try {
+        let user = null;
+        if (req.user) {
+            user = req.user;
+        } else if (req.session.user) {
+            user = await User.findById(req.session.user);
+        }
+
+        const productId = req.params.id;
+
+        const product = await Product.findById(productId).populate("category");
+        const [colours, sizes] = await Promise.all([
+            Varient.distinct('colour', { productId }),
+            Varient.distinct('size', { productId }),
+        ]);
+        const variants = await Varient.find({ productId: productId });
+
+
+
+        if (!product) {
+            return res.status(404).send("Product not found");
+        }
+
+        res.locals.user = user;
+
+
+        const originalPrice = product.basePrice; 
+        const sellingPrice = product.salePrice;          
+
+        let discountPercent = 0;
+        if (originalPrice > sellingPrice) {
+            discountPercent = Math.round(((originalPrice - sellingPrice) / originalPrice) * 100);
+        }
+
+        const relatedProducts = await Product.find({
+            category: product.category._id,
+            _id: { $ne: productId },
+          }).limit(5);
+
+
+        res.render('product-detail', {
+            product,
+            colours,
+            sizes: [...new Set(variants.map(v => v.size))],
+            discountPercent,
+            relatedProducts,
+            variants
+        });
+
+    } catch (error) {
+        console.error("Error loading product detail:", error.message);
+        res.status(500).send("Server error");
+    }
+};
+
+
 
 module.exports = {
     loadAllProducts,
     loadNewArrivals,
-    loadBoysPage
+    loadBoysPage,
+    loadProductDetail
 }

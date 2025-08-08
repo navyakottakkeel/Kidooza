@@ -82,7 +82,7 @@
                                 </span>
                             </td>
                             <td>
-                                <button style="height:38px;width:100px;background-color:black;color:white" class="btn btn-success">View More</button>
+                                <button  data-user='<%- JSON.stringify(data[i]) %>' style="height:38px;width:100px;background-color:black;color:white" class="btn view-btn">View </button>
                             </td>
                         </tr>
                         <%}%>
@@ -99,12 +99,12 @@
                     <% } %>
                 </ul>
             </nav>
-
-            
-
-
-        
     </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
 
     <script>
@@ -153,4 +153,49 @@
     </script>
 
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+  const viewButtons = document.querySelectorAll('.view-btn');
+
+  viewButtons.forEach(button => {
+    button.addEventListener('click', function () {
+      const user = JSON.parse(this.dataset.user);
+
+      // Horizontal image gallery
+     
+
+      Swal.fire({
+        title: `<h2 style="margin-bottom: 10px;">${user.name}</h2>`,
+        width: '900px',
+        html: `
+          <div style="
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 70vh;
+            overflow-y: auto;
+          ">
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>Category:</strong> ${user.categoryData?.name || ''}</p>
+            <p><strong>Phone:</strong> ${user.phone}</p>
+            <p><strong>Blocked:</strong> ${user.isBlocked}</p>
+            <p><strong>Balance:</strong> ₹${user.wallet}</p>
+            
+            <hr style="margin: 15px 0;">
+            
+          </div>
+        `,
+        showCancelButton: false,
+        confirmButtonText: 'Close',
+        confirmButtonColor: '#3085d6',
+        customClass: {
+          popup: 'swal-wide'
+        }
+      });
+    });
+  });
+});
+
+</script>
+
+
