@@ -8,6 +8,9 @@ const categorySchema = new Schema({
         required : true,
         unique : true
     },
+    description : {
+        type : String
+    },
     isDeleted : {
         type : Boolean,
         default : false

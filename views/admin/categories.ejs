@@ -36,6 +36,10 @@
                             <label for="categoryName" class="form-label">Name</label>
                             <input type="text" class="form-control" id="categoryName" name="name" />
                         </div>
+                        <div class="mb-3">
+                            <label for="categoryDescription" class="form-label">Description</label>
+                            <textarea type="text" class="form-control" id="description" name="description"></textarea>
+                        </div>
                         <button class="btn" type="submit"
                             style="height:38px;width:230px;background-color:black;color:white;margin-bottom: 10px;">Add
                             New Category
@@ -85,7 +89,8 @@
                                     <td>
                                         <button style="height:38px;width:100px;background-color:black;color:white"
                                             class="btn edit-btn" data-id="<%= data[i]._id %>"
-                                            data-name="<%= data[i].name %>">Edit</button>
+                                            data-name="<%= data[i].name %>"
+                                            data-description="<%= data[i].description %>">Edit</button>
                                     </td>
                                 </tr>
                                 <%}%>
@@ -134,25 +139,40 @@
                     button.addEventListener('click', function () {
                         const catId = this.dataset.id;
                         const catName = this.dataset.name;
+                        const catDescription = this.dataset.description || '';
 
                         Swal.fire({
                             title: 'Edit Category',
-                            input: 'text',
-                            inputLabel: 'Category Name',
-                            inputValue: catName,
+                            html: `
+                <input id="swal-input1" class="swal2-input" placeholder="Category Name" value="${catName}">
+                <textarea id="swal-input2" class="swal2-textarea" placeholder="Category Description">${catDescription}</textarea>
+            `,
+                            focusConfirm: false,
                             showCancelButton: true,
                             confirmButtonText: 'Update',
-                            preConfirm: (newName) => {
-                                if (!newName.trim()) {
+                            preConfirm: () => {
+                                const newName = document.getElementById('swal-input1').value.trim();
+                                const newDescription = document.getElementById('swal-input2').value.trim();
+
+                                if (!newName) {
                                     Swal.showValidationMessage('Name cannot be empty');
                                     return false;
                                 }
+                                if (!newDescription) {
+                                    Swal.showValidationMessage('Description cannot be empty');
+                                    return false;
+                                }
+
                                 return fetch(`/admin/category`, {
                                     method: 'PUT',
                                     headers: {
                                         'Content-Type': 'application/json'
                                     },
-                                    body: JSON.stringify({ id: catId, name: newName.trim() })
+                                    body: JSON.stringify({
+                                        id: catId,
+                                        name: newName,
+                                        description: newDescription
+                                    })
                                 })
                                     .then(res => res.json())
                                     .then(data => {
@@ -173,7 +193,7 @@
                                     timer: 1500,
                                     showConfirmButton: false
                                 }).then(() => {
-                                    window.location.reload(); // reload to see updated data
+                                    window.location.reload();
                                 });
                             }
                         });

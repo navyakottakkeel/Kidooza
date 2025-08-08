@@ -290,7 +290,7 @@ const editProduct = async (req, res) => {
       });
     }
  
-
+    
     // Update fields only (no image handling)
     product.productName = productName;
     product.description = description;
@@ -298,6 +298,15 @@ const editProduct = async (req, res) => {
     product.salePrice = salePrice;
     product.brand = brand;
     product.category = category;
+
+    if (parseFloat(salePrice) >= parseFloat(basePrice)) {
+      const categories = await Category.find({ isDeleted: false });
+      return res.render('edit-product', {
+        categories,
+        product,
+        error: 'Sale price must be less than base price.'
+      });
+    }
 
     await product.save();
 

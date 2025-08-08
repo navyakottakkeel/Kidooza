@@ -57,6 +57,24 @@ const addVarient = async (req, res) => {
             return res.status(400).send("Invalid product ID");
         }
 
+        if (!size || size.trim() === "") {
+          return res.redirect(`/admin/varients?productId=${productId}&productName=${productName}&msg=Size is required`);
+      }
+      if (!colour || colour.trim() === "") {
+          return res.redirect(`/admin/varients?productId=${productId}&productName=${productName}&msg=Colour is required`);
+      }
+      
+
+        const exists = await Varients.findOne({ 
+          productId: new mongoose.Types.ObjectId(productId), 
+          size, 
+          colour 
+      });
+
+      if (exists) {
+        return res.redirect(`/admin/varients?productId=${productId}&productName=${productName}&msg=Variant already exists`);
+    }
+
         const newVarient = new Varients({
             productId,
             size,

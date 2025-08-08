@@ -282,6 +282,30 @@
     color: #888;
     margin-left: 5px;
   }
+  .colour-options {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.colour-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.colour-circle.selected {
+  border-color: #f16522; /* highlight */
+  transform: scale(1.1);
+}
+
+.colour-circle:hover {
+  transform: scale(1.05);
+}
+
 
   </style>
   
@@ -350,10 +374,17 @@
 
             <div class="mt-3">
               <h5>Available Colours:</h5>
-                <% colours.forEach(colour => { %>
-                  <span class="badge bg-secondary me-1"><%= colour %></span>
+              <div class="colour-options">
+                <% colours.forEach(function(colour, index) { %>
+                  <div class="colour-circle <%= index === 0 ? 'selected' : '' %>"
+                       style="background-color: <%= colour %>"
+                       onclick="selectColour(this, '<%= colour %>')">
+                  </div>
                 <% }) %>
+              </div>
+              <input type="hidden" id="selectedColour" name="selectedColour" value="<%= colours[0] %>">
             </div>
+            
     
 
             <div class="size-selection-wrapper">
@@ -515,10 +546,11 @@
     button.classList.add('selected');
 
     const selectedSize = button.innerText.trim();
-    document.getElementById('selectedSize').value = selectedSize;
+document.getElementById('selectedSize').value = selectedSize;
 
-    const stock = getStockForSize(selectedSize);
-    console.log("stock: ",stock);
+const selectedColour = document.getElementById('selectedColour').value;
+const stock = getStockForVariant(selectedSize, selectedColour);
+
     
     const stockInfo = document.getElementById('stock-info');
     const stockInfo2 = document.getElementById('stock-info2');
@@ -537,10 +569,11 @@
     }
   }
 
-  function getStockForSize(size) {
-    const selectedVariant = variants.find(v => v.size === size);
-    return selectedVariant ? selectedVariant.stock : 0;
-  }
+  function getStockForVariant(size, colour) {
+  const selectedVariant = variants.find(v => v.size === size && v.colour === colour);
+  return selectedVariant ? selectedVariant.stock : 0;
+}
+
 
   // Run once for the default selected size on page load
   window.addEventListener('DOMContentLoaded', () => {
@@ -561,6 +594,47 @@
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
+  function selectColour(element, colour) {
+  // Remove selection from other colours
+  document.querySelectorAll('.colour-circle').forEach(c => c.classList.remove('selected'));
+  element.classList.add('selected');
+
+  // Update hidden input
+  document.getElementById('selectedColour').value = colour;
+
+  // Get current selected size
+  const selectedSize = document.getElementById('selectedSize').value;
+
+  // Update stock info
+  const stock = getStockForVariant(selectedSize, colour);
+  updateStockDisplay(stock);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+function updateStockDisplay(stock) {
+  const stockInfo = document.getElementById('stock-info');
+  const stockInfo2 = document.getElementById('stock-info2');
+
+  if (stock > 0) {
+    stockInfo.textContent = `In Stock: ${stock}`;
+    stockInfo2.textContent = "";
+  } else {
+    stockInfo2.textContent = "Out of Stock";
+    stockInfo.textContent = "";
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+window.addEventListener('DOMContentLoaded', () => {
+  const defaultSize = document.getElementById('selectedSize').value;
+  const defaultColour = document.getElementById('selectedColour').value;
+  const stock = getStockForVariant(defaultSize, defaultColour);
+  updateStockDisplay(stock);
+});
 
 
 

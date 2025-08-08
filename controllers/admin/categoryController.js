@@ -40,9 +40,14 @@ const categoryInfo = async (req,res) =>{
 const addCategory = async (req, res) => {
     try {
         const name = req.body.name.trim();
+        const description = req.body.description.trim();
 
         if (!name) {
             return res.redirect('/admin/category?msg=Name cannot be empty');
+        }
+
+        if (!description) {
+            return res.redirect('/admin/category?msg=Description cannot be empty');
         }
 
         const exists = await Category.findOne({ name, isDeleted: false });
@@ -50,7 +55,7 @@ const addCategory = async (req, res) => {
             return res.redirect('/admin/category?msg=Category already exists');
         }
 
-        const newCat = new Category({ name });
+        const newCat = new Category({ name,descriptio });
         await newCat.save();
         res.redirect('/admin/category?msg=Category added successfully');
     } catch (err) {
@@ -63,10 +68,14 @@ const addCategory = async (req, res) => {
 
 const editCategory = async (req, res) => {
     try {
-        const { id, name } = req.body;
+        const { id, name, description } = req.body;
 
         if (!name.trim()) {
             return res.status(400).json({ success: false, message: "Name cannot be empty" });
+        }
+
+        if (!description.trim()) {
+            return res.status(400).json({ success: false, message: "Description cannot be empty" });
         }
 
         const exists = await Category.findOne({ name, isDeleted: false, _id: { $ne: id } });
@@ -74,7 +83,7 @@ const editCategory = async (req, res) => {
             return res.status(400).json({ success: false, message: "Category name already exists" });
         }
 
-        await Category.findByIdAndUpdate(id, { name: name.trim() });
+        await Category.findByIdAndUpdate(id, { name: name.trim(), description: description.trim() });
 
         return res.json({ success: true });
     } catch (err) {

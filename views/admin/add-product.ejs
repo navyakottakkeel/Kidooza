@@ -1,102 +1,103 @@
+<%-include("../../views/partials/admin/main") %>
 
- <%-include("../../views/partials/admin/main") %>
-
- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 
 
-<div class="container mt-5 table-responsive rounded-4 shadow-sm">
+  <div class="container mt-5 table-responsive rounded-4 shadow-sm">
     <h3><strong>Add New Product</strong></h3>
-  
+
     <div class="card p-3" style="margin-top: 45px;    margin-bottom: 25px;">
-    <form id="productForm"  method="POST" enctype="multipart/form-data">
-      <div class="form-group mt-4">
-        <label for="name">Product Name</label>
-        <input type="text" name="productName" class="form-control" placeholder="Product Name">
-      </div>
-  
-      <div class="form-group mt-3">
-        <label for="description">Product Description</label>
-        <textarea name="description" class="form-control" placeholder="Write your description here..." rows="3"></textarea>
-      </div>
-  
-      <div class="form-group mt-4">
-        <label>Add photos</label>
-        <input type="file" id="productImageInput" accept="image/*" class="form-control" multiple>
-                <small class="text-muted">Upload minimum 3 images</small>
-        <div class="d-flex gap-3 mt-3" id="imagePreview"></div>
-      </div>
-  
-      <div class="row mt-4">
-        <div class="col-md-6">
-          <label>Base Price</label>
-          <input type="number" name="basePrice" class="form-control" placeholder="₹ 1399" >
+      <form id="productForm" method="POST" enctype="multipart/form-data">
+        <div class="form-group mt-4">
+          <label for="name">Product Name</label>
+          <input type="text" name="productName" class="form-control" placeholder="Product Name">
         </div>
-        <div class="col-md-6">
-          <label>Sale Price</label>
-          <input type="number" name="salePrice" class="form-control" placeholder="Enter sale price">
+
+        <div class="form-group mt-3">
+          <label for="description">Product Description</label>
+          <textarea name="description" class="form-control" placeholder="Write your description here..."
+            rows="3"></textarea>
         </div>
-      </div>
-  
-      <div class="row mt-4">
-        <div class="col-md-6">
-          <label>Product Category</label>
-          <select name="category" class="form-control" >
-            <option value="">Product Category</option>
-            <% categories.forEach(cat => { %>
-              <option value="<%= cat._id %>"><%= cat.name %></option>
-            <% }) %>
-          </select>
+
+        <div class="form-group mt-4">
+          <label>Add photos</label>
+          <input type="file" id="productImageInput" accept="image/*" class="form-control" multiple>
+          <small class="text-muted">Upload minimum 3 images</small>
+          <div class="d-flex gap-3 mt-3" id="imagePreview"></div>
         </div>
-        <div class="col-md-6">
-          <label>Brand Name</label>
-          <input type="text" name="brand" class="form-control" placeholder="Brand Name" >
+
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <label>Base Price</label>
+            <input type="number" name="basePrice" class="form-control" placeholder="₹ 1399">
+          </div>
+          <div class="col-md-6">
+            <label>Sale Price</label>
+            <input type="number" name="salePrice" class="form-control" placeholder="Enter sale price">
+          </div>
         </div>
-  
-      
-      </div>
-  
-      <div class="mt-5 d-flex justify-content-end gap-3">
-        <a href="/admin/products" class="btn btn-outline-dark">Cancel</a>
-        <button type="submit" class="btn btn-dark">Save</button>
-      </div>
-    </form>
+
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <label>Product Category</label>
+            <select name="category" class="form-control">
+              <option value="">Product Category</option>
+              <% categories.forEach(cat=> { %>
+                <option value="<%= cat._id %>">
+                  <%= cat.name %>
+                </option>
+                <% }) %>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label>Brand Name</label>
+            <input type="text" name="brand" class="form-control" placeholder="Brand Name">
+          </div>
+
+        </div>
+
+        <div class="mt-5 d-flex justify-content-end gap-3">
+          <a href="/admin/products" class="btn btn-outline-dark">Cancel</a>
+          <button type="submit" class="btn btn-dark">Save</button>
+        </div>
+      </form>
     </div>
   </div>
 
 
   <!-- Cropping Modal -->
-<div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Crop Image</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <img id="cropperImage" style="max-width: 100%;"/>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="cropBtn" class="btn btn-dark">Crop & Save</button>
+  <div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Crop Image</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <img id="cropperImage" style="max-width: 100%;" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cropBtn" class="btn btn-dark">Crop & Save</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-  
+
 
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-<!-- Bootstrap Bundle with Popper.js -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap Bundle with Popper.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
 
 
 
-  
 
-<% if (typeof success !== 'undefined') { %>
+
+  <% if (typeof success !=='undefined' ) { %>
     <script>
       Swal.fire({
         icon: 'success',
@@ -107,124 +108,121 @@
         window.location.href = '/admin/products/add'; // Reload to fresh form
       });
     </script>
-  <% } %>
-
-  
-<% if (typeof error !== 'undefined') { %>
-    <script>
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: '<%- error %>',
-        confirmButtonColor: '#d33'
-      });
-    </script>
-  <% } %>
+    <% } %>
 
 
-  <script>
-    const input = document.getElementById('productImageInput');
-    const modal = new bootstrap.Modal(document.getElementById('cropperModal'));
-    const imageEl = document.getElementById('cropperImage');
-    const previewContainer = document.getElementById('imagePreview');
-    
-    let cropper;
-    let fileQueue = [];
-    let croppedBlobs = [];
-  
-    input.addEventListener('change', (e) => {
-      fileQueue = Array.from(e.target.files);
-      croppedBlobs = [];
-      previewContainer.innerHTML = '';
-      processNextImage();
-    });
-  
-    function processNextImage() {
-      if (fileQueue.length === 0) return;
-  
-      const file = fileQueue.shift();
-      const reader = new FileReader();
-  
-      reader.onload = function () {
-        imageEl.src = reader.result;
-        modal.show();
-  
-        modal._element.addEventListener('shown.bs.modal', () => {
-          if (cropper) {
-            cropper.destroy();
-          }
-          cropper = new Cropper(imageEl, {
-            aspectRatio: 1,
-            viewMode: 1
+      <% if (typeof error !=='undefined' ) { %>
+        <script>
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '<%- error %>',
+            confirmButtonColor: '#d33'
           });
-        }, { once: true });
-      };
-  
-      reader.readAsDataURL(file);
-    }
-  
-    document.getElementById('cropBtn').addEventListener('click', async () => {
-      if (!cropper) return;
-  
-      const canvas = cropper.getCroppedCanvas({
-        width: 500,
-        height: 500
-      });
-  
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-      croppedBlobs.push(blob);
-  
-      // Add to preview
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(blob);
-      img.style.width = '100px';
-      img.style.height = '100px';
-      img.style.objectFit = 'cover';
-      img.style.border = '1px dashed #ccc';
-      img.style.padding = '5px';
-      previewContainer.appendChild(img);
-  
-      // Clean up cropper and proceed
-      cropper.destroy();
-      cropper = null;
-      modal.hide();
-  
-      // Delay before showing next image
-      setTimeout(() => {
-        processNextImage();
-      }, 300);
-    });
-  
-    // Submit form with cropped blobs
-    document.getElementById('productForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-  
-      if (croppedBlobs.length < 3) {
-        alert("Please crop at least 3 images.");
-        return;
-      }
-  
-      const formData = new FormData(this);
-      croppedBlobs.forEach((blob, index) => {
-        formData.append('productImage', blob, `cropped-${index}.jpeg`);
-      });
-  
-      try {
-        const res = await fetch('/admin/products/add', {
-          method: 'POST',
-          body: formData
-        });
-  
-        const html = await res.text();
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (err) {
-        alert("Upload failed");
-        console.error(err);
-      }
-    });
-  </script>
-  
-  
-  
+        </script>
+        <% } %>
+
+
+          <script>
+            const input = document.getElementById('productImageInput');
+            const modal = new bootstrap.Modal(document.getElementById('cropperModal'));
+            const imageEl = document.getElementById('cropperImage');
+            const previewContainer = document.getElementById('imagePreview');
+
+            let cropper;
+            let fileQueue = [];
+            let croppedBlobs = [];
+
+            input.addEventListener('change', (e) => {
+              fileQueue = Array.from(e.target.files);
+              croppedBlobs = [];
+              previewContainer.innerHTML = '';
+              processNextImage();
+            });
+
+            function processNextImage() {
+              if (fileQueue.length === 0) return;
+
+              const file = fileQueue.shift();
+              const reader = new FileReader();
+
+              reader.onload = function () {
+                imageEl.src = reader.result;
+                modal.show();
+
+                modal._element.addEventListener('shown.bs.modal', () => {
+                  if (cropper) {
+                    cropper.destroy();
+                  }
+                  cropper = new Cropper(imageEl, {
+                    aspectRatio: 1,
+                    viewMode: 1
+                  });
+                }, { once: true });
+              };
+
+              reader.readAsDataURL(file);
+            }
+
+            document.getElementById('cropBtn').addEventListener('click', async () => {
+              if (!cropper) return;
+
+              const canvas = cropper.getCroppedCanvas({
+                width: 500,
+                height: 500
+              });
+
+              const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+              croppedBlobs.push(blob);
+
+              // Add to preview
+              const img = document.createElement('img');
+              img.src = URL.createObjectURL(blob);
+              img.style.width = '100px';
+              img.style.height = '100px';
+              img.style.objectFit = 'cover';
+              img.style.border = '1px dashed #ccc';
+              img.style.padding = '5px';
+              previewContainer.appendChild(img);
+
+              // Clean up cropper and proceed
+              cropper.destroy();
+              cropper = null;
+              modal.hide();
+
+              // Delay before showing next image
+              setTimeout(() => {
+                processNextImage();
+              }, 300);
+            });
+
+            // Submit form with cropped blobs
+            document.getElementById('productForm').addEventListener('submit', async function (e) {
+              e.preventDefault();
+
+              if (croppedBlobs.length < 3) {
+                alert("Please crop at least 3 images.");
+                return;
+              }
+
+              const formData = new FormData(this);
+              croppedBlobs.forEach((blob, index) => {
+                formData.append('productImage', blob, `cropped-${index}.jpeg`);
+              });
+
+              try {
+                const res = await fetch('/admin/products/add', {
+                  method: 'POST',
+                  body: formData
+                });
+
+                const html = await res.text();
+                document.open();
+                document.write(html);
+                document.close();
+              } catch (err) {
+                alert("Upload failed");
+                console.error(err);
+              }
+            });
+          </script>

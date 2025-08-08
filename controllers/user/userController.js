@@ -6,7 +6,7 @@ const env = require("dotenv").config();
 const bcrypt = require("bcrypt");
 
 
-//////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 const loadHomepage = async (req, res) => {
     try {
@@ -49,7 +49,7 @@ const loadHomepage = async (req, res) => {
 };
 
 
-///////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 const loadSignup = async (req, res) => {
     try {
@@ -62,7 +62,7 @@ const loadSignup = async (req, res) => {
     }
 }
 
-///////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 const loadLogin = async (req, res) => {
     try {
@@ -78,8 +78,48 @@ const loadLogin = async (req, res) => {
     }
 }
 
-////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+
+const signup = async (req, res) => {
+    try {
+
+        const { name, phone, email, password, cpassword } = req.body;
+
+        if (password !== cpassword) {
+            return res.render("signup");
+        }
+
+        const findUser = await User.findOne({ email });
+        if (findUser) {
+            return res.render("signup", { message: "EmailId already exist" })
+        }
+
+        const findUserbyMobile = await User.findOne({ phone });
+        if (findUserbyMobile) {
+            return res.render("signup", { message: "Mobile Number already exist" })
+        }
+
+        const otp = generateOtp();
+        const emailSent = await sendVerificationEmail(email, otp);
+
+        if (!emailSent) {
+            return res.json("email-error");
+        }
+
+        req.session.userOtp = otp;
+        req.session.userData = { name, phone, email, password };
+
+        res.render("verify-otp");
+        console.log("OTP sent", otp);
+
+    } catch (error) {
+        console.error("Signup error", error);
+        res.redirect("/pageNotFound");
+    }
+}
+
+//////////////////////////////
 
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -125,42 +165,7 @@ async function sendVerificationEmail(email, otp) {
     }
 }
 
-
-
-const signup = async (req, res) => {
-    try {
-
-        const { name, phone, email, password, cpassword } = req.body;
-
-        if (password !== cpassword) {
-            return res.render("signup");
-        }
-
-        const findUser = await User.findOne({ email });
-        if (findUser) {
-            return res.render("signup", { message: "EmailId already exist" })
-        }
-
-        const otp = generateOtp();
-        const emailSent = await sendVerificationEmail(email, otp);
-
-        if (!emailSent) {
-            return res.json("email-error");
-        }
-
-        req.session.userOtp = otp;
-        req.session.userData = { name, phone, email, password };
-
-        res.render("verify-otp");
-        console.log("OTP sent", otp);
-
-    } catch (error) {
-        console.error("Signup error", error);
-        res.redirect("/pageNotFound");
-    }
-}
-
-//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 const securePassword = async (password) => {
     try {

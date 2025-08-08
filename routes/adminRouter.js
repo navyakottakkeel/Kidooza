@@ -11,8 +11,6 @@ const upload = require('../middlewares/multer');
 const Category = require('../models/categorySchema');
 
 
-
-
 router.get('/pageerror', adminController.pageerror);
 router.get('/login', adminController.loadLogin);
 router.post('/login', adminController.login);
@@ -37,10 +35,8 @@ router.get('/unblockCustomer', customerController.customerUnblocked);
 
 router.get('/products',productController.loadProducts);
 router.get('/products/add', productController.loadAddProduct);
-//router.put('/products/update', upload.array('updatedImages'), productController.updateProduct);
 router.post('/products/add', upload.array('productImage', 5), productController.addProduct);
 router.patch('/products/delete/:id', productController.softDeleteProduct);
-
 
 router.get('/products/edit',productController.loadEditProduct);
 router.post('/products/edit',productController.editProduct)
@@ -48,24 +44,12 @@ router.post('/products/delete-image', productController.deleteProductImage);
 router.post('/products/update-image', upload.single('image'), productController.updateProductImage);
 router.post('/products/add-image', upload.single('image'), productController.addProductImage);
 
-
-
-
-
-
-// router.post('/products/edit-images', upload.any(), productController.updateProductImages);
-
-
 router.route('/varients')
 .get(varientController.loadVarient)
 .post(varientController.addVarient)
 .put(varientController.updateVarient)
 
-
 router.delete('/varients/:id',varientController.deleteVarient);
-
-
-
 
 
 module.exports = router;

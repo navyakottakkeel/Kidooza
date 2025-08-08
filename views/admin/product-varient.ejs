@@ -30,12 +30,24 @@
 
                         <div class="mb-3">
                             <label for="size" class="form-label">Size</label>
-                            <input type="text" class="form-control" id="size" name="size" />
+                            <select class="form-control" id="size" name="size">
+                              <option value="">-- Select Size --</option>
+                              <option value="0-6 Months">0-6 Months</option>
+                              <option value="6-12 Months">6-12 Months</option>
+                              <option value="12-18 Months">12-18 Months</option>
+                              <option value="18-24 Months">18-24 Months</option>
+                              <option value="2-3 Years">2-3 Years</option>
+                              <option value="3-4 Years">3-4 Years</option>
+                              <option value="4-5 Years">4-5 Years</option>
+                          </select>
+
+                            <!-- <input type="text" class="form-control" id="size" name="size" /> -->
                         </div>
                         <div class="mb-3">
-                            <label for="colour" class="form-label">Colour</label>
-                            <input type="text" class="form-control" id="colour" name="colour" />
-                        </div>
+                          <label for="colour" class="form-label">Colour</label>
+                          <input type="color" class="form-control form-control-color" id="colour" name="colour" value="#000000" title="Choose your color">
+                      </div>
+                      
                         <div class="mb-3">
                             <label for="stock" class="form-label">Stock</label>
                             <div class="input-group">
@@ -135,65 +147,82 @@ document.addEventListener('DOMContentLoaded', function () {
   const editButtons = document.querySelectorAll('.edit-btn');
 
   editButtons.forEach(button => {
-    button.addEventListener('click', async function () {
-      const varId = this.dataset.id;
-      const currentSize = this.dataset.size;
-      const currentColour = this.dataset.colour;
-      const currentStock = this.dataset.stock;
+  button.addEventListener('click', async function () {
+    const varId = this.dataset.id;
+    const currentSize = this.dataset.size;
+    const currentColour = this.dataset.colour;
+    const currentStock = this.dataset.stock;
 
-      const { value: formValues } = await Swal.fire({
-        title: 'Edit Variant',
-        html:
-          `<input id="swal-input1" class="swal2-input" placeholder="Size" value="${currentSize}">` +
-          `<input id="swal-input2" class="swal2-input" placeholder="Colour" value="${currentColour}">` +
-          `<input id="swal-input3" type="number" min="0" class="swal2-input" placeholder="Stock" value="${currentStock}">`,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'Update',
-        preConfirm: () => {
-          const size = document.getElementById('swal-input1').value.trim();
-          const colour = document.getElementById('swal-input2').value.trim();
-          const stock = parseInt(document.getElementById('swal-input3').value);
+    const sizeOptions = [
+      "0-6 Months", "6-12 Months", "12-18 Months", "18-24 Months",
+      "2-3 Years", "3-4 Years", "4-5 Years"
+    ];
 
-          if (!size || !colour || isNaN(stock) || stock < 0) {
-            Swal.showValidationMessage('Please fill all fields correctly');
-            return false;
-          }
+    const { value: formValues } = await Swal.fire({
+      title: 'Edit Variant',
+      html: `
+        <label for="swal-size" style="display:block;text-align:left;">Size</label>
+        <select id="swal-size" class="swal2-input">
+          ${sizeOptions.map(size => `
+            <option value="${size}" ${size === currentSize ? 'selected' : ''}>${size}</option>
+          `).join('')}
+        </select>
 
-          return { id: varId, size, colour, stock };
+        <label for="swal-colour" style="display:block;text-align:left;margin-top:10px;">Colour</label>
+        <input type="color" id="swal-colour" style="width: 100px;" class="swal2-input" value="${currentColour}">
+
+        <label for="swal-stock" style="display:block;text-align:left;margin-top:10px;">Stock</label>
+        <input id="swal-stock" type="number" min="0" class="swal2-input" placeholder="Stock" value="${currentStock}">
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Update',
+      preConfirm: () => {
+        const size = document.getElementById('swal-size').value;
+        const colour = document.getElementById('swal-colour').value;
+        const stock = parseInt(document.getElementById('swal-stock').value);
+
+        if (!size || !colour || isNaN(stock) || stock < 0) {
+          Swal.showValidationMessage('Please fill all fields correctly');
+          return false;
         }
-      });
 
-      if (formValues) {
-        fetch(`/admin/varients`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formValues)
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Variant Updated',
-              timer: 1500,
-              showConfirmButton: false
-            }).then(() => {
-              location.reload();
-            });
-          } else {
-            Swal.fire('Error!', data.message || 'Update failed', 'error');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          Swal.fire('Error!', 'Something went wrong.', 'error');
-        });
+        return { id: varId, size, colour, stock };
       }
     });
+
+  
+    if (formValues) {
+      fetch(`/admin/varients`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formValues)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Variant Updated',
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            location.reload();
+          });
+        } else {
+          Swal.fire('Error!', data.message || 'Update failed', 'error');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire('Error!', 'Something went wrong.', 'error');
+      });
+    }
   });
+});
+
 });
 
 
@@ -265,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
   
 
 
-        <!-- <% if (msg) { %>
+        <% if (msg) { %>
             <script>
                 Swal.fire({
                     icon: "<%= msg.includes('success') ? 'success' : 'error' %>",
@@ -274,4 +303,4 @@ document.addEventListener('DOMContentLoaded', function () {
                     timer: 2000
                 });
             </script>
-            <% } %> -->
+            <% } %>
