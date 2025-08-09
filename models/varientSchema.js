@@ -19,6 +19,18 @@ const varientSchema = new Schema({
         type : Number,
         required : true
     },
+    productImage : {
+        type : [String],
+        validate: [arr => arr.length >= 3, "At least 3 images required"]
+    },
+    basePrice : {
+        type : Number,
+        required : true
+    },
+    salePrice : {
+        type : Number,
+        required : true
+    },
     createdAt : {
         type : Date,
         default : Date.now

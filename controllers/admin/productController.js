@@ -35,7 +35,6 @@ const addProduct = async (req, res) => {
       });
     }
 
-
     const imagePaths = [];
 
     for (let i = 0; i < productImage.length; i++) {

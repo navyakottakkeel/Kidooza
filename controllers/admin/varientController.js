@@ -1,6 +1,9 @@
 const Product = require('../../models/productSchema');
 const Varients = require('../../models/varientSchema');
 const mongoose = require("mongoose");
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
 
 
 
@@ -49,47 +52,57 @@ const loadVarient = async (req, res) => {
 ///////////////////////////////////////////////////////////////////////////
 
 const addVarient = async (req, res) => {
-    try {
-        const { productId,productName, size, colour, stock } = req.body;
+  try {
+    const { productId, productName, size, colour, basePrice, salePrice, stock } = req.body;
+    const productImage = req.files;
 
 
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return res.status(400).send("Invalid product ID");
-        }
-
-        if (!size || size.trim() === "") {
-          return res.redirect(`/admin/varients?productId=${productId}&productName=${productName}&msg=Size is required`);
-      }
-      if (!colour || colour.trim() === "") {
-          return res.redirect(`/admin/varients?productId=${productId}&productName=${productName}&msg=Colour is required`);
-      }
-      
-
-        const exists = await Varients.findOne({ 
-          productId: new mongoose.Types.ObjectId(productId), 
-          size, 
-          colour 
+    if (!req.files || req.files.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload at least 3 images"
       });
-
-      if (exists) {
-        return res.redirect(`/admin/varients?productId=${productId}&productName=${productName}&msg=Variant already exists`);
     }
 
-        const newVarient = new Varients({
-            productId,
-            size,
-            colour,
-            stock
-        });
 
-        await newVarient.save();
+    const imagePaths = [];
 
-        res.redirect(`/admin/varients?productId=${productId}&productName=${productName}&success=true`);
-    } catch (error) {
-        console.error("Error while adding varient:", error);
-        res.status(500).send("Internal server error");
+    for (let i = 0; i < productImage.length; i++) {
+      const file = productImage[i];
+      const filename = `product-${Date.now()}-${i}.jpeg`;
+      const outputPath = path.join(__dirname, '../../public/uploads/products', filename);
+
+      await sharp(file.buffer)
+        .resize(500, 500)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 })
+        .toFile(outputPath);
+
+      imagePaths.push('/uploads/products/' + filename);
     }
+
+    const newVarient = new Varients({
+      productId,
+      size,
+      colour,
+      basePrice,
+      salePrice,
+      stock,
+      productImage: imagePaths
+    });
+
+    await newVarient.save();
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Error while adding varient:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
 };
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +132,7 @@ const deleteVarient = async (req, res) => {
 
   const updateVarient = async (req, res) => {
     try {
-      const { id, size, colour, stock } = req.body;
+      const { id, size, colour, stock, basePrice, salePrice } = req.body;
   
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ success: false, message: "Invalid variant ID" });
@@ -127,7 +140,7 @@ const deleteVarient = async (req, res) => {
   
       const updated = await Varients.findByIdAndUpdate(
         id,
-        { size, colour, stock },
+        { size, colour, stock, basePrice, salePrice },
         { new: true }
       );
   

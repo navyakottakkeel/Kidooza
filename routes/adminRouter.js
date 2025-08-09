@@ -44,12 +44,16 @@ router.post('/products/delete-image', productController.deleteProductImage);
 router.post('/products/update-image', upload.single('image'), productController.updateProductImage);
 router.post('/products/add-image', upload.single('image'), productController.addProductImage);
 
+
 router.route('/varients')
 .get(varientController.loadVarient)
-.post(varientController.addVarient)
+// .post(upload.array('productImage', 5),varientController.addVarient)
 .put(varientController.updateVarient)
 
 router.delete('/varients/:id',varientController.deleteVarient);
+router.post('/varients', upload.array('productImage', 5), varientController.addVarient);
+
+
 
 
 module.exports = router;

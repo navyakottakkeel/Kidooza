@@ -29,6 +29,29 @@
   pointer-events: none;
   background-color: #f5f5f5;
 }
+.colour-circle-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.colour-circle-label input {
+  display: none; /* Hide the checkbox */
+}
+
+.colour-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.colour-circle-label input:checked + .colour-circle {
+  border: 2px solid #000; /* Highlight when selected */
+  transform: scale(1.1);
+}
 
 </style>
 
@@ -120,23 +143,30 @@
             </div>
           
             <!-- Repeat for Colour -->
-            <div class="accordion-item">
-              <h2 class="accordion-header" id="headingColour">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseColour">
-                  Colour
-                </button>
-              </h2>
-              <div id="collapseColour" class="accordion-collapse collapse">
-                <div class="accordion-body">
-                  <% colours.forEach(colour => { %>
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="colour" value="<%= colour %>" onchange="document.getElementById('filtersForm').submit()" <%= (Array.isArray(filters.colour) ? filters.colour.includes(colour) : filters.colour === colour) ? 'checked' : '' %>                      >
-                      <label class="form-check-label"><%= colour %></label>
-                    </div>
-                  <% }) %>
-                </div>
-              </div>
-            </div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingColour">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseColour">
+      Colour
+    </button>
+  </h2>
+  <div id="collapseColour" class="accordion-collapse collapse">
+    <div class="accordion-body d-flex flex-wrap gap-2">
+      <% colours.forEach(colour => { %>
+        <label class="colour-circle-label">
+          <input 
+            type="checkbox" 
+            name="colour" 
+            value="<%= colour %>" 
+            onchange="document.getElementById('filtersForm').submit()" 
+            <%= (Array.isArray(filters.colour) ? filters.colour.includes(colour) : filters.colour === colour) ? 'checked' : '' %>
+          >
+          <span class="colour-circle" style="background-color: <%= colour %>"></span>
+        </label>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
 
             <!-- Price -->
           <div class="accordion-item">

@@ -98,7 +98,7 @@ const loadBoysPage = async (req, res) => {
         const brands = await Product.distinct("brand");
         const colours = await Varient.distinct("colour");
         const size = await Varient.distinct("size");
-
+       
 
         const filter = { isBlock: false };
 
@@ -311,7 +311,8 @@ const loadProductDetail = async (req, res) => {
             Varient.distinct('colour', { productId }),
             Varient.distinct('size', { productId }),
         ]);
-        const variants = await Varient.find({ productId: productId });
+
+const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice images'); 
 
 
 

@@ -325,14 +325,15 @@
         <div class="col-md-6">
             <div style="display: flex; gap: 20px;">
                 <!-- Thumbnail list -->
-                <div>
-                    <% product.productImage.forEach((image, index) => { %>
-                      <img src="<%= image %>"
-                           class="thumbnail-img <%= index === 0 ? 'active' : '' %>"
-                           data-index="<%= index %>"
-                           onclick="changeMainImage(this, '<%= image %>')" /><br>
-                    <% }); %>
-                  </div>
+                <div id="thumbnailsContainer">
+                  <% product.productImage.forEach((image, index) => { %>
+                    <img src="<%= image %>"
+                         class="thumbnail-img <%= index === 0 ? 'active' : '' %>"
+                         data-index="<%= index %>"
+                         onclick="changeMainImage(this, '<%= image %>')" /><br>
+                  <% }); %>
+                </div>
+                
                   
               
                 <!-- Main Image -->
@@ -478,140 +479,14 @@
 
 </div>
 
-<script>
-    const variants = <%- JSON.stringify(variants) %>;
-  </script>
-
 
 <script>
 
-    //////////////////////////////////////////////////////////////////////
-    
-    function changeMainImage(clickedThumbnail, imageUrl) {
-      // Change the main image source
-      document.getElementById('mainImage').src = imageUrl;
-  
-      // Remove 'active' class from all thumbnails
-      const thumbnails = document.querySelectorAll('.thumbnail-img');
-      thumbnails.forEach(thumb => thumb.classList.remove('active'));
-  
-      // Add 'active' class to the clicked one
-      clickedThumbnail.classList.add('active');
-    }
+const variants = <%- JSON.stringify(variants) %>;
 
-    ///////////////////////////////////////////////////////////////
-
-  const zoomContainer = document.querySelector('.zoom-container');
-  const mainImage = document.getElementById('mainImage');
-  const zoomLens = document.getElementById('zoomLens');
-
-  mainImage.addEventListener('mouseenter', () => {
-    zoomLens.style.visibility = 'visible';
-    zoomLens.style.backgroundImage = `url('${mainImage.src}')`;
-  });
-
-  mainImage.addEventListener('mousemove', (e) => {
-    const bounds = mainImage.getBoundingClientRect();
-    const x = e.pageX - bounds.left - window.scrollX;
-    const y = e.pageY - bounds.top - window.scrollY;
-
-    const lensSize = zoomLens.offsetWidth / 2;
-
-    let lensX = x - lensSize;
-    let lensY = y - lensSize;
-
-    if (lensX < 0) lensX = 0;
-    if (lensY < 0) lensY = 0;
-    if (lensX > bounds.width - zoomLens.offsetWidth) lensX = bounds.width - zoomLens.offsetWidth;
-    if (lensY > bounds.height - zoomLens.offsetHeight) lensY = bounds.height - zoomLens.offsetHeight;
-
-    zoomLens.style.left = `${lensX}px`;
-    zoomLens.style.top = `${lensY}px`;
-
-    const zoomLevel = 2;
-    zoomLens.style.backgroundPosition = `-${x * zoomLevel - lensSize}px -${y * zoomLevel - lensSize}px`;
-  });
-
-  mainImage.addEventListener('mouseleave', () => {
-    zoomLens.style.visibility = 'hidden';
-  });
-
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-
-  function selectSize(button) {
-
-    document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
-
-    button.classList.add('selected');
-
-    const selectedSize = button.innerText.trim();
-document.getElementById('selectedSize').value = selectedSize;
-
-const selectedColour = document.getElementById('selectedColour').value;
-const stock = getStockForVariant(selectedSize, selectedColour);
-
-    
-    const stockInfo = document.getElementById('stock-info');
-    const stockInfo2 = document.getElementById('stock-info2');
-
-    if (stock > 0) {
-      stockInfo.textContent = `In Stock: ${stock}`;
-      stockInfo2.textContent = "";
-      stockInfo.classList.remove("text-red-600");
-      stockInfo.classList.add("text-green-700");
-    } else {
-      stockInfo2.textContent = "Out of Stock";
-      stockInfo.textContent = "";
-
-      stockInfo2.classList.remove("text-green-700");
-      stockInfo2.classList.add("text-red-600");
-    }
-  }
-
-  function getStockForVariant(size, colour) {
-  const selectedVariant = variants.find(v => v.size === size && v.colour === colour);
-  return selectedVariant ? selectedVariant.stock : 0;
+function findVariant(size, colour) {
+  return variants.find(v => v.size === size && v.colour === colour);
 }
-
-
-  // Run once for the default selected size on page load
-  window.addEventListener('DOMContentLoaded', () => {
-    const defaultSize = document.getElementById('selectedSize').value;
-    const stock = getStockForSize(defaultSize);
-    const stockInfo = document.getElementById('stock-info');
-    const stockInfo2 = document.getElementById('stock-info2');
-
-    if (stock > 0) {
-      stockInfo.textContent = `In Stock: ${stock}`;
-      stockInfo2.textContent = "";
-    } else {
-      stockInfo2.textContent = "Out of Stock";
-      stockInfo.textContent = "";
-
-    }
-  });
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-
-  function selectColour(element, colour) {
-  // Remove selection from other colours
-  document.querySelectorAll('.colour-circle').forEach(c => c.classList.remove('selected'));
-  element.classList.add('selected');
-
-  // Update hidden input
-  document.getElementById('selectedColour').value = colour;
-
-  // Get current selected size
-  const selectedSize = document.getElementById('selectedSize').value;
-
-  // Update stock info
-  const stock = getStockForVariant(selectedSize, colour);
-  updateStockDisplay(stock);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 function updateStockDisplay(stock) {
   const stockInfo = document.getElementById('stock-info');
@@ -619,28 +494,118 @@ function updateStockDisplay(stock) {
 
   if (stock > 0) {
     stockInfo.textContent = `In Stock: ${stock}`;
+    stockInfo.style.color = 'green';
     stockInfo2.textContent = "";
   } else {
     stockInfo2.textContent = "Out of Stock";
+    stockInfo2.style.color = 'red';
     stockInfo.textContent = "";
   }
 }
 
+function updatePriceAndDiscount(variant) {
+  if (!variant) return;
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+  const sellingPriceElem = document.querySelector('.selling-price');
+  const originalPriceElem = document.querySelector('.original-price');
+  const discountTagElem = document.querySelector('.discount-tag');
+
+  const basePrice = variant.basePrice || 0;
+  const salePrice = variant.salePrice || 0;
+
+  sellingPriceElem.textContent = `₹${salePrice}`;
+
+  if (basePrice > salePrice) {
+    originalPriceElem.innerHTML = `<del>₹${basePrice}</del>`;
+    const discountPercent = Math.round(((basePrice - salePrice) / basePrice) * 100);
+    discountTagElem.textContent = `${discountPercent}% OFF`;
+    discountTagElem.style.display = 'inline';
+  } else {
+    originalPriceElem.textContent = '';
+    discountTagElem.textContent = '';
+    discountTagElem.style.display = 'none';
+  }
+}
+
+function updateImagesForColour(colour) {
+  const variant = variants.find(v => v.colour === colour);
+  if (!variant || !variant.productImage || variant.productImage.length === 0) return;
+
+  const mainImage = document.getElementById('mainImage');
+  const zoomLens = document.getElementById('zoomLens');
+
+  mainImage.src = variant.productImage[0];
+  zoomLens.style.backgroundImage = `url('${variant.productImage[0]}')`;
+
+  const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+  thumbnailsContainer.innerHTML = '';
+
+  variant.productImage.forEach((imgUrl, index) => {
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    img.className = 'thumbnail-img' + (index === 0 ? ' active' : '');
+    img.dataset.index = index;
+    img.style.cursor = 'pointer';
+    img.onclick = () => changeMainImage(img, imgUrl);
+    thumbnailsContainer.appendChild(img);
+  });
+}
+
+function changeMainImage(clickedThumbnail, imageUrl) {
+  const mainImage = document.getElementById('mainImage');
+  mainImage.src = imageUrl;
+
+  const zoomLens = document.getElementById('zoomLens');
+  zoomLens.style.backgroundImage = `url('${imageUrl}')`;
+
+  document.querySelectorAll('.thumbnail-img').forEach(img => img.classList.remove('active'));
+  clickedThumbnail.classList.add('active');
+}
+
+function selectSize(button) {
+  document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
+  button.classList.add('selected');
+
+  const selectedSize = button.innerText.trim();
+  document.getElementById('selectedSize').value = selectedSize;
+
+  const selectedColour = document.getElementById('selectedColour').value;
+
+  const variant = findVariant(selectedSize, selectedColour);
+
+  updateStockDisplay(variant ? variant.stock : 0);
+  updatePriceAndDiscount(variant);
+}
+
+function selectColour(element, colour) {
+  document.querySelectorAll('.colour-circle').forEach(c => c.classList.remove('selected'));
+  element.classList.add('selected');
+
+  document.getElementById('selectedColour').value = colour;
+
+  const selectedSize = document.getElementById('selectedSize').value;
+
+  const variant = findVariant(selectedSize, colour);
+
+  updateStockDisplay(variant ? variant.stock : 0);
+  updatePriceAndDiscount(variant);
+  updateImagesForColour(colour);
+}
 
 window.addEventListener('DOMContentLoaded', () => {
   const defaultSize = document.getElementById('selectedSize').value;
   const defaultColour = document.getElementById('selectedColour').value;
-  const stock = getStockForVariant(defaultSize, defaultColour);
-  updateStockDisplay(stock);
+
+  const variant = findVariant(defaultSize, defaultColour);
+
+  updateStockDisplay(variant ? variant.stock : 0);
+  updatePriceAndDiscount(variant);
+  updateImagesForColour(defaultColour);
 });
 
 
+</script>
 
-  </script>
-  
-  
 
      
 

@@ -1,166 +1,319 @@
 <%-include("../../views/partials/admin/main") %>
 
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 
 
-    <div class="container-fluid" style="width:100% ;">
-        <div class="d-flex justify-content-between align-items-center mb-3" style="    padding-left: 50px;">
-            <div style="    width: 50%;margin-top: 30px;">
-                <h2 class="fw-bold">Varients of <%= productName %></h2>
+  <div class="container-fluid" style="width:111% ;">
+    <div class="d-flex justify-content-between align-items-center mb-3" style="    padding-left: 50px;">
+      <div style="    width: 50%;margin-top: 30px;">
+        <h2 class="fw-bold">Varients of <%= productName %>
+        </h2>
+      </div>
+
+      <div>
+        <a href="/admin/products">Back to Product Listing Page</a>
+      </div>
+
+
+    </div>
+
+    <div>
+      <div class="col-3" style="float:left ;">
+        <!-- Varient Add Form -->
+        <div class="card p-3" style="max-width: 300px;">
+
+
+          <form id="variantForm" action="/admin/varients" method="POST" enctype="multipart/form-data">
+
+            <input type="hidden" name="productId" value="<%= productId %>">
+            <input type="hidden" name="productName" value="<%= productName %>">
+
+
+            <div class="mb-3">
+              <label for="size" class="form-label">Size</label>
+              <select class="form-control" id="size" name="size">
+                <option value="">-- Select Size --</option>
+                <option value="0-6 Months">0-6 Months</option>
+                <option value="6-12 Months">6-12 Months</option>
+                <option value="12-18 Months">12-18 Months</option>
+                <option value="18-24 Months">18-24 Months</option>
+                <option value="2-3 Years">2-3 Years</option>
+                <option value="3-4 Years">3-4 Years</option>
+                <option value="4-5 Years">4-5 Years</option>
+              </select>
+
+              <!-- <input type="text" class="form-control" id="size" name="size" /> -->
+            </div>
+            <div class="mb-3">
+              <label for="colour" class="form-label">Colour</label>
+              <input type="color" class="form-control form-control-color" id="colour" name="colour" value="#000000"
+                title="Choose your color">
             </div>
 
-            <div>
-                <a href="/admin/products">Back to Product Listing Page</a>
+            <div class="mb-3">
+              <label>Base Price ( ₹ )</label>
+              <input type="number" name="basePrice" class="form-control" placeholder="Enter Base price">
             </div>
+
+            <div class="mb-3">
+              <label>Sale Price ( ₹ )</label>
+              <input type="number" name="salePrice" class="form-control" placeholder="Enter sale price">
+            </div>
+
+            <div class="form-group mt-4">
+              <label>Add photos</label>
+              <input type="file" name="productImage" id="productImageInput" accept="image/*" class="form-control"
+                multiple>
+              <small class="text-muted">Upload minimum 3 images</small>
+              <div class="d-flex gap-3 mt-3" id="imagePreview"></div>
+            </div>
+
+
+            <div class="mb-3">
+              <label for="stock" class="form-label">Stock</label>
+              <div class="input-group">
+                <button class="btn btn-outline-secondary" type="button" onclick="changeStock(-1)">−</button>
+                <input type="number" class="form-control text-center" id="stock" name="stock" value="0" min="0" />
+                <button class="btn btn-outline-secondary" type="button" onclick="changeStock(1)">+</button>
+              </div>
+            </div>
+            <button class="btn" type="submit"
+              style="height:38px;width:230px;background-color:black;color:white;margin-bottom: 10px;">Add
+              New Varient
+              <i class="fas fa-add" style="padding-left: 10px; "></i></button>
+          </form>
+        </div>
+      </div>
+
+
+
+
+      <div class="col-9" style="float: left;margin-left: 5px;width: 74%;">
+        <!-- Table -->
+        <div class="table-responsive rounded-4 shadow-sm">
+          <table class="table align-middle text-center table-bordered mb-0" style="width: 100%;">
+            <thead class="text-white" style="background-color: #000;">
+              <tr>
+                <th>Sl.No</th>
+                <th>Size</th>
+                <th>Colour</th>
+                <th>Stock</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%for( let i=0; i < data.length; i++){%>
+                <tr>
+                  <td>
+                    <%= (currentPage - 1) * 6 + i + 1 %>
+                  </td>
+                  <td>
+                    <%=data[i].size%>
+                  </td>
+                  <td>
+                    <%=data[i].colour%>
+                  </td>
+                  <td>
+                    <%=data[i].stock%>
+                  </td>
+
+                  <td>
+                    <button onclick="deleteVarient('<%= data[i]._id %>', '<%= productId %>', '<%= productName %>')"
+                      class="btn btn-sm"
+                      style="height:38px;width:100px;background-color:red;color:white">Delete</button>
+
+                    <button class="btn edit-btn" style="height:38px;width:100px;background-color:black;color:white"
+                      data-id="<%= data[i]._id %>" data-size="<%= data[i].size %>" data-colour="<%= data[i].colour %>"
+                      data-stock="<%= data[i].stock %>" data-baseprice="<%= data[i].basePrice %>"
+                      data-saleprice="<%= data[i].salePrice %>"
+                      data-images='<%= JSON.stringify(data[i].productImage) %>'>
+                      Edit
+                    </button>
+
+
+                  </td>
+
+                </tr>
+                <%}%>
+            </tbody>
+          </table>
 
 
         </div>
 
-        <div>
-            <div class="col-3" style="float:left ;">
-                <!-- Varient Add Form -->
-                <div class="card p-3" style="max-width: 300px;">
-                    
 
-                    <form action="/admin/varients" method="POST">
-
-                        <input type="hidden" name="productId" value="<%= productId %>">
-                        <input type="hidden" name="productName" value="<%= productName %>">
-
-
-                        <div class="mb-3">
-                            <label for="size" class="form-label">Size</label>
-                            <select class="form-control" id="size" name="size">
-                              <option value="">-- Select Size --</option>
-                              <option value="0-6 Months">0-6 Months</option>
-                              <option value="6-12 Months">6-12 Months</option>
-                              <option value="12-18 Months">12-18 Months</option>
-                              <option value="18-24 Months">18-24 Months</option>
-                              <option value="2-3 Years">2-3 Years</option>
-                              <option value="3-4 Years">3-4 Years</option>
-                              <option value="4-5 Years">4-5 Years</option>
-                          </select>
-
-                            <!-- <input type="text" class="form-control" id="size" name="size" /> -->
-                        </div>
-                        <div class="mb-3">
-                          <label for="colour" class="form-label">Colour</label>
-                          <input type="color" class="form-control form-control-color" id="colour" name="colour" value="#000000" title="Choose your color">
-                      </div>
-                      
-                        <div class="mb-3">
-                            <label for="stock" class="form-label">Stock</label>
-                            <div class="input-group">
-                                <button class="btn btn-outline-secondary" type="button" onclick="changeStock(-1)">−</button>
-                                <input type="number" class="form-control text-center" id="stock" name="stock" value="0" min="0" />
-                                <button class="btn btn-outline-secondary" type="button" onclick="changeStock(1)">+</button>
-                              </div>                        </div>
-                        <button class="btn" type="submit"
-                            style="height:38px;width:230px;background-color:black;color:white;margin-bottom: 10px;">Add
-                            New Varient
-                            <i class="fas fa-add" style="padding-left: 10px; "></i></button>
-                    </form>
-                </div>
-            </div>
-
-
-
-
-            <div class="col-9" style="float: left;margin-left: 5px;width: 74%;">
-                <!-- Table -->
-                <div class="table-responsive rounded-4 shadow-sm">
-                    <table class="table align-middle text-center table-bordered mb-0" style="width: 100%;">
-                        <thead class="text-white" style="background-color: #000;">
-                            <tr>
-                                <th>Sl.No</th>
-                                <th>Size</th>
-                                <th>Colour</th>
-                                <th>Stock</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <%for( let i=0; i < data.length; i++){%>
-                                <tr>
-                                    <td>
-                                        <%= (currentPage - 1) * 6 + i + 1 %>
-                                    </td>
-                                    <td><%=data[i].size%></td>
-                                    <td><%=data[i].colour%></td>
-                                    <td><%=data[i].stock%></td>
-
-                                    <td>
-                                        <button onclick="deleteVarient('<%= data[i]._id %>', '<%= productId %>', '<%= productName %>')" class="btn btn-sm"
-                                            style="height:38px;width:100px;background-color:red;color:white">Delete</button>
-
-                                            <button class="btn edit-btn"
-        style="height:38px;width:100px;background-color:black;color:white"
-        data-id="<%= data[i]._id %>"
-        data-size="<%= data[i].size %>"
-        data-colour="<%= data[i].colour %>"
-        data-stock="<%= data[i].stock %>">
-  Edit
-</button>
-
-                                    </td>
-                                    
-                                </tr>
-                                <%}%>
-                        </tbody>
-                    </table>
-
-
-                </div>
-
-
-                <div class="container">
-                    <nav class="mt-3 d-flex justify-content-center">
-                      <ul class="pagination">
-                        <% for (let i = 1; i <= totalPages; i++) { %>
-                          <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-                            <a class="page-link" href="/admin/varients?page=<%= i %>">
-                              <%= i %>
-                            </a>
-                          </li>
-                        <% } %>
-                      </ul>
-                    </nav>
-                  </div>
-                  
-
-
-            </div>
-
-
-
-
-
-
+        <div class="container">
+          <nav class="mt-3 d-flex justify-content-center">
+            <ul class="pagination">
+              <% for (let i=1; i <=totalPages; i++) { %>
+                <li class="page-item <%= currentPage == i ? 'active' : '' %>">
+                  <a class="page-link" href="/admin/varients?page=<%= i %>">
+                    <%= i %>
+                  </a>
+                </li>
+                <% } %>
+            </ul>
+          </nav>
         </div>
 
 
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+      </div>
 
 
-        <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const editButtons = document.querySelectorAll('.edit-btn');
 
-  editButtons.forEach(button => {
-  button.addEventListener('click', async function () {
-    const varId = this.dataset.id;
-    const currentSize = this.dataset.size;
-    const currentColour = this.dataset.colour;
-    const currentStock = this.dataset.stock;
 
-    const sizeOptions = [
-      "0-6 Months", "6-12 Months", "12-18 Months", "18-24 Months",
-      "2-3 Years", "3-4 Years", "4-5 Years"
-    ];
 
-    const { value: formValues } = await Swal.fire({
-      title: 'Edit Variant',
-      html: `
+
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+
+    <script>
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const fileInput = document.getElementById('productImageInput');
+        const previewContainer = document.getElementById('imagePreview');
+
+        fileInput.addEventListener('change', async function (event) {
+          const files = Array.from(event.target.files); // ✅ all files
+          if (!files.length) return;
+
+          let croppedFiles = [];
+
+          for (let file of files) {
+            const dataUrl = await readFileAsDataURL(file);
+
+            const croppedBlob = await showCropperModal(dataUrl);
+            if (croppedBlob) {
+              croppedFiles.push(new File([croppedBlob], file.name, { type: file.type }));
+              // Show preview
+              const img = document.createElement('img');
+              img.src = URL.createObjectURL(croppedBlob);
+              img.style.width = "80px";
+              img.style.height = "80px";
+              img.style.objectFit = "cover";
+              previewContainer.appendChild(img);
+            }
+          }
+
+          // ✅ Replace the input files with cropped ones
+          const dataTransfer = new DataTransfer();
+          croppedFiles.forEach(f => dataTransfer.items.add(f));
+          fileInput.files = dataTransfer.files;
+        });
+
+        // helper: read file as data URL
+        function readFileAsDataURL(file) {
+          return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.readAsDataURL(file);
+          });
+        }
+
+        // helper: show cropper modal & return cropped blob
+        function showCropperModal(dataUrl) {
+          return new Promise((resolve) => {
+            Swal.fire({
+              title: 'Crop & Save',
+              html: '<img id="cropperImage" style="max-width: 100%;">',
+              showCancelButton: true,
+              confirmButtonText: 'Crop & Save',
+              didOpen: () => {
+                const image = document.getElementById('cropperImage');
+                image.src = dataUrl;
+                image.onload = () => {
+                  window.currentCropper = new Cropper(image, {
+                    aspectRatio: 1,
+                    viewMode: 1
+                  });
+                };
+              }
+            }).then(result => {
+              if (result.isConfirmed && window.currentCropper) {
+                window.currentCropper.getCroppedCanvas().toBlob(blob => {
+                  resolve(blob);
+                }, 'image/jpeg');
+              } else {
+                resolve(null);
+              }
+            });
+          });
+        }
+      });
+
+
+
+
+      document.getElementById('variantForm').addEventListener('submit', function (e) {
+        e.preventDefault(); // stop normal form submit
+
+        const form = document.getElementById('variantForm');
+        const formData = new FormData(form); // automatically collects all form inputs including files
+
+        fetch('/admin/varients', {
+          method: 'POST',
+          body: formData
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Variant Added',
+                timer: 1500,
+                showConfirmButton: false
+              }).then(() => location.reload());
+            } else {
+              Swal.fire('Error!', data.message || 'Something went wrong', 'error');
+            }
+          })
+          .catch(err => {
+            console.error('Upload failed', err);
+            Swal.fire('Error!', 'Upload failed', 'error');
+          });
+      });
+
+    </script>
+
+
+
+
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const editButtons = document.querySelectorAll('.edit-btn');
+
+        editButtons.forEach(button => {
+          button.addEventListener('click', async function () {
+            const varId = this.dataset.id;
+            const currentSize = this.dataset.size;
+            const currentColour = this.dataset.colour;
+            const currentStock = this.dataset.stock;
+            const basePrice = this.dataset.baseprice;
+            const salePrice = this.dataset.saleprice;
+            const images = JSON.parse(this.dataset.images || '[]');
+
+            const sizeOptions = [
+              "0-6 Months", "6-12 Months", "12-18 Months", "18-24 Months",
+              "2-3 Years", "3-4 Years", "4-5 Years"
+            ];
+
+            const baseImagePath = '/uploads/products/';
+            const imagesHtml = images.map(src =>
+  `<img src="${src}" style="width: 80px; height: 80px; object-fit: cover;">`
+).join('');
+
+
+
+            const { value: formValues } = await Swal.fire({
+              title: 'Edit Variant',
+              html: `
         <label for="swal-size" style="display:block;text-align:left;">Size</label>
         <select id="swal-size" class="swal2-input">
           ${sizeOptions.map(size => `
@@ -171,136 +324,147 @@ document.addEventListener('DOMContentLoaded', function () {
         <label for="swal-colour" style="display:block;text-align:left;margin-top:10px;">Colour</label>
         <input type="color" id="swal-colour" style="width: 100px;" class="swal2-input" value="${currentColour}">
 
+        <label for="swal-basePrice" style="display:block;text-align:left;margin-top:10px;">Base Price (₹)</label>
+        <input id="swal-basePrice" type="number" min="0" class="swal2-input" placeholder="Base Price" value="${basePrice}">
+
+        <label for="swal-salePrice" style="display:block;text-align:left;margin-top:10px;">Sale Price (₹)</label>
+        <input id="swal-salePrice" type="number" min="0" class="swal2-input" placeholder="Sale Price" value="${salePrice}">
+
         <label for="swal-stock" style="display:block;text-align:left;margin-top:10px;">Stock</label>
         <input id="swal-stock" type="number" min="0" class="swal2-input" placeholder="Stock" value="${currentStock}">
+
+        <label style="display:block;text-align:left;margin-top:10px;">Images</label>
+        <div style="display:flex; flex-wrap:wrap; gap:5px;">${imagesHtml}</div>
       `,
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Update',
-      preConfirm: () => {
-        const size = document.getElementById('swal-size').value;
-        const colour = document.getElementById('swal-colour').value;
-        const stock = parseInt(document.getElementById('swal-stock').value);
+              focusConfirm: false,
+              showCancelButton: true,
+              confirmButtonText: 'Update',
+              preConfirm: () => {
+                const size = document.getElementById('swal-size').value;
+                const colour = document.getElementById('swal-colour').value;
+                const basePrice = parseFloat(document.getElementById('swal-basePrice').value);
+                const salePrice = parseFloat(document.getElementById('swal-salePrice').value);
+                const stock = parseInt(document.getElementById('swal-stock').value);
 
-        if (!size || !colour || isNaN(stock) || stock < 0) {
-          Swal.showValidationMessage('Please fill all fields correctly');
-          return false;
-        }
+                if (!size || !colour || isNaN(stock) || stock < 0 || isNaN(basePrice) || basePrice < 0 || isNaN(salePrice) || salePrice < 0) {
+                  Swal.showValidationMessage('Please fill all fields correctly');
+                  return false;
+                }
 
-        return { id: varId, size, colour, stock };
-      }
-    });
-
-  
-    if (formValues) {
-      fetch(`/admin/varients`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formValues)
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          Swal.fire({
-            icon: 'success',
-            title: 'Variant Updated',
-            timer: 1500,
-            showConfirmButton: false
-          }).then(() => {
-            location.reload();
-          });
-        } else {
-          Swal.fire('Error!', data.message || 'Update failed', 'error');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        Swal.fire('Error!', 'Something went wrong.', 'error');
-      });
-    }
-  });
-});
-
-});
-
-
-
-        
-  function deleteVarient(varientId) {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'Are you want to delete?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
-    }).then((result) => {
-        console.log("id:",varientId);
-      if (result.isConfirmed) {
-        fetch(`/admin/varients/${varientId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            Swal.fire('Deleted!', data.message, 'success').then(() => {
-              location.reload(); // refresh to update the list
+                return { id: varId, size, colour, basePrice, salePrice, stock };
+              }
             });
-          } else {
-            Swal.fire('Error!', data.message, 'error');
+
+
+            if (formValues) {
+              fetch(`/admin/varients`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formValues)
+              })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) {
+                    Swal.fire({
+                      icon: 'success',
+                      title: 'Variant Updated',
+                      timer: 1500,
+                      showConfirmButton: false
+                    }).then(() => {
+                      location.reload();
+                    });
+                  } else {
+                    Swal.fire('Error!', data.message || 'Update failed', 'error');
+                  }
+                })
+                .catch(err => {
+                  console.error(err);
+                  Swal.fire('Error!', 'Something went wrong.', 'error');
+                });
+            }
+          });
+        });
+
+      });
+
+
+
+
+      function deleteVarient(varientId) {
+        Swal.fire({
+          title: 'Are you sure?',
+          text: 'Are you want to delete?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete it!',
+          cancelButtonText: 'Cancel'
+        }).then((result) => {
+          console.log("id:", varientId);
+          if (result.isConfirmed) {
+            fetch(`/admin/varients/${varientId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  Swal.fire('Deleted!', data.message, 'success').then(() => {
+                    location.reload(); // refresh to update the list
+                  });
+                } else {
+                  Swal.fire('Error!', data.message, 'error');
+                }
+              })
+              .catch(err => {
+                console.error(err);
+                Swal.fire('Error!', 'Something went wrong.', 'error');
+              });
           }
-        })
-        .catch(err => {
-          console.error(err);
-          Swal.fire('Error!', 'Something went wrong.', 'error');
         });
       }
-    });
-  }
 
 
 
 
 
-            function changeStock(change) {
-    const input = document.getElementById('stock');
-    let current = parseInt(input.value) || 0;
-    current += change;
-    if (current < 0) current = 0;
-    input.value = current;
-  }
+      function changeStock(change) {
+        const input = document.getElementById('stock');
+        let current = parseInt(input.value) || 0;
+        current += change;
+        if (current < 0) current = 0;
+        input.value = current;
+      }
 
 
-        </script>
-
-
-
-<% if (success) { %>
-    <script>
-      Swal.fire({
-        icon: 'success',
-        title: 'Variant Added',
-        text: 'The new variant was added successfully!',
-        timer: 2000,
-        showConfirmButton: false
-      });
     </script>
-  <% } %>
-  
+
+
+
+    <% if (success) { %>
+      <script>
+        Swal.fire({
+          icon: 'success',
+          title: 'Variant Added',
+          text: 'The new variant was added successfully!',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      </script>
+      <% } %>
+
 
 
         <% if (msg) { %>
-            <script>
-                Swal.fire({
-                    icon: "<%= msg.includes('success') ? 'success' : 'error' %>",
-                    title: "<%= msg %>",
-                    showConfirmButton: false,
-                    timer: 2000
-                });
-            </script>
-            <% } %>
+          <script>
+            Swal.fire({
+              icon: "<%= msg.includes('success') ? 'success' : 'error' %>",
+              title: "<%= msg %>",
+              showConfirmButton: false,
+              timer: 2000
+            });
+          </script>
+          <% } %>
