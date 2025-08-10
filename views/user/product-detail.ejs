@@ -604,6 +604,42 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 
+const zoomContainer = document.querySelector('.zoom-container');
+  const mainImage = document.getElementById('mainImage');
+  const zoomLens = document.getElementById('zoomLens');
+
+  mainImage.addEventListener('mouseenter', () => {
+    zoomLens.style.visibility = 'visible';
+    zoomLens.style.backgroundImage = `url('${mainImage.src}')`;
+  });
+
+  mainImage.addEventListener('mousemove', (e) => {
+    const bounds = mainImage.getBoundingClientRect();
+    const x = e.pageX - bounds.left - window.scrollX;
+    const y = e.pageY - bounds.top - window.scrollY;
+
+    const lensSize = zoomLens.offsetWidth / 2;
+
+    let lensX = x - lensSize;
+    let lensY = y - lensSize;
+
+    if (lensX < 0) lensX = 0;
+    if (lensY < 0) lensY = 0;
+    if (lensX > bounds.width - zoomLens.offsetWidth) lensX = bounds.width - zoomLens.offsetWidth;
+    if (lensY > bounds.height - zoomLens.offsetHeight) lensY = bounds.height - zoomLens.offsetHeight;
+
+    zoomLens.style.left = `${lensX}px`;
+    zoomLens.style.top = `${lensY}px`;
+
+    const zoomLevel = 2;
+    zoomLens.style.backgroundPosition = `-${x * zoomLevel - lensSize}px -${y * zoomLevel - lensSize}px`;
+  });
+
+  mainImage.addEventListener('mouseleave', () => {
+    zoomLens.style.visibility = 'hidden';
+  });
+
+
 </script>
 
 

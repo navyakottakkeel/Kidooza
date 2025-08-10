@@ -312,7 +312,7 @@ const loadProductDetail = async (req, res) => {
             Varient.distinct('size', { productId }),
         ]);
 
-const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice images'); 
+const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice productImage'); 
 
 
 
