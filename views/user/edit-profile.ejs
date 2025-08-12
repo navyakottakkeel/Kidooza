@@ -1,0 +1,168 @@
+<%- include("../../views/partials/user/header") %>
+
+<div class="container" style="margin-top: 180px;">
+  <div class="row">
+   <!-- Left Sidebar -->
+   <div class="col-md-3">
+    <div class="list-group shadow-sm rounded-4 overflow-hidden" style="border: 1px solid #e0e0e0;">
+
+        <!-- Header -->
+        <div class="list-group-item fw-bold text-center py-3" style="background: linear-gradient(135deg, #f5f5f5, #e0e0e0); 
+       color: #444; 
+       font-size: 1.1rem; 
+       letter-spacing: 0.5px;">
+            <i class="fas fa-user-circle me-2"></i> My Account
+        </div>
+
+        <!-- Links -->
+        <a href="/userProfile" class="list-group-item list-group-item-action py-3"
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-user me-2 text-primary"></i> My Profile
+        </a>
+
+        <a href="/address" class="list-group-item list-group-item-action py-3"
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-map-marker-alt me-2 text-success"></i> Address
+        </a>
+
+        <a href="#" class="list-group-item list-group-item-action py-3"
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-box me-2 text-warning"></i> My Orders
+        </a>
+
+        <a href="#" class="list-group-item list-group-item-action py-3"
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-wallet me-2 text-info"></i> Wallet
+        </a>
+
+        <a href="/profile-change-password" class="list-group-item list-group-item-action py-3"
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-key me-2 text-secondary"></i> Change Password
+        </a>
+
+        <a href="/logout" class="list-group-item list-group-item-action text-danger py-3 fw-bold"
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-sign-out-alt me-2"></i> Logout
+        </a>
+    </div>
+</div>
+
+    <!-- Right Content -->
+    <div class="col-md-9">
+      <div class="card shadow-sm rounded-3">
+        <div class="card-header" style="background-color: #e4e1d7;">
+          <h5 class="mb-0 fw-bold">Edit Profile</h5>
+        </div>
+
+        <form id="editProfileForm" method="POST" class="p-4">
+          <div class="row g-3">
+            <!-- Name -->
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Name</label>
+              <input type="text" name="name" class="form-control" value="<%= user.name %>" required>
+            </div>
+
+            <!-- Email -->
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Email</label>
+              <input type="email" name="email" class="form-control" value="<%= user.email %>" required>
+            </div>
+
+            <!-- Phone -->
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Mobile</label>
+              <input type="text" name="phone" class="form-control" value="<%= user.phone %>" required>
+            </div>
+
+            <!-- Buttons -->
+            <div class="col-12 d-flex justify-content-end gap-2 mt-4">
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+              <a href="/userProfile" class="btn btn-secondary">Cancel</a>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+const originalEmail = "<%= user.email %>";
+
+document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const name = formData.get('name');
+    const email = formData.get('email');
+    const phone = formData.get('phone');
+
+    try {
+
+         // ✅ If email is NOT changed → direct update
+         if (email === originalEmail) {
+            const updateRes = await fetch('/updateProfile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone })
+            });
+            const updateData = await updateRes.json();
+            if (!updateRes.ok) throw new Error(updateData.message);
+
+            Swal.fire('Success', 'Profile updated successfully!', 'success')
+                .then(() => location.href = '/userProfile');
+            return;
+        }
+        
+        // Step 1: Send OTP to new email
+        const sendOtpRes = await fetch('/updateProfile/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, phone })
+        });
+
+        const sendOtpData = await sendOtpRes.json();
+        if (!sendOtpRes.ok) throw new Error(sendOtpData.message);
+
+        // Step 2: Prompt for OTP
+        const { value: otp } = await Swal.fire({
+            title: 'Verify New Email',
+            input: 'text',
+            inputLabel: 'Enter the OTP sent to ' + email,
+            inputPlaceholder: 'Enter OTP',
+            confirmButtonText: 'Verify',
+            showCancelButton: true,
+            inputValidator: (value) => {
+                if (!value) return 'You need to enter the OTP!';
+            }
+        });
+
+        if (otp) {
+            // Step 3: Verify OTP & update profile
+            const verifyRes = await fetch('/updateProfile/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, otp })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyData.message);
+
+            Swal.fire('Success', 'Profile updated successfully!', 'success')
+                .then(() => location.href = '/userProfile');
+        }
+
+    } catch (err) {
+        Swal.fire('Error', err.message, 'error');
+    }
+});
+</script>
+
+
+
+<%- include("../../views/partials/user/footer") %>
