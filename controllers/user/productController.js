@@ -2,6 +2,8 @@ const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
 const User = require('../../models/userSchema');
 const Varient = require('../../models/varientSchema');
+const Wishlist = require('../../models/wishlistSchema');
+
 const url = require("url");
 
 
@@ -68,6 +70,25 @@ const loadBoysPage = async (req, res) => {
 
         const products = await Product.find(productQuery);
 
+        let user = null;
+        if (req.user) {
+            user = req.user;
+        } else if (req.session.user) {
+            user = await User.findById(req.session.user);
+        }
+
+        let wishlistItems = [];
+if (user) {
+    const wishlist = await Wishlist.findOne({ userId: user._id });
+    if (wishlist) {
+        wishlistItems = wishlist.items.map(item => ({
+            productId: item.productId.toString(),
+            variantId: item.variantId.toString()
+        }));
+    }
+}
+
+
         const perPage = 6;
         const page = parseInt(req.query.page) || 1;
 
@@ -88,12 +109,7 @@ const loadBoysPage = async (req, res) => {
             search = search.filter(s => s.trim() !== '')[0] || ''; // Take first non-empty string or ''
         }
 
-        let user = null;
-        if (req.user) {
-            user = req.user;
-        } else if (req.session.user) {
-            user = await User.findById(req.session.user);
-        }
+      
 
         const brands = await Product.distinct("brand");
         const colours = await Varient.distinct("colour");
@@ -190,6 +206,13 @@ const loadBoysPage = async (req, res) => {
             .skip((page - 1) * perPage)
             .limit(perPage);
 
+
+            for (let product of allProducts) {
+                const variant = await Varient.findOne({ productId: product._id }).lean();
+                product.defaultVariantId = variant ? variant._id : null;
+            }
+
+
         const categories = await Category.find({ isDeleted: false });
 
         // Group products by category
@@ -232,7 +255,8 @@ const loadBoysPage = async (req, res) => {
                 colour: selectedColours,
                 minPrice,
                 maxPrice
-            }
+            },
+            wishlistItems
         });
 
     } catch (error) {
@@ -304,6 +328,19 @@ const loadProductDetail = async (req, res) => {
             user = await User.findById(req.session.user);
         }
 
+        
+        let wishlistItems = [];
+if (user) {
+    const wishlist = await Wishlist.findOne({ userId: user._id });
+    if (wishlist) {
+        wishlistItems = wishlist.items.map(item => ({
+            productId: item.productId.toString(),
+            variantId: item.variantId.toString()
+        }));
+    }
+}
+
+
         const productId = req.params.id;
 
         const product = await Product.findById(productId).populate("category");
@@ -343,7 +380,8 @@ const variants = await Varient.find({ productId: productId }).select('size colou
             sizes: [...new Set(variants.map(v => v.size))],
             discountPercent,
             relatedProducts,
-            variants
+            variants,
+            wishlistItems
         });
 
     } catch (error) {
@@ -353,10 +391,59 @@ const variants = await Varient.find({ productId: productId }).select('size colou
 };
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
+
+const addToWishlist = async (req, res) => {
+    try {
+        const { productId, variantId } = req.body;
+        const userId = req.session.user; // assuming session holds user ID
+
+        if (!productId || !variantId) {
+            return res.status(400).json({ success: false, message: "Missing product or variant ID" });
+        }
+
+        let wishlist = await Wishlist.findOne({ userId });
+
+        // If no wishlist yet, create one with this item
+        if (!wishlist) {
+            wishlist = new Wishlist({
+                userId,
+                items: [{ productId, variantId }]
+            });
+            await wishlist.save();
+            return res.json({ success: true, action: "added" });
+        }
+
+        // Check if item already exists
+        const itemIndex = wishlist.items.findIndex(
+            item => item.productId.toString() === productId && item.variantId.toString() === variantId
+        );
+
+        if (itemIndex > -1) {
+            // Exists → remove it
+            wishlist.items.splice(itemIndex, 1);
+            await wishlist.save();
+            return res.json({ success: true, action: "removed" });
+        } else {
+            // Not exists → add it
+            wishlist.items.push({ productId, variantId });
+            await wishlist.save();
+            return res.json({ success: true, action: "added" });
+        }
+
+    } catch (err) {
+        console.error("Wishlist Toggle Error:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
     loadAllProducts,
     loadNewArrivals,
     loadBoysPage,
-    loadProductDetail
+    loadProductDetail,
+    addToWishlist
 }

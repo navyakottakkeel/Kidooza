@@ -37,6 +37,9 @@ const addToCart = async (req, res) => {
             if (!varient) return res.status(404).json({ error: 'Variant not found' });
             stockAvailable = varient.stock;
             price = varient.salePrice;
+        }else{
+            stockAvailable = 0;
+            price = product.salePrice;
         }
 
         // ✅ Out of stock check
