@@ -191,7 +191,7 @@
     border-radius: 5px;
   }
 
-  /* Cart Buttons */
+ 
   .cart-actions button {
     display: block;
     width: 60%;
@@ -204,12 +204,12 @@
   }
 
   .btn-add-to-cart {
-    background-color: #5d8255; /* navy blue */
+    background-color: #5d8255;
     color: #fff;
   }
 
   .btn-buy-now {
-    background-color: #fa5d63; /* red-pink */
+    background-color: #fa5d63; 
     color: #fff;
   }
 
@@ -305,6 +305,33 @@
 .colour-circle:hover {
   transform: scale(1.05);
 }
+.quantity-selector {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    overflow: hidden;
+    background-color: white;
+    font-size: 18px;
+    margin-bottom: 15px;
+    height: 45px;
+}
+
+.quantity-selector button {
+    background: none;
+    border: none;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 20px;
+    color: #333;
+}
+
+.quantity-selector span {
+    padding: 0 14px;
+    font-size: 16px;
+    min-width: 30px;
+    text-align: center;
+}
 
 
   </style>
@@ -366,11 +393,7 @@
             <% } %>
           </div>
 
-          
 
-          <!-- <h4>₹<%= product.salePrice %> <s style="color:gray; font-size:small;">₹<%= product.basePrice %></s></h4>
-          <p><strong>Category:</strong> <%= product.category?.name || 'N/A' %></p> -->
-    
           <% if (colours && colours.length > 0) { %>
 
             <div class="mt-3">
@@ -420,9 +443,21 @@
           
           <!-- Add to Cart & Buy Now Buttons -->
           <div class="cart-actions">
-            <button class="btn-add-to-cart">Add To Cart</button>
-            <!-- <button class="btn-buy-now">Buy It Now</button> -->
-          </div>
+            <form id="addToCartForm">
+                <input type="hidden" name="productId" value="<%= product._id %>">
+                <input type="hidden" name="varientId" id="variantIdInput" value="">
+                <div class="quantity-selector">
+                  <button type="button" id="qty-decrease">-</button>
+                  <span id="quantityDisplay">1</span>
+                  <input type="hidden" id="quantityInput" name="quantity" value="1">
+                  <button type="button" id="qty-increase">+</button>
+              </div><label for="" style="color: #5d8255;">#Maximum quantity is 5</label>
+              
+              
+                <button type="submit" class="btn btn-primary btn-add-to-cart">Add to Cart</button>
+            </form>
+        </div>
+        
           
 
 
@@ -479,10 +514,78 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 
 const variants = <%- JSON.stringify(variants) %>;
+
+document.getElementById('addToCartForm').addEventListener('submit', (e) => {
+    e.preventDefault(); // ⛔ Prevent page reload
+
+    const productId = "<%= product._id %>";
+    const varientId = findVariant(
+        document.getElementById('selectedSize').value,
+        document.getElementById('selectedColour').value
+    )?._id || null;
+    const quantity = parseInt(document.getElementById('quantityInput').value, 10);
+
+    fetch('/cart/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId, varientId, quantity })
+    })
+    .then(async res => {
+    const data = await res.json();
+    if (!res.ok) throw data; // pass server error object to catch
+    return data;
+})
+.then(data => {
+    Swal.fire('Added!', 'Product added to cart', 'success');
+})
+.catch(err => {
+    if (err.error === 'Not logged in') {
+        Swal.fire({
+            title: 'Please log in to continue',
+            text: 'You need to log in before adding items to your cart.',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Login',
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (result.isConfirmed) {
+                window.location.href = '/login';
+            }
+        });
+    } else {
+        Swal.fire('Error', err.error || 'Something went wrong', 'error');
+    }
+});
+});
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+let qty = 1;
+const qtyDisplay = document.getElementById('quantityDisplay');
+const qtyInput = document.getElementById('quantityInput');
+
+document.getElementById('qty-decrease').addEventListener('click', () => {
+    if (qty > 1) qty--;
+    qtyDisplay.textContent = qty;
+    qtyInput.value = qty;
+});
+
+document.getElementById('qty-increase').addEventListener('click', () => {
+    qty++;
+    qtyDisplay.textContent = qty;
+    qtyInput.value = qty;
+});
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 function findVariant(size, colour) {
   return variants.find(v => v.size === size && v.colour === colour);
@@ -502,6 +605,9 @@ function updateStockDisplay(stock) {
     stockInfo.textContent = "";
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 function updatePriceAndDiscount(variant) {
   if (!variant) return;
@@ -527,6 +633,9 @@ function updatePriceAndDiscount(variant) {
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
 function updateImagesForColour(colour) {
   const variant = variants.find(v => v.colour === colour);
   if (!variant || !variant.productImage || variant.productImage.length === 0) return;
@@ -551,6 +660,9 @@ function updateImagesForColour(colour) {
   });
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 function changeMainImage(clickedThumbnail, imageUrl) {
   const mainImage = document.getElementById('mainImage');
   mainImage.src = imageUrl;
@@ -561,6 +673,9 @@ function changeMainImage(clickedThumbnail, imageUrl) {
   document.querySelectorAll('.thumbnail-img').forEach(img => img.classList.remove('active'));
   clickedThumbnail.classList.add('active');
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 
 function selectSize(button) {
   document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
@@ -577,6 +692,9 @@ function selectSize(button) {
   updatePriceAndDiscount(variant);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
 function selectColour(element, colour) {
   document.querySelectorAll('.colour-circle').forEach(c => c.classList.remove('selected'));
   element.classList.add('selected');
@@ -591,6 +709,8 @@ function selectColour(element, colour) {
   updatePriceAndDiscount(variant);
   updateImagesForColour(colour);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 window.addEventListener('DOMContentLoaded', () => {
   const defaultSize = document.getElementById('selectedSize').value;
@@ -641,6 +761,7 @@ const zoomContainer = document.querySelector('.zoom-container');
 
 
 </script>
+
 
 
      

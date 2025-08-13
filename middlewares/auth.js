@@ -1,4 +1,5 @@
 const User = require('../models/userSchema');
+const Cart = require('../models/cartSchema');
 
 
 const adminAuth = (req, res, next) => {
@@ -43,7 +44,27 @@ const userAuth = (req, res, next) => {
 }
 
 
+////////////////////////////////////////////////////////////////////
+
+const cartCount = async (req, res, next) => {
+    const userId = req.user ? req.user._id : req.session.user;
+    if (userId) {
+        try {
+            const cart = await Cart.findOne({ userId });
+            res.locals.cartCount = cart ? cart.totalItems : 0;
+        } catch (err) {
+            res.locals.cartCount = 0;
+        }
+    } else {
+        res.locals.cartCount = 0;
+    }
+    next();
+};
+
+////////////////////////////////////////////////////////////////////////////////////////
+
 module.exports = {
     adminAuth,
-    userAuth
+    userAuth,
+    cartCount
 }

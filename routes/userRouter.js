@@ -5,12 +5,14 @@ const userController = require("../controllers/user/userController")
 const productController = require("../controllers/user/productController")
 const profileController = require("../controllers/user/profileController")
 const addressController = require("../controllers/user/addressController")
+const cartController = require("../controllers/user/cartController")
 
 
-const { userAuth } = require("../middlewares/auth");
+const { userAuth, cartCount } = require("../middlewares/auth");
 const upload = require('../middlewares/multer');
 
 
+router.use(cartCount)
 
 router.get('/', userController.loadHomepage);
 router.get('/pageNotFound', userController.pageNotFound);
@@ -43,6 +45,9 @@ router.get('/newArrivals', productController.loadNewArrivals);
 router.get('/boys', productController.loadBoysPage);
 router.get("/productDetail/:id", productController.loadProductDetail);
 
+
+router.post('/cart/add',cartController.addToCart);
+
 router.use(userAuth)
 
 router.get('/userProfile',profileController.loadUserProfile);
@@ -58,10 +63,10 @@ router.post('/profile-change-password',profileController.changePassword);
 router.get('/address',addressController.loadAddressPage);
 router.post("/address/save",addressController.saveAddress);
 router.patch("/address/:id/default", addressController.setDefaultAddress);
+router.get('/address/:id', addressController.getAddressById);
+router.patch('/address/:id', addressController.updateAddress);
+router.delete('/address/:id', addressController.deleteAddress);
 
-router.get("/address/:id", addressController.getAddressById);
-router.patch("/address/:id", addressController.updateAddress);
-router.delete("/address/:id", addressController.deleteAddress);
 
 
 
