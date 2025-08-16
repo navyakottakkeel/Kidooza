@@ -36,6 +36,10 @@ const userSchema = new Schema({
         type : Boolean,
         default : false
     },
+    profilePhoto : {
+        type : String,
+        default : 'profile.webp'
+    },
     cart : [{
         type : Schema.Types.ObjectId,
         ref : "Cart"

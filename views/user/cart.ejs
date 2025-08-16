@@ -1,0 +1,274 @@
+<%-include("../../views/partials/user/header") %>
+
+
+    <style>
+        .form-select-sm {
+            border-radius: 8px;
+            padding: 4px 8px;
+            width: 60px;
+            display: inline-block;
+        }
+        .btn-pink {
+            background-color: #a8db9e;
+            color: #fff;
+            border: none;
+        }
+
+        .btn-pink:hover {
+            background-color: #e0cf9c;
+            color: #fff;
+        }
+    </style>
+
+    <div class="container py-5" style="margin-top:180px;">
+
+        <span
+            style="opacity: .8;font-size: 32px;font-weight: 700;line-height: 1.25;color: #000;display: inline-block;">Cart</span>
+        <span
+            style="opacity: .36;font-size: 20px;font-weight: 400;line-height: 1.2;color: #000;display: inline-block;">•
+            <%= cartItems.length %> items</span>
+
+        <% if (soldOutItems> 0) { %>
+            <div class="alert alert-warning" style="    border-color: #e0cf9c;">
+                ⚠️ <%= soldOutItems %> item(s) in your bag are sold out.
+            </div>
+            <% } %>
+
+                <div class="row">
+                    <!-- Left: Cart items -->
+                    <div class="col-md-8">
+                        <% cartItems.forEach(item=> { %>
+
+                            <% if (item.stock> 0) { %>
+                                <div class="d-flex align-items-center border-bottom py-3">
+                                    <img src="<%= item.image %>" width="100" alt="Product Image">
+
+                                    <div class="flex-grow-1 ms-3">
+
+                                        <h6>
+                                            <%= item.name %>
+                                        </h6>
+                                        <p>
+                                            <%= item.description %>
+                                        </p>
+                                        <p>Size: <%= item.size %>
+                                        </p>
+
+
+
+                                        <p>
+                                            <strong style="color: black;font-size: larger;font-family: math;">₹ <%=
+                                                    (item.salePrice * item.quantity).toLocaleString() %></strong>
+                                            <% if (item.basePrice> item.salePrice) { %>
+                                                &nbsp;&nbsp; <del class="text-muted"> ₹ <%= (item.basePrice *
+                                                        item.quantity).toLocaleString() %></del>
+                                                <% } %>
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <form action="/cart/update-quantity" method="POST" class="update-quantity-form"
+                                            style="display:inline;">
+                                            <input type="hidden" name="productId" value="<%= item.productId %>">
+                                            <input type="hidden" name="varientId" value="<%= item.varientId %>">
+                                            <select name="quantity" class="form-select form-select-sm"
+                                                onchange="this.form.dispatchEvent(new Event('submit'))">
+                                                <% for (let i=1; i <=5; i++) { %>
+                                                    <option value="<%= i %>" <%=i===item.quantity ? 'selected' : '' %>>
+                                                        <%= i %>
+                                                    </option>
+                                                    <% } %>
+                                            </select>
+                                        </form>
+
+                                        <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
+                                            class="text-danger ms-3 delete-cart-item">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+
+                                    </div>
+
+                                </div>
+                                <% } else { %>
+
+                                    <div class="d-flex align-items-center border-bottom py-3">
+                                        <img src="<%= item.image %>" width="100" alt="Product Image"
+                                            style="opacity: .36;">
+
+                                        <div class="flex-grow-1 ms-3" style="opacity: .36;">
+
+                                            <h6>
+                                                <%= item.name %>
+                                            </h6>
+                                            <p>
+                                                <%= item.description %>
+                                            </p>
+                                            <p>Size: <%= item.size %>
+                                            </p>
+
+
+
+                                            <p>
+                                                <strong style="color: black;font-size: larger;font-family: math;">₹ <%=
+                                                        (item.salePrice * item.quantity).toLocaleString() %></strong>
+                                                <% if (item.basePrice> item.salePrice) { %>
+                                                    &nbsp;&nbsp; <del class="text-muted"> ₹ <%= (item.basePrice *
+                                                            item.quantity).toLocaleString() %></del>
+                                                    <% } %>
+                                            </p>
+                                        </div>
+                                        <div style="margin-right: 16rem;">
+                                            <h3 class="text-danger">Sold Out</h3>
+                                        </div>
+                                        <div>
+                                            <select style="opacity: .36;" name="quantity"
+                                                class="form-select form-select-sm"
+                                                onchange="this.form.dispatchEvent(new Event('submit'))">
+                                                <% for (let i=1; i <=5; i++) { %>
+                                                    <option value="<%= i %>" <%=i===item.quantity ? 'selected' : '' %>>
+                                                        <%= i %>
+                                                    </option>
+                                                    <% } %>
+                                            </select>
+
+                                            <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
+                                                class="text-danger ms-3 delete-cart-item">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+
+                                        </div>
+
+                                    </div>
+                                    <% } %>
+
+
+                                        <% }) %>
+                    </div>
+
+
+
+                    <!-- Price Summary (Right side) -->
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm border-0 rounded-3 p-4 sticky-top" style="top: 140px;">
+                            <h5 class="fw-bold mb-4">Price Summary</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total item price</span>
+                                <span>₹<%= totalItemPrice %></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Item discount</span>
+                                <span>-₹<%= itemDiscount %></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Platform fee</span>
+                                <span>₹<%= platformFee %></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Shipping fee</span>
+                                <span>
+                                    <%= shippingFee===0 ? 'Free' : '₹' + shippingFee %>
+                                </span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold mb-4">
+                                <span>Total</span>
+                                <span>₹<%= total %></span>
+                            </div>
+                            <button class="btn btn-pink w-100 fw-bold py-2">PROCEED TO CHECKOUT</button>
+                        </div>
+                    </div>
+
+
+
+                </div>
+    </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".delete-cart-item").forEach(btn => {
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault(); // stop the default link redirect
+                    const url = this.getAttribute("href");
+
+                    Swal.fire({
+                        title: "Remove item?",
+                        text: "Do you really want to remove this product from your cart?",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#d33",
+                        cancelButtonColor: "#3085d6",
+                        confirmButtonText: "Yes, remove it",
+                        cancelButtonText: "Cancel"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = url; // redirect to remove route
+                        }
+                    });
+                });
+            });
+        });
+
+
+ //////////////////////////////////////////////////////////////////////////////////////////////
+
+        $(document).ready(function () {
+            // Save the old value before user changes it
+            $("select[name='quantity']").on("focus", function () {
+                $(this).data("prev", $(this).val());
+            });
+
+            $(".update-quantity-form").on("submit", function (e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const select = form.find("select[name='quantity']");
+
+                $.post("/cart/update-quantity", form.serialize())
+                    .done(function (res) {
+                        if (res.success) {
+                            location.reload(); // reload cart totals
+                        } else {
+                            // Restore old value
+                            select.val(select.data("prev"));
+                            Swal.fire({
+                                icon: "error",
+                                title: "Stock Error",
+                                text: res.message,
+                            });
+                        }
+                    })
+                    .fail(function (xhr) {
+                        // Restore old value
+                        select.val(select.data("prev"));
+
+                        let msg = "Something went wrong";
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        Swal.fire({
+                            icon: "error",
+                            title: "Stock Error",
+                            text: msg,
+                        });
+                    });
+            });
+        });
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+    </script>
+
+
+
+
+
+
+    <%-include("../../views/partials/user/footer") %>
