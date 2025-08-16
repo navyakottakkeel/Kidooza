@@ -80,6 +80,14 @@
     .wishlist-btn.active i {
       color: white;
     }
+    .discount-tag {
+    background-color:#5d8355;
+    color: #fff;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+  }
+
   </style>
 
 
@@ -290,19 +298,19 @@
                                   <% } %>
 
                                     <!-- Wishlist Heart Icon -->
-
+<!-- 
                                     <% const isWishlisted=wishlistItems.some(w=>
                                       w.productId === product._id.toString() &&
                                       w.variantId === (product.defaultVariantId ? product.defaultVariantId.toString() :
                                       "")
                                       );
                                       %>
-                                      <button
+                                      <button onclick="addToWishlist('<%= product._id %>', '<%= product.defaultVariantId %>')"
                                         class="wishlist-btn position-absolute top-0 end-0 m-2 <%= isWishlisted ? 'active' : '' %>"
                                         data-product-id="<%= product._id %>"
                                         data-variant-id="<%= product.defaultVariantId %>">
                                         <i class="fa fa-heart"></i>
-                                      </button>
+                                      </button> -->
 
                             </div>
 
@@ -313,15 +321,24 @@
                               <p class="text-truncate">
                                 <%= product.description %>
                               </p>
+
+                              
+
+
                               <div class="d-flex justify-content-between flex-lg-wrap">
-                                <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice %>
+                                <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice.toLocaleString() %> &nbsp;&nbsp;
+                                  <s style="color:grey;font-size: small;">₹<%=
+                                    product.basePrice.toLocaleString() %></s>
                                 </p>
-                                <p class="text-dark fs-5 fw-bold mb-0"><s style="color:grey;font-size: small;">₹<%=
-                                      product.basePrice %></s></p>
-                                <a href="#" class="btn border border-secondary rounded-pill px-3 text-primary">
-                                  <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart
-                                </a>
+                                <p class="text-dark fs-5 fw-bold mb-0">
+                                  <span class="discount-tag"><%= Math.round(((product.basePrice - product.salePrice) / product.basePrice) * 100) %>% OFF</span>
+
+                                </p>
+                               
                               </div>
+
+
+
                             </div>
                           </div>
                         </div>
@@ -379,15 +396,15 @@
     </ul>
   </nav>
 
-
+<!-- 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     document.querySelectorAll('.wishlist-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        const productId = this.datasret.productId;
+        const productId = this.dataset.productId;
         const variantId = this.dataset.variantId;
 
-        // Check if user is logged in (serve will pass this in res.locals.user)
+        // Check if user is logged in (server will pass this in res.locals.user)
         const isLoggedIn = <%= user ? 'true' : 'false' %>;
 
         if (!isLoggedIn) {
@@ -428,8 +445,36 @@
           });
       });
     });
-  </script>
 
+
+    async function addToWishlist(productId, variantId) {
+      fetch('/wishlist/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, variantId })
+})
+.then(res => res.json())
+.then(data => {
+    if (data.success) {
+        updateWishlistCount(data.wishlistCount);
+    }
+});
+
+}
+
+
+function updateWishlistCount(count) {
+    const el = document.getElementById("wishlist-count");
+    if (el) {
+        el.textContent = count;
+        el.style.display = count > 0 ? "flex" : "none";
+    }
+}
+
+
+
+  </script>
+ -->
 
 
 

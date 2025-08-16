@@ -1,0 +1,102 @@
+<%- include("../../views/partials/user/header") %>
+
+
+
+
+    <div class="container-fluid fruite py-5" style="margin-top:180px ;">
+        <div class="container py-5">
+            <div class="tab-class text-center">
+                <div class="row g-4">
+                    <div class="col-lg-4 text-start">
+                        <h1>My Wishlist</h1>
+                    </div>
+                </div>
+
+                <div class="tab-content">
+                    <div id="tab-all" class="tab-pane fade show p-0 active">
+                        <div class="row g-4">
+                            <% if (wishlistProducts && wishlistProducts.length> 0) { %>
+                                <% wishlistProducts.forEach(product=> { %>
+                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                        <div class="rounded position-relative fruite-item">
+                                            <div class="fruite-img">
+                                                <a href="/productDetail/<%= product._id %>">
+                                                    <img src="<%= product.variantId.productImage?.[0] || '/img/1.jpg' %>"
+                                                        class="img-fluid w-100 rounded-top" alt="">
+                                                </a>
+
+
+                                            </div>
+
+                                            <div class="border border-secondary border-top-0 rounded-bottom"
+                                                style="text-align: justify;padding: 10px">
+                                                <h4>
+                                                    <%= product.productName %>
+                                                </h4>
+                                                <p class="">
+                                                    <%= product.description %>
+                                                </p>
+                                                
+                                                <div class="d-flex justify-content-between flex-lg-wrap">
+
+                                                    <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice %>
+                                                        <span><s style="color:grey;font-size: small;">₹<%=
+                                                                    product.basePrice %></s> </span>
+                                                </p>
+
+                                                    <button
+                                                        class="btn border border-danger rounded-pill px-3 text-danger delete-wishlist"
+                                                        data-product-id="<%= product._id %>"
+                                                        data-variant-id="<%= product.variantId._id %>">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <% }) %>
+                                        <% } else { %>
+                                            <p>No products in your wishlist.</p>
+                                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.delete-wishlist').forEach(button => {
+                button.addEventListener('click', async function () {
+                    const productId = this.dataset.productId;
+                    const variantId = this.dataset.variantId;
+
+                    try {
+                        const res = await fetch(`/wishlist/${productId}/${variantId}`, {
+                            method: 'DELETE'
+                        });
+
+                        const data = await res.json();
+                        if (data.success) {
+                            // Remove product card from DOM
+                            this.closest('.col-md-6, .col-lg-4, .col-xl-3').remove();
+                        } else {
+                            alert(data.message || 'Failed to remove');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Error removing from wishlist');
+                    }
+                });
+            });
+        });
+    </script>
+
+
+
+
+    <%- include("../../views/partials/user/footer") %>

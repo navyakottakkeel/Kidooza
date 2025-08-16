@@ -78,15 +78,15 @@ const loadBoysPage = async (req, res) => {
         }
 
         let wishlistItems = [];
-if (user) {
-    const wishlist = await Wishlist.findOne({ userId: user._id });
-    if (wishlist) {
-        wishlistItems = wishlist.items.map(item => ({
-            productId: item.productId.toString(),
-            variantId: item.variantId.toString()
-        }));
-    }
-}
+        if (user) {
+            const wishlist = await Wishlist.findOne({ userId: user._id });
+            if (wishlist) {
+                wishlistItems = wishlist.items.map(item => ({
+                    productId: item.productId.toString(),
+                    variantId: item.variantId.toString()
+                }));
+            }
+        }
 
 
         const perPage = 6;
@@ -109,12 +109,12 @@ if (user) {
             search = search.filter(s => s.trim() !== '')[0] || ''; // Take first non-empty string or ''
         }
 
-      
+
 
         const brands = await Product.distinct("brand");
         const colours = await Varient.distinct("colour");
         const size = await Varient.distinct("size");
-       
+
 
         const filter = { isBlock: false };
 
@@ -207,10 +207,10 @@ if (user) {
             .limit(perPage);
 
 
-            for (let product of allProducts) {
-                const variant = await Varient.findOne({ productId: product._id }).lean();
-                product.defaultVariantId = variant ? variant._id : null;
-            }
+        for (let product of allProducts) {
+            const variant = await Varient.findOne({ productId: product._id }).lean();
+            product.defaultVariantId = variant ? variant._id : null;
+        }
 
 
         const categories = await Category.find({ isDeleted: false });
@@ -300,6 +300,7 @@ const loadNewArrivals = async (req, res) => {
             );
         });
 
+       
         res.locals.user = user;
 
         res.render("new-arrivals", {
@@ -328,17 +329,17 @@ const loadProductDetail = async (req, res) => {
             user = await User.findById(req.session.user);
         }
 
-        
+
         let wishlistItems = [];
-if (user) {
-    const wishlist = await Wishlist.findOne({ userId: user._id });
-    if (wishlist) {
-        wishlistItems = wishlist.items.map(item => ({
-            productId: item.productId.toString(),
-            variantId: item.variantId.toString()
-        }));
-    }
-}
+        if (user) {
+            const wishlist = await Wishlist.findOne({ userId: user._id });
+            if (wishlist) {
+                wishlistItems = wishlist.items.map(item => ({
+                    productId: item.productId.toString(),
+                    variantId: item.variantId.toString()
+                }));
+            }
+        }
 
 
         const productId = req.params.id;
@@ -349,7 +350,7 @@ if (user) {
             Varient.distinct('size', { productId }),
         ]);
 
-const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice productImage'); 
+        const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice productImage');
 
 
 
@@ -360,8 +361,8 @@ const variants = await Varient.find({ productId: productId }).select('size colou
         res.locals.user = user;
 
 
-        const originalPrice = product.basePrice; 
-        const sellingPrice = product.salePrice;          
+        const originalPrice = product.basePrice;
+        const sellingPrice = product.salePrice;
 
         let discountPercent = 0;
         if (originalPrice > sellingPrice) {
@@ -371,7 +372,7 @@ const variants = await Varient.find({ productId: productId }).select('size colou
         const relatedProducts = await Product.find({
             category: product.category._id,
             _id: { $ne: productId },
-          }).limit(5);
+        }).limit(5);
 
 
         res.render('product-detail', {
@@ -393,49 +394,7 @@ const variants = await Varient.find({ productId: productId }).select('size colou
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-const addToWishlist = async (req, res) => {
-    try {
-        const { productId, variantId } = req.body;
-        const userId = req.session.user; // assuming session holds user ID
 
-        if (!productId || !variantId) {
-            return res.status(400).json({ success: false, message: "Missing product or variant ID" });
-        }
-
-        let wishlist = await Wishlist.findOne({ userId });
-
-        // If no wishlist yet, create one with this item
-        if (!wishlist) {
-            wishlist = new Wishlist({
-                userId,
-                items: [{ productId, variantId }]
-            });
-            await wishlist.save();
-            return res.json({ success: true, action: "added" });
-        }
-
-        // Check if item already exists
-        const itemIndex = wishlist.items.findIndex(
-            item => item.productId.toString() === productId && item.variantId.toString() === variantId
-        );
-
-        if (itemIndex > -1) {
-            // Exists → remove it
-            wishlist.items.splice(itemIndex, 1);
-            await wishlist.save();
-            return res.json({ success: true, action: "removed" });
-        } else {
-            // Not exists → add it
-            wishlist.items.push({ productId, variantId });
-            await wishlist.save();
-            return res.json({ success: true, action: "added" });
-        }
-
-    } catch (err) {
-        console.error("Wishlist Toggle Error:", err);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
-};
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -445,5 +404,4 @@ module.exports = {
     loadNewArrivals,
     loadBoysPage,
     loadProductDetail,
-    addToWishlist
 }

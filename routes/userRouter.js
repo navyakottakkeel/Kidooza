@@ -6,6 +6,8 @@ const productController = require("../controllers/user/productController")
 const profileController = require("../controllers/user/profileController")
 const addressController = require("../controllers/user/addressController")
 const cartController = require("../controllers/user/cartController")
+const wishlistController = require("../controllers/user/wishlistController")
+
 
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
@@ -67,7 +69,17 @@ router.get('/address/:id', addressController.getAddressById);
 router.patch('/address/:id', addressController.updateAddress);
 router.delete('/address/:id', addressController.deleteAddress);
 
-router.post("/wishlist/add", productController.addToWishlist);
+router.post("/wishlist/add", wishlistController.addToWishlist);
+router.get('/wishlist', wishlistController.getWishlistPage);
+router.delete('/wishlist/:productId/:variantId', wishlistController.removeFromWishlist);
+
+router.get('/cart', cartController.getCartPage);
+router.post('/cart/update-quantity', cartController.updateQuantity);
+router.get("/cart/remove/:productId/:varientId", cartController.removeFromCart);
+
+
+
+
 
 
 
