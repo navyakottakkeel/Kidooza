@@ -1,315 +1,483 @@
 <%-include("../../views/partials/user/header") %>
 
 
-<style>
+  <style>
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
+    .page-item .page-link {
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: #333;
+      border: 1px solid #ccc;
+      background-color: white;
+      transition: all 0.2s ease-in-out;
+    }
 
-.page-item .page-link {
-  border-radius: 8px;
-  padding: 6px 12px;
-  color: #333;
-  border: 1px solid #ccc;
-  background-color: white;
-  transition: all 0.2s ease-in-out;
-}
+    .page-item.active .page-link {
+      background-color: #8fcf7c;
+      border-color: #8fcf7c;
+      color: white;
+    }
 
-.page-item.active .page-link {
-  background-color: #8fcf7c;
-  border-color: #8fcf7c;
-  color: white;
-}
+    .page-item.disabled .page-link {
+      color: #bbb;
+      pointer-events: none;
+      background-color: #f5f5f5;
+    }
 
-.page-item.disabled .page-link {
-  color: #bbb;
-  pointer-events: none;
-  background-color: #f5f5f5;
-}
-.colour-circle-label {
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-}
+    .colour-circle-label {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+    }
 
-.colour-circle-label input {
-  display: none; /* Hide the checkbox */
-}
+    .colour-circle-label input {
+      display: none;
+      /* Hide the checkbox */
+    }
 
-.colour-circle {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid #ccc;
-  display: inline-block;
-  transition: transform 0.2s ease;
-}
+    .colour-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
 
-.colour-circle-label input:checked + .colour-circle {
-  border: 2px solid #000; /* Highlight when selected */
-  transform: scale(1.1);
-}
+    .colour-circle-label input:checked+.colour-circle {
+      border: 2px solid #000;
+      /* Highlight when selected */
+      transform: scale(1.1);
+    }
 
-</style>
+    .wishlist-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .wishlist-btn i {
+      font-size: 1.2rem;
+      color: #dc3545
+    }
+
+    .wishlist-btn.active {
+      background-color: #dc3545;
+    }
+
+    .wishlist-btn.active i {
+      color: white;
+    }
+    .discount-tag {
+    background-color:#5d8355;
+    color: #fff;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+  }
+
+  </style>
 
 
 
-<div class="container-fluid" style="margin-top:220px">
-    <div class="row" >
+  <div class="container-fluid" style="margin-top:220px">
+    <div class="row">
       <!-- Sidebar Start -->
       <div class="col-lg-3">
         <!-- Search and Clear -->
         <form id="filtersForm" action="/boys" method="GET" class="mb-4">
           <div class="input-group">
-            <input type="text" name="search" class="form-control" placeholder="Search products..." value="<%= search || '' %>">
+            <input type="text" name="search" class="form-control" placeholder="Search products..."
+              value="<%= search || '' %>">
             <button class="btn btn-outline-secondary" type="submit">Search</button>
             <a href="/boys" class="btn btn-outline-danger">Clear</a>
           </div>
-        
-          
-        <!-- Sort Dropdown -->
-        <div class="mb-4">
-          <label for="sort" class="form-label fw-bold">Sort By</label>
-          <select id="sort" name="sort" class="form-select" onchange="this.form.submit()">
-            <option value="">Default</option>
-            <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
-            <option value="price-desc" <%= sort === 'price-desc' ? 'selected' : '' %>>Price: High to Low</option>
-            <option value="name-asc" <%= sort === 'name-asc' ? 'selected' : '' %>>Name: A-Z</option>
-            <option value="name-desc" <%= sort === 'name-desc' ? 'selected' : '' %>>Name: Z-A</option>
-          </select>
-        </div>
-  
-        <!-- Filter Section -->
-        <div class="accordion" id="filtersAccordion">
-            
+
+
+          <!-- Sort Dropdown -->
+          <div class="mb-4">
+            <label for="sort" class="form-label fw-bold">Sort By</label>
+            <select id="sort" name="sort" class="form-select" onchange="this.form.submit()">
+              <option value="">Default</option>
+              <option value="price-asc" <%=sort==='price-asc' ? 'selected' : '' %>>Price: Low to High</option>
+              <option value="price-desc" <%=sort==='price-desc' ? 'selected' : '' %>>Price: High to Low</option>
+              <option value="name-asc" <%=sort==='name-asc' ? 'selected' : '' %>>Name: A-Z</option>
+              <option value="name-desc" <%=sort==='name-desc' ? 'selected' : '' %>>Name: Z-A</option>
+            </select>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="accordion" id="filtersAccordion">
+
             <!-- Brand Filter -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="headingBrand">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBrand">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#collapseBrand">
                   Brand
                 </button>
               </h2>
               <div id="collapseBrand" class="accordion-collapse collapse">
                 <div class="accordion-body">
-                  <% brands.forEach(brand => { %>
+                  <% brands.forEach(brand=> { %>
                     <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="brand" value="<%= brand %>" onchange="document.getElementById('filtersForm').submit()" <%= (Array.isArray(filters.brand) ? filters.brand.includes(brand) : filters.brand === brand) ? 'checked' : '' %>>
-                      <label class="form-check-label"><%= brand %></label>
+                      <input class="form-check-input" type="checkbox" name="brand" value="<%= brand %>"
+                        onchange="document.getElementById('filtersForm').submit()" <%=(Array.isArray(filters.brand) ?
+                        filters.brand.includes(brand) : filters.brand===brand) ? 'checked' : '' %>>
+                      <label class="form-check-label">
+                        <%= brand %>
+                      </label>
                     </div>
-                  <% }) %>
+                    <% }) %>
                 </div>
               </div>
             </div>
-          
+
             <!-- Repeat for Age -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="headingSize">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSize">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#collapseSize">
                   Size
                 </button>
               </h2>
               <div id="collapseSize" class="accordion-collapse collapse">
                 <div class="accordion-body">
-                  <% size.forEach(size => { %>
+                  <% size.forEach(size=> { %>
                     <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="size" value="<%= size %>" onchange="document.getElementById('filtersForm').submit()" <%= (Array.isArray(filters.size) ? filters.size.includes(size) : filters.size === size) ? 'checked' : '' %>>
-                      <label class="form-check-label"><%= size %></label>
+                      <input class="form-check-input" type="checkbox" name="size" value="<%= size %>"
+                        onchange="document.getElementById('filtersForm').submit()" <%=(Array.isArray(filters.size) ?
+                        filters.size.includes(size) : filters.size===size) ? 'checked' : '' %>>
+                      <label class="form-check-label">
+                        <%= size %>
+                      </label>
                     </div>
-                  <% }) %>
+                    <% }) %>
                 </div>
               </div>
             </div>
-          
+
             <!-- Repeat for Category -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="headingCategory">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCategory">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#collapseCategory">
                   Category
                 </button>
               </h2>
               <div id="collapseCategory" class="accordion-collapse collapse">
                 <div class="accordion-body">
-                  <% categories.forEach(cat => { %>
+                  <% categories.forEach(cat=> { %>
                     <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="category" value="<%= cat.name %>" onchange="document.getElementById('filtersForm').submit()" <%= (Array.isArray(filters.category) ? filters.category.includes(cat.name) : filters.category === cat.name) ? 'checked' : '' %>>
-                      <label class="form-check-label"><%= cat.name %></label>
+                      <input class="form-check-input" type="checkbox" name="category" value="<%= cat.name %>"
+                        onchange="document.getElementById('filtersForm').submit()" <%=(Array.isArray(filters.category) ?
+                        filters.category.includes(cat.name) : filters.category===cat.name) ? 'checked' : '' %>>
+                      <label class="form-check-label">
+                        <%= cat.name %>
+                      </label>
                     </div>
-                  <% }) %>
+                    <% }) %>
                 </div>
               </div>
             </div>
-          
+
             <!-- Repeat for Colour -->
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingColour">
-    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseColour">
-      Colour
-    </button>
-  </h2>
-  <div id="collapseColour" class="accordion-collapse collapse">
-    <div class="accordion-body d-flex flex-wrap gap-2">
-      <% colours.forEach(colour => { %>
-        <label class="colour-circle-label">
-          <input 
-            type="checkbox" 
-            name="colour" 
-            value="<%= colour %>" 
-            onchange="document.getElementById('filtersForm').submit()" 
-            <%= (Array.isArray(filters.colour) ? filters.colour.includes(colour) : filters.colour === colour) ? 'checked' : '' %>
-          >
-          <span class="colour-circle" style="background-color: <%= colour %>"></span>
-        </label>
-      <% }) %>
-    </div>
-  </div>
-</div>
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingColour">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#collapseColour">
+                  Colour
+                </button>
+              </h2>
+              <div id="collapseColour" class="accordion-collapse collapse">
+                <div class="accordion-body d-flex flex-wrap gap-2">
+                  <% colours.forEach(colour=> { %>
+                    <label class="colour-circle-label">
+                      <input type="checkbox" name="colour" value="<%= colour %>"
+                        onchange="document.getElementById('filtersForm').submit()" <%=(Array.isArray(filters.colour) ?
+                        filters.colour.includes(colour) : filters.colour===colour) ? 'checked' : '' %>
+                      >
+                      <span class="colour-circle" style="background-color: <%= colour %>"></span>
+                    </label>
+                    <% }) %>
+                </div>
+              </div>
+            </div>
 
 
             <!-- Price -->
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="headingPrice">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrice">
-                Price
-              </button>
-            </h2>
-            <div id="collapsePrice" class="accordion-collapse collapse">
-              <div class="accordion-body">
-                  <input type="range" class="form-range" min="0" max="3000" id="priceRange" name="maxPrice" value="<%= filters?.maxPrice || 3000 %>" oninput="document.getElementById('priceValue').innerText = '₹' + this.value" onchange="this.form.submit()">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingPrice">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#collapsePrice">
+                  Price
+                </button>
+              </h2>
+              <div id="collapsePrice" class="accordion-collapse collapse">
+                <div class="accordion-body">
+                  <input type="range" class="form-range" min="0" max="3000" id="priceRange" name="maxPrice"
+                    value="<%= filters?.maxPrice || 3000 %>"
+                    oninput="document.getElementById('priceValue').innerText = '₹' + this.value"
+                    onchange="this.form.submit()">
                   <div class="d-flex justify-content-between mt-2">
                     <span>₹0</span>
                     <span id="priceValue">₹<%= filters?.maxPrice || 3000 %></span>
                   </div>
-          
+
                   <!-- Hidden filters (preserve other query params) -->
                   <input type="hidden" name="search" value="<%= search %>">
                   <input type="hidden" name="sort" value="<%= sort %>">
+                </div>
+              </div>
+            </div>
+
+        </form>
+
+        <!-- Hidden fields to retain search and sort -->
+        <input type="hidden" name="search" value="<%= search %>">
+        <input type="hidden" name="sort" value="<%= sort %>">
+
+
+
+
+
+
+
+      </div>
+    </div>
+    <!-- Sidebar End -->
+
+    <!-- Main Content (Already Included) -->
+    <div class="col-lg-9">
+      <!-- your right side product card code already exists here -->
+
+
+
+      <div>
+        <!-- Boys fashion Start-->
+        <div class="container-fluid fruite py-5">
+          <div class="container py-5">
+            <div class="tab-class text-center">
+              <div class="row g-4">
+                <div class="col-lg-4 text-start">
+                  <h1>Boys Fashion</h1>
+                </div>
+
+              </div>
+
+              <div class="tab-content">
+                <!-- All Products Tab Content -->
+                <div id="tab-all" class="tab-pane fade show p-0 active">
+                  <div class="row g-4">
+
+
+
+                    <% if (allProducts && allProducts.length> 0) { %>
+                      <% allProducts.forEach(product=> { %>
+                        <div class="col-md-6 col-lg-4 col-xl-4">
+                          <div class="rounded position-relative fruite-item">
+                            <div class="fruite-img">
+                              <% if (product.productImage && product.productImage.length> 0) { %>
+                                <a href="/productDetail/<%= product._id %>">
+                                  <img src="<%= product.productImage[0] %>" class="img-fluid w-100 rounded-top" alt="">
+                                </a>
+                                <% } else { %>
+                                  <img src="/img/1.jpg" class="img-fluid w-100 rounded-top" alt="No image">
+                                  <% } %>
+
+                                    <!-- Wishlist Heart Icon -->
+<!-- 
+                                    <% const isWishlisted=wishlistItems.some(w=>
+                                      w.productId === product._id.toString() &&
+                                      w.variantId === (product.defaultVariantId ? product.defaultVariantId.toString() :
+                                      "")
+                                      );
+                                      %>
+                                      <button onclick="addToWishlist('<%= product._id %>', '<%= product.defaultVariantId %>')"
+                                        class="wishlist-btn position-absolute top-0 end-0 m-2 <%= isWishlisted ? 'active' : '' %>"
+                                        data-product-id="<%= product._id %>"
+                                        data-variant-id="<%= product.defaultVariantId %>">
+                                        <i class="fa fa-heart"></i>
+                                      </button> -->
+
+                            </div>
+
+                            <div class="p-4 border border-secondary border-top-0 rounded-bottom">
+                              <h4>
+                                <%= product.productName %>
+                              </h4>
+                              <p class="text-truncate">
+                                <%= product.description %>
+                              </p>
+
+                              
+
+
+                              <div class="d-flex justify-content-between flex-lg-wrap">
+                                <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice.toLocaleString() %> &nbsp;&nbsp;
+                                  <s style="color:grey;font-size: small;">₹<%=
+                                    product.basePrice.toLocaleString() %></s>
+                                </p>
+                                <p class="text-dark fs-5 fw-bold mb-0">
+                                  <span class="discount-tag"><%= Math.round(((product.basePrice - product.salePrice) / product.basePrice) * 100) %>% OFF</span>
+
+                                </p>
+                               
+                              </div>
+
+
+
+                            </div>
+                          </div>
+                        </div>
+                        <% }) %>
+                          <% } else { %>
+                            <p>No products found.</p>
+                            <% } %>
+                  </div>
+                </div>
+
+
               </div>
             </div>
           </div>
-          
-          </form>
-
-           <!-- Hidden fields to retain search and sort -->
-           <input type="hidden" name="search" value="<%= search %>">
-           <input type="hidden" name="sort" value="<%= sort %>">
-
-  
-          
-          
-  
-  
-          
         </div>
+        <!-- Fruits Shop End-->
       </div>
-      <!-- Sidebar End -->
-  
-      <!-- Main Content (Already Included) -->
-      <div class="col-lg-9">
-        <!-- your right side product card code already exists here -->
-     
 
-
-<div >  
-    <!-- Boys fashion Start-->
-    <div class="container-fluid fruite py-5">
-        <div class="container py-5">
-            <div class="tab-class text-center">
-                <div class="row g-4">
-                    <div class="col-lg-4 text-start">
-                        <h1>Boys Fashion</h1>
-                    </div>
-                   
-                </div>
-
-                <div class="tab-content">
-                    <!-- All Products Tab Content -->
-                    <div id="tab-all" class="tab-pane fade show p-0 active">
-                        <div class="row g-4">
-
-
-                          
-                          <% if (allProducts && allProducts.length > 0) { %>
-                            <% allProducts.forEach(product => { %>
-                                <div class="col-md-6 col-lg-4 col-xl-4">
-                                    <div class="rounded position-relative fruite-item">
-                                        <div class="fruite-img">
-                                            <% if (product.productImage && product.productImage.length > 0) { %>
-                                              <a href="/productDetail/<%= product._id %>">
-                                                <img src="<%= product.productImage[0] %>" class="img-fluid w-100 rounded-top" alt="">
-                                              </a>
-                                              <% } else { %>
-                                                <img src="/img/1.jpg" class="img-fluid w-100 rounded-top" alt="No image">
-                                              <% } %>
-                                                                                      </div>
-                                        
-                                        <div class="p-4 border border-secondary border-top-0 rounded-bottom">
-                                            <h4><%= product.productName %></h4>
-                                            <p class="text-truncate"><%= product.description %></p>
-                                            <div class="d-flex justify-content-between flex-lg-wrap">
-                                                <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice %></p>
-                                                <p class="text-dark fs-5 fw-bold mb-0" ><s style="color:grey;font-size: small;">₹<%= product.basePrice %></s></p>
-                                                <a href="#" class="btn border border-secondary rounded-pill px-3 text-primary">
-                                                    <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <% }) %>
-                            <% } else { %>
-                              <p>No products found.</p>
-                            <% } %>
-                        </div>
-                    </div>
-
-               
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Fruits Shop End-->
-</div>
-
- </div>
     </div>
   </div>
-  
+  </div>
 
-<nav class="mt-4 d-flex justify-content-center">
+
+  <nav class="mt-4 d-flex justify-content-center">
     <ul class="pagination">
-  
-      <% if (currentPage > 1) { %>
+
+      <% if (currentPage> 1) { %>
         <li class="page-item">
           <a class="page-link" href="?page=<%= currentPage - 1 %>&<%= baseQuery %>">Prev</a>
         </li>
-      <% } else { %>
-        <li class="page-item disabled">
-          <span class="page-link">&laquo; Prev</span>
-        </li>
-      <% } %>
-  
-      <% for (let i = 1; i <= totalPages; i++) { %>
-        <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-          <a class="page-link" href="?page=<%= i %>&<%= baseQuery %>"><%= i %></a>
-        </li>
-      <% } %>
-  
-      <% if (currentPage < totalPages) { %>
-        <li class="page-item">
-          <a class="page-link" href="?page=<%= currentPage + 1 %>&<%= baseQuery %>">Next</a>
-        </li>
-      <% } else { %>
-        <li class="page-item disabled">
-          <span class="page-link">Next &raquo;</span>
-        </li>
-      <% } %>
-  
+        <% } else { %>
+          <li class="page-item disabled">
+            <span class="page-link">&laquo; Prev</span>
+          </li>
+          <% } %>
+
+            <% for (let i=1; i <=totalPages; i++) { %>
+              <li class="page-item <%= currentPage == i ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %>&<%= baseQuery %>">
+                  <%= i %>
+                </a>
+              </li>
+              <% } %>
+
+                <% if (currentPage < totalPages) { %>
+                  <li class="page-item">
+                    <a class="page-link" href="?page=<%= currentPage + 1 %>&<%= baseQuery %>">Next</a>
+                  </li>
+                  <% } else { %>
+                    <li class="page-item disabled">
+                      <span class="page-link">Next &raquo;</span>
+                    </li>
+                    <% } %>
+
     </ul>
   </nav>
-  
+
+<!-- 
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const productId = this.dataset.productId;
+        const variantId = this.dataset.variantId;
+
+        // Check if user is logged in (server will pass this in res.locals.user)
+        const isLoggedIn = <%= user ? 'true' : 'false' %>;
+
+        if (!isLoggedIn) {
+          Swal.fire({
+            title: 'Login Required',
+            text: 'You need to log in to add items to your wishlist.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Login',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = '/login'; // Redirect to login
+            }
+          });
+          return; // Stop here if not logged in
+        }
+
+        // If logged in → proceed to add/remove from wishlist
+        fetch('/wishlist/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, variantId })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              if (data.action === "added") {
+                this.classList.add('active');
+              } else {
+                this.classList.remove('active');
+              }
+            } else {
+              alert(data.message || 'Wishlist update failed');
+            }
+          });
+      });
+    });
 
 
-<%-include("../../views/partials/user/footer") %>
+    async function addToWishlist(productId, variantId) {
+      fetch('/wishlist/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, variantId })
+})
+.then(res => res.json())
+.then(data => {
+    if (data.success) {
+        updateWishlistCount(data.wishlistCount);
+    }
+});
+
+}
+
+
+function updateWishlistCount(count) {
+    const el = document.getElementById("wishlist-count");
+    if (el) {
+        el.textContent = count;
+        el.style.display = count > 0 ? "flex" : "none";
+    }
+}
+
+
+
+  </script>
+ -->
+
+
+
+
+
+  <%-include("../../views/partials/user/footer") %>

@@ -2,6 +2,8 @@ const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
 const User = require('../../models/userSchema');
 const Varient = require('../../models/varientSchema');
+const Wishlist = require('../../models/wishlistSchema');
+
 const url = require("url");
 
 
@@ -68,6 +70,25 @@ const loadBoysPage = async (req, res) => {
 
         const products = await Product.find(productQuery);
 
+        let user = null;
+        if (req.user) {
+            user = req.user;
+        } else if (req.session.user) {
+            user = await User.findById(req.session.user);
+        }
+
+        let wishlistItems = [];
+        if (user) {
+            const wishlist = await Wishlist.findOne({ userId: user._id });
+            if (wishlist) {
+                wishlistItems = wishlist.items.map(item => ({
+                    productId: item.productId.toString(),
+                    variantId: item.variantId.toString()
+                }));
+            }
+        }
+
+
         const perPage = 6;
         const page = parseInt(req.query.page) || 1;
 
@@ -88,17 +109,12 @@ const loadBoysPage = async (req, res) => {
             search = search.filter(s => s.trim() !== '')[0] || ''; // Take first non-empty string or ''
         }
 
-        let user = null;
-        if (req.user) {
-            user = req.user;
-        } else if (req.session.user) {
-            user = await User.findById(req.session.user);
-        }
+
 
         const brands = await Product.distinct("brand");
         const colours = await Varient.distinct("colour");
         const size = await Varient.distinct("size");
-       
+
 
         const filter = { isBlock: false };
 
@@ -190,6 +206,13 @@ const loadBoysPage = async (req, res) => {
             .skip((page - 1) * perPage)
             .limit(perPage);
 
+
+        for (let product of allProducts) {
+            const variant = await Varient.findOne({ productId: product._id }).lean();
+            product.defaultVariantId = variant ? variant._id : null;
+        }
+
+
         const categories = await Category.find({ isDeleted: false });
 
         // Group products by category
@@ -232,7 +255,8 @@ const loadBoysPage = async (req, res) => {
                 colour: selectedColours,
                 minPrice,
                 maxPrice
-            }
+            },
+            wishlistItems
         });
 
     } catch (error) {
@@ -276,6 +300,7 @@ const loadNewArrivals = async (req, res) => {
             );
         });
 
+       
         res.locals.user = user;
 
         res.render("new-arrivals", {
@@ -304,6 +329,19 @@ const loadProductDetail = async (req, res) => {
             user = await User.findById(req.session.user);
         }
 
+
+        let wishlistItems = [];
+        if (user) {
+            const wishlist = await Wishlist.findOne({ userId: user._id });
+            if (wishlist) {
+                wishlistItems = wishlist.items.map(item => ({
+                    productId: item.productId.toString(),
+                    variantId: item.variantId.toString()
+                }));
+            }
+        }
+
+
         const productId = req.params.id;
 
         const product = await Product.findById(productId).populate("category");
@@ -312,7 +350,7 @@ const loadProductDetail = async (req, res) => {
             Varient.distinct('size', { productId }),
         ]);
 
-const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice productImage'); 
+        const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice productImage');
 
 
 
@@ -323,8 +361,8 @@ const variants = await Varient.find({ productId: productId }).select('size colou
         res.locals.user = user;
 
 
-        const originalPrice = product.basePrice; 
-        const sellingPrice = product.salePrice;          
+        const originalPrice = product.basePrice;
+        const sellingPrice = product.salePrice;
 
         let discountPercent = 0;
         if (originalPrice > sellingPrice) {
@@ -334,7 +372,7 @@ const variants = await Varient.find({ productId: productId }).select('size colou
         const relatedProducts = await Product.find({
             category: product.category._id,
             _id: { $ne: productId },
-          }).limit(5);
+        }).limit(5);
 
 
         res.render('product-detail', {
@@ -343,7 +381,8 @@ const variants = await Varient.find({ productId: productId }).select('size colou
             sizes: [...new Set(variants.map(v => v.size))],
             discountPercent,
             relatedProducts,
-            variants
+            variants,
+            wishlistItems
         });
 
     } catch (error) {
@@ -353,10 +392,16 @@ const variants = await Varient.find({ productId: productId }).select('size colou
 };
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
     loadAllProducts,
     loadNewArrivals,
     loadBoysPage,
-    loadProductDetail
+    loadProductDetail,
 }

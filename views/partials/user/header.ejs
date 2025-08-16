@@ -126,23 +126,33 @@
                     <button class="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4"
                         data-bs-toggle="modal" data-bs-target="#searchModal"><i
                             class="fas fa-search text-primary"></i></button>
-                    <a href="#" class="position-relative me-4 my-auto">
-                        <i class="fa fa-shopping-cart fa-2x"></i>
-                        <!-- <span
-                            class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                            style="top: -5px; left: 15px; height: 20px; min-width: 20px;">3</span> -->
-                    </a>
-                    <a href="#" class="position-relative me-4 my-auto">
-                        <i class="fa fa-heart fa-2x"></i>
-                        <!-- <span
-                            class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                            style="top: -5px; left: 15px; height: 20px; min-width: 20px;">3</span> -->
-                    </a>
 
-                    <!-- DEBUG -->
-                    <!-- <p style="color:red">DEBUG USER: <%= JSON.stringify(user) %>
-                    </p> -->
 
+                            <a href="/cart" class="position-relative me-4 my-auto">
+                                <i class="fa fa-shopping-cart fa-2x"></i>
+                                <% if (cartCount > 0) { %>
+                                    <span
+                                        class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
+                                        style="top: -5px; left: 15px; height: 20px; min-width: 20px; font-size: 0.8rem;">
+                                        <%= cartCount %>
+                                    </span>
+                                <% } %>
+                            </a>
+
+                            
+
+                            <a href="/wishlist" class="position-relative me-4 my-auto">
+                                <i class="fa fa-heart fa-2x"></i>
+                                <% if (wishlistCount > 0) { %>
+                                    <span id="wishlist-count"
+                                        class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
+                                        style="top: -5px; left: 15px; height: 20px; min-width: 20px; font-size: 0.8rem;">
+                                        <%= wishlistCount %>
+                                    </span>
+                                <% } %>
+                            </a>
+
+                  
                     <% if (user && user.name) { %>
                         <div class="dropdown my-auto" style="position: relative;">
                             <a href="#" class="d-flex align-items-center "
@@ -153,7 +163,7 @@
                                 </span>
                             </a>
                             <div class="dropdown-content text-start">
-                                <a href="#" class="text-dark text-decoration-none">Profile</a>
+                                <a href="/userProfile" class="text-dark text-decoration-none">Profile</a>
                                 <a href="/logout" class="text-dark text-decoration-none">Logout</a>
                             </div>
                         </div>
