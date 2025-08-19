@@ -8,6 +8,7 @@
             width: 60px;
             display: inline-block;
         }
+
         .btn-pink {
             background-color: #a8db9e;
             color: #fff;
@@ -22,164 +23,193 @@
 
     <div class="container py-5" style="margin-top:180px;">
 
-        <span
-            style="opacity: .8;font-size: 32px;font-weight: 700;line-height: 1.25;color: #000;display: inline-block;">Cart</span>
-        <span
-            style="opacity: .36;font-size: 20px;font-weight: 400;line-height: 1.2;color: #000;display: inline-block;">•
-            <%= cartItems.length %> items</span>
-
-        <% if (soldOutItems> 0) { %>
-            <div class="alert alert-warning" style="    border-color: #e0cf9c;">
-                ⚠️ <%= soldOutItems %> item(s) in your bag are sold out.
+        <% if (cartItems.length===0) { %>
+            <!-- Empty Cart UI -->
+            <div class="text-center my-5">
+                <img src="https://cdn-icons-png.flaticon.com/512/102/102661.png" alt="Empty Cart"
+                    style="width:120px;opacity:0.6;">
+                <h2 class="mt-4">Cart is empty ☹️</h2>
+                <p class="text-muted">You have not added any items to your cart yet.</p>
+                <a href="/boys" class="btn btn-pink mt-3 px-4 py-2">SHOP NOW</a>
             </div>
-            <% } %>
+            <% } else { %>
 
-                <div class="row">
-                    <!-- Left: Cart items -->
-                    <div class="col-md-8">
-                        <% cartItems.forEach(item=> { %>
+                <span
+                    style="opacity: .8;font-size: 32px;font-weight: 700;line-height: 1.25;color: #000;display: inline-block;">Cart</span>
+                <span
+                    style="opacity: .36;font-size: 20px;font-weight: 400;line-height: 1.2;color: #000;display: inline-block;">•
+                    <%= cartItems.length %> items
+                </span>
 
-                            <% if (item.stock> 0) { %>
-                                <div class="d-flex align-items-center border-bottom py-3">
-                                    <img src="<%= item.image %>" width="100" alt="Product Image">
+                <% if (soldOutItems> 0) { %>
+                    <div class="alert alert-warning" style="    border-color: #e0cf9c;">
+                        ⚠️ <%= soldOutItems %> item(s) in your bag are sold out.
+                    </div>
+                    <% } %>
 
-                                    <div class="flex-grow-1 ms-3">
+                        <div class="row">
+                            <!-- Left: Cart items -->
+                            <div class="col-md-8">
+                                <% cartItems.forEach(item=> { %>
 
-                                        <h6>
-                                            <%= item.name %>
-                                        </h6>
-                                        <p>
-                                            <%= item.description %>
-                                        </p>
-                                        <p>Size: <%= item.size %>
-                                        </p>
+                                    <% if (item.stock> 0) { %>
+                                        <div class="d-flex align-items-center border-bottom py-3">
+                                            <img src="<%= item.image %>" width="100" alt="Product Image">
+
+                                            <div class="flex-grow-1 ms-3">
+
+                                                <h6>
+                                                    <%= item.name %>
+                                                </h6>
+                                                <p>
+                                                    <%= item.description %>
+                                                </p>
+                                                <p>Size: <%= item.size %>
+                                                </p>
+
+                                                <!-- <small>₹ <%= item.salePrice.toLocaleString() %> each</small> -->
 
 
 
-                                        <p>
-                                            <strong style="color: black;font-size: larger;font-family: math;">₹ <%=
-                                                    (item.salePrice * item.quantity).toLocaleString() %></strong>
-                                            <% if (item.basePrice> item.salePrice) { %>
-                                                &nbsp;&nbsp; <del class="text-muted"> ₹ <%= (item.basePrice *
-                                                        item.quantity).toLocaleString() %></del>
-                                                <% } %>
-                                        </p>
+                                                <p>
+                                                    <strong style="color: black;font-size: larger;font-family: math;">₹
+                                                        <%= (item.salePrice * item.quantity).toLocaleString() %>
+                                                            </strong>
+                                                    <% if (item.basePrice> item.salePrice) { %>
+                                                        &nbsp;&nbsp; <del class="text-muted"> ₹ <%= (item.basePrice *
+                                                                item.quantity).toLocaleString() %></del>
+                                                        <% } %>
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <form action="/cart/update-quantity" method="POST"
+                                                    class="update-quantity-form" style="display:inline;">
+                                                    <input type="hidden" name="productId" value="<%= item.productId %>">
+                                                    <input type="hidden" name="varientId" value="<%= item.varientId %>">
+                                                    <select name="quantity" class="form-select form-select-sm"
+                                                        onchange="this.form.dispatchEvent(new Event('submit'))">
+                                                        <% for (let i=1; i <=5; i++) { %>
+                                                            <option value="<%= i %>" <%=i===item.quantity ? 'selected'
+                                                                : '' %>>
+                                                                <%= i %>
+                                                            </option>
+                                                            <% } %>
+                                                    </select>
+                                                </form>
+
+                                                <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
+                                                    class="text-danger ms-3 delete-cart-item">
+                                                    <i class="fa fa-trash"></i>
+                                                </a>
+
+                                            </div>
+
+                                        </div>
+                                        <% } else { %>
+
+                                            <div class="d-flex align-items-center border-bottom py-3">
+                                                <img src="<%= item.image %>" width="100" alt="Product Image"
+                                                    style="opacity: .36;">
+
+                                                <div class="flex-grow-1 ms-3" style="opacity: .36;">
+
+                                                    <h6>
+                                                        <%= item.name %>
+                                                    </h6>
+                                                    <p>
+                                                        <%= item.description %>
+                                                    </p>
+                                                    <p>Size: <%= item.size %>
+                                                    </p>
+
+
+
+                                                    <p>
+                                                        <strong
+                                                            style="color: black;font-size: larger;font-family: math;">₹
+                                                            <%= (item.salePrice * item.quantity).toLocaleString() %>
+                                                                </strong>
+                                                        <% if (item.basePrice> item.salePrice) { %>
+                                                            &nbsp;&nbsp; <del class="text-muted"> ₹ <%= (item.basePrice
+                                                                    * item.quantity).toLocaleString() %></del>
+                                                            <% } %>
+                                                    </p>
+                                                </div>
+                                                <div style="margin-right: 16rem;">
+                                                    <h3 class="text-danger">Sold Out</h3>
+                                                </div>
+                                                <div>
+                                                    <select disabled name="quantity" class="form-select form-select-sm"
+                                                        onchange="this.form.dispatchEvent(new Event('submit'))">
+                                                        <% for (let i=1; i <=5; i++) { %>
+                                                            <option value="<%= i %>" <%=i===item.quantity ? 'selected'
+                                                                : '' %>>
+                                                                <%= i %>
+                                                            </option>
+                                                            <% } %>
+                                                    </select>
+
+                                                    <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
+                                                        class="text-danger ms-3 delete-cart-item">
+                                                        <i class="fa fa-trash"></i>
+                                                    </a>
+
+                                                </div>
+
+                                            </div>
+                                            <% } %>
+
+
+                                                <% }) %>
+                            </div>
+
+
+
+                            <!-- Price Summary (Right side) -->
+                            <div class="col-lg-4">
+                                <div class="card shadow-sm border-0 rounded-3 p-4 sticky-top" style="top: 140px;">
+                                    <h5 class="fw-bold mb-4">Price Summary</h5>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Total item price</span>
+                                        <span>₹<%= totalItemPrice.toLocaleString() %></span>
                                     </div>
-                                    <div>
-                                        <form action="/cart/update-quantity" method="POST" class="update-quantity-form"
-                                            style="display:inline;">
-                                            <input type="hidden" name="productId" value="<%= item.productId %>">
-                                            <input type="hidden" name="varientId" value="<%= item.varientId %>">
-                                            <select name="quantity" class="form-select form-select-sm"
-                                                onchange="this.form.dispatchEvent(new Event('submit'))">
-                                                <% for (let i=1; i <=5; i++) { %>
-                                                    <option value="<%= i %>" <%=i===item.quantity ? 'selected' : '' %>>
-                                                        <%= i %>
-                                                    </option>
-                                                    <% } %>
-                                            </select>
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <span>Item discount</span>
+                                        <span>-₹<%= itemDiscount.toLocaleString() %></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Platform fee</span>
+                                        <span>₹<%= platformFee %></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span>Shipping fee</span>
+                                        <span>
+                                            <%= shippingFee===0 ? 'Free' : '₹' + shippingFee %>
+                                        </span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between fw-bold mb-4">
+                                        <span>Total</span>
+                                        <span>₹<%= total.toLocaleString() %></span>
+                                    </div>
+
+                                    <% if (cartItems.some(item=> item.stock > 0)) { %>
+                                        <form action="/checkout" method="GET">
+                                            <button class="btn btn-pink w-100 fw-bold py-2">PROCEED TO CHECKOUT</button>
                                         </form>
+                                        <% } else { %>
+                                            <button class="btn btn-secondary w-100 fw-bold py-2" disabled>ALL ITEMS SOLD
+                                                OUT</button>
+                                            <% } %>
 
-                                        <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
-                                            class="text-danger ms-3 delete-cart-item">
-                                            <i class="fa fa-trash"></i>
-                                        </a>
-
-                                    </div>
 
                                 </div>
-                                <% } else { %>
-
-                                    <div class="d-flex align-items-center border-bottom py-3">
-                                        <img src="<%= item.image %>" width="100" alt="Product Image"
-                                            style="opacity: .36;">
-
-                                        <div class="flex-grow-1 ms-3" style="opacity: .36;">
-
-                                            <h6>
-                                                <%= item.name %>
-                                            </h6>
-                                            <p>
-                                                <%= item.description %>
-                                            </p>
-                                            <p>Size: <%= item.size %>
-                                            </p>
-
-
-
-                                            <p>
-                                                <strong style="color: black;font-size: larger;font-family: math;">₹ <%=
-                                                        (item.salePrice * item.quantity).toLocaleString() %></strong>
-                                                <% if (item.basePrice> item.salePrice) { %>
-                                                    &nbsp;&nbsp; <del class="text-muted"> ₹ <%= (item.basePrice *
-                                                            item.quantity).toLocaleString() %></del>
-                                                    <% } %>
-                                            </p>
-                                        </div>
-                                        <div style="margin-right: 16rem;">
-                                            <h3 class="text-danger">Sold Out</h3>
-                                        </div>
-                                        <div>
-                                            <select style="opacity: .36;" name="quantity"
-                                                class="form-select form-select-sm"
-                                                onchange="this.form.dispatchEvent(new Event('submit'))">
-                                                <% for (let i=1; i <=5; i++) { %>
-                                                    <option value="<%= i %>" <%=i===item.quantity ? 'selected' : '' %>>
-                                                        <%= i %>
-                                                    </option>
-                                                    <% } %>
-                                            </select>
-
-                                            <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
-                                                class="text-danger ms-3 delete-cart-item">
-                                                <i class="fa fa-trash"></i>
-                                            </a>
-
-                                        </div>
-
-                                    </div>
-                                    <% } %>
-
-
-                                        <% }) %>
-                    </div>
-
-
-
-                    <!-- Price Summary (Right side) -->
-                    <div class="col-lg-4">
-                        <div class="card shadow-sm border-0 rounded-3 p-4 sticky-top" style="top: 140px;">
-                            <h5 class="fw-bold mb-4">Price Summary</h5>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Total item price</span>
-                                <span>₹<%= totalItemPrice %></span>
                             </div>
-                            <div class="d-flex justify-content-between mb-2 text-success">
-                                <span>Item discount</span>
-                                <span>-₹<%= itemDiscount %></span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Platform fee</span>
-                                <span>₹<%= platformFee %></span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-3">
-                                <span>Shipping fee</span>
-                                <span>
-                                    <%= shippingFee===0 ? 'Free' : '₹' + shippingFee %>
-                                </span>
-                            </div>
-                            <hr>
-                            <div class="d-flex justify-content-between fw-bold mb-4">
-                                <span>Total</span>
-                                <span>₹<%= total %></span>
-                            </div>
-                            <button class="btn btn-pink w-100 fw-bold py-2">PROCEED TO CHECKOUT</button>
+
+
+
                         </div>
-                    </div>
-
-
-
-                </div>
+                        <% } %>
     </div>
 
 
@@ -215,7 +245,7 @@
         });
 
 
- //////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////
 
         $(document).ready(function () {
             // Save the old value before user changes it

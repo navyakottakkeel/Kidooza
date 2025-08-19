@@ -94,6 +94,8 @@ const addToCart = async (req, res) => {
 
         await cart.save();
 
+        const count = cart.items.length;
+
         res.json({ message: 'Added to cart', cart, removedFromWishlist: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -126,6 +128,7 @@ const getCartPage = async (req, res) => {
             })
             .lean();
 
+            res.locals.user = user;
 
         if (!cart || cart.items.length === 0) {
             return res.render("cart", {
@@ -185,7 +188,6 @@ const getCartPage = async (req, res) => {
         let shippingFee = totalItemPrice > 599 ? 0 : 30;
         const total = totalItemPrice - itemDiscount + platformFee + shippingFee;
 
-        res.locals.user = user;
 
         res.render("cart", {
             cartItems,
@@ -315,7 +317,6 @@ const removeFromCart = async (req, res) => {
         res.status(500).send("Server Error");
     }
 };
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////

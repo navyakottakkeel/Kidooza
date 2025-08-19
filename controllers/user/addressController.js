@@ -3,7 +3,6 @@ const Address = require('../../models/addressSchema');
 const mongoose = require("mongoose");
 
 
-
 const loadAddressPage = async (req, res) => {
     try {
 
@@ -37,6 +36,8 @@ const saveAddress = async (req, res) => {
 
         let userAddressDoc = await Address.findOne({ userId });
 
+        const isFirstAddress = !userAddressDoc || userAddressDoc.addresses.length === 0;
+
         const newAddress = {
             addressType: req.body.addressType,
             name: req.body.name,
@@ -46,7 +47,7 @@ const saveAddress = async (req, res) => {
             pincode: req.body.pincode,
             phone: req.body.phone,
             altPhone: req.body.altPhone || null,
-            isDefault: req.body.isDefault || false
+            isDefault: isFirstAddress ? true : (req.body.isDefault || false) // 👈 First one default
         };
 
         if (!userAddressDoc) {

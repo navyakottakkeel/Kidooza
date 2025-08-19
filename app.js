@@ -9,6 +9,8 @@ const adminRouter = require('./routes/adminRouter');
 const passport = require('./config/passport');
 db();
 
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -41,8 +43,8 @@ app.set("view engine", "ejs");
 app.set("views", [path.join(__dirname, 'views/user'), path.join(__dirname, 'views/admin')])
 
 
-app.use('/', userRouter);
 app.use('/admin', adminRouter);
+app.use('/', userRouter);
 
 
 app.listen(process.env.PORT, () => console.log("Server started..."));

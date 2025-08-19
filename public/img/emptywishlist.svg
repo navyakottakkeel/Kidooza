@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="159" height="185" viewBox="0 0 159 185">
+    <defs>
+        <path id="a" d="M.375 0h66v61h-66z"/>
+        <path id="c" d="M0 0h60v55H0z"/>
+    </defs>
+    <g fill="none" fill-rule="evenodd">
+        <path d="M-27-14h212v212H-27z"/>
+        <g transform="translate(0 -1)">
+            <circle cx="79.5" cy="106.006" r="79.5" fill="#ECECEC"/>
+            <g transform="rotate(30 -84.565 210.66)">
+                <rect width="63" height="74" x="2.032" y="1.582" fill="#FFF" stroke="#484848" stroke-width="3" rx="10"/>
+                <g fill="#E5EAEC" transform="translate(12.898 14.448)">
+                    <rect width="44" height="34.541" rx="10"/>
+                    <rect width="44" height="9.639" y="39.361" rx="4.82"/>
+                </g>
+            </g>
+            <g transform="rotate(-3 710.614 -325.324)">
+                <rect width="78" height="92" x="1.5" y="1.5" fill="#FFF" stroke="#484848" stroke-width="3" rx="10"/>
+                <g fill="#E5EAEC" transform="translate(14.57 17.945)">
+                    <rect width="54" height="43" rx="10"/>
+                    <rect width="54" height="12" y="49" rx="6"/>
+                </g>
+            </g>
+            <g transform="rotate(18 29.015 234.388)">
+                <mask id="b" fill="#fff">
+                    <use xlink:href="#a"/>
+                </mask>
+                <path fill="#484848" d="M33.344 61C51.214 48.5 60.15 37.063 64.35 28.344c4.91-10.194.64-22.827-10.073-27.066-12.59-4.98-20.933 6.511-20.933 6.511S25.07-3.735 12.478 1.251C1.762 5.49-2.51 18.124 2.401 28.316 6.605 37.036 15.48 48.501 33.344 61z" mask="url(#b)"/>
+            </g>
+            <g transform="rotate(18 17.857 243.544)">
+                <mask id="d" fill="#fff">
+                    <use xlink:href="#c"/>
+                </mask>
+                <path fill="#E64C3C" d="M29.971 55c16.245-11.27 24.37-21.583 28.188-29.444 4.464-9.191.58-20.582-9.157-24.404-11.446-4.49-19.03 5.871-19.03 5.871s-7.523-10.39-18.97-5.895C1.26 4.95-2.623 16.341 1.842 25.531c3.821 7.863 11.89 18.2 28.13 29.469z" mask="url(#d)"/>
+            </g>
+            <path fill="#FFF" d="M120.018 24.92c5.585 3.027 6.516 7.407 2.793 13.14z"/>
+            <rect width="5" height="13" x="142.397" y="18.343" fill="#FFD56E" rx="2.5" transform="rotate(68 144.897 24.843)"/>
+            <rect width="5" height="14" x="138.324" y="6.108" fill="#FFD56E" rx="2.5" transform="rotate(47 140.824 13.108)"/>
+            <rect width="5" height="12" x="126.301" y="1" fill="#FFD56E" rx="2.5" transform="rotate(25 128.801 7)"/>
+        </g>
+    </g>
+</svg>

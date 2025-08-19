@@ -66,16 +66,17 @@ const loadAllProducts = async (req, res) => {
 const loadBoysPage = async (req, res) => {
     try {
 
-        productQuery = { isBlock: false }
-
-        const products = await Product.find(productQuery);
-
+        
         let user = null;
         if (req.user) {
             user = req.user;
         } else if (req.session.user) {
             user = await User.findById(req.session.user);
         }
+
+        productQuery = { isBlock: false }
+
+        const products = await Product.find(productQuery);
 
         let wishlistItems = [];
         if (user) {
@@ -106,7 +107,7 @@ const loadBoysPage = async (req, res) => {
         sort = sort.trim();
 
         if (Array.isArray(search)) {
-            search = search.filter(s => s.trim() !== '')[0] || ''; // Take first non-empty string or ''
+            search = search.filter(s => s.trim() !== '')[0] || ''; 
         }
 
 
@@ -170,11 +171,19 @@ const loadBoysPage = async (req, res) => {
             }
         }
 
+        // Price filter
         if (!isNaN(minPrice) || !isNaN(maxPrice)) {
             filter.salePrice = {};
             if (!isNaN(minPrice)) filter.salePrice.$gte = parseInt(minPrice);
             if (!isNaN(maxPrice)) filter.salePrice.$lte = parseInt(maxPrice);
         }
+
+
+        // 🔹 Ensure product has at least one variant
+        const productsWithVariants = await Varient.distinct("productId");
+        filter._id = filter._id
+            ? { $in: filter._id.$in.filter(id => productsWithVariants.includes(id)) }
+            : { $in: productsWithVariants };
 
 
         // Sorting
@@ -198,6 +207,7 @@ const loadBoysPage = async (req, res) => {
 
 
 
+        // Pagination + product query
         const totalProducts = await Product.countDocuments(filter);
 
         const allProducts = await Product.find(filter)
@@ -207,6 +217,7 @@ const loadBoysPage = async (req, res) => {
             .limit(perPage);
 
 
+        // Attach defaultVariantId
         for (let product of allProducts) {
             const variant = await Varient.findOne({ productId: product._id }).lean();
             product.defaultVariantId = variant ? variant._id : null;
@@ -232,7 +243,6 @@ const loadBoysPage = async (req, res) => {
 
         const queryObj = { ...req.query };
         delete queryObj.page;
-
         const baseQuery = new URLSearchParams(queryObj).toString();
 
 

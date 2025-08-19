@@ -3,19 +3,24 @@ const Cart = require('../models/cartSchema');
 const Wishlist = require('../models/wishlistSchema');
 
 
-
 const adminAuth = (req, res, next) => {
+
+    // Allow login page and error page without session
+    if (req.path === '/login' || req.path === '/pageerror') {
+        return next();
+    }
+
     if (req.session.admin) {
-        User.findOne({ isAdmin: true })
+        User.findById(req.session.admin)
             .then(data => {
-                if (data) {
+                if (data && data.isAdmin) {
                     next();
                 } else {
                     res.redirect('/admin/login');
                 }
             })
             .catch(error => {
-                console.log("Error in adminauth middleware", error);
+                console.log("Error in adminAuth middleware", error);
                 res.status(500).send("Internal Server error");
             })
     } else {
@@ -23,10 +28,12 @@ const adminAuth = (req, res, next) => {
     }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////
 
 
 const userAuth = (req, res, next) => {
+
     if (req.session.user) {
         User.findById(req.session.user)
             .then(data => {
@@ -48,19 +55,27 @@ const userAuth = (req, res, next) => {
 
 ////////////////////////////////////////////////////////////////////
 
+
 const cartCount = async (req, res, next) => {
-    const userId = req.user ? req.user._id : req.session.user;
-    if (userId) {
-        try {
-            const cart = await Cart.findOne({ userId });
-            res.locals.cartCount = cart ? cart.totalItems : 0;
-        } catch (err) {
-            res.locals.cartCount = 0;
-        }
-    } else {
-        res.locals.cartCount = 0;
+  try {
+    let userId = null;
+    if (req.user) {
+      userId = req.user._id;
+    } else if (req.session.user) {
+      userId = req.session.user;
     }
-    next();
+
+    if (userId) {
+      const cart = await Cart.findOne({ userId });
+      res.locals.cartCount = cart ? cart.items.length : 0;
+    } else {
+      res.locals.cartCount = 0;
+    }
+  } catch (err) {
+    console.error("Cart count middleware error:", err);
+    res.locals.cartCount = 0;
+  }
+  next();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////

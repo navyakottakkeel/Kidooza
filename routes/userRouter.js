@@ -7,7 +7,8 @@ const profileController = require("../controllers/user/profileController")
 const addressController = require("../controllers/user/addressController")
 const cartController = require("../controllers/user/cartController")
 const wishlistController = require("../controllers/user/wishlistController")
-
+const checkoutController = require("../controllers/user/checkoutController")
+const orderController = require("../controllers/user/orderController");
 
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
@@ -77,11 +78,10 @@ router.get('/cart', cartController.getCartPage);
 router.post('/cart/update-quantity', cartController.updateQuantity);
 router.get("/cart/remove/:productId/:varientId", cartController.removeFromCart);
 
+router.get('/checkout', checkoutController.getCheckoutPage);
 
-
-
-
-
+router.post("/order/place", orderController.placeOrder);
+router.get("/orderplaced", orderController.loadOrderPlaced);
 
 
 

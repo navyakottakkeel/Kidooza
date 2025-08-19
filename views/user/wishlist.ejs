@@ -6,17 +6,18 @@
     <div class="container-fluid fruite py-5" style="margin-top:180px ;">
         <div class="container py-5">
             <div class="tab-class text-center">
-                <div class="row g-4">
-                    <div class="col-lg-4 text-start">
-                        <h1>My Wishlist</h1>
-                    </div>
-                </div>
+                
 
                 <div class="tab-content">
                     <div id="tab-all" class="tab-pane fade show p-0 active">
                         <div class="row g-4">
                             <% if (wishlistProducts && wishlistProducts.length> 0) { %>
                                 <% wishlistProducts.forEach(product=> { %>
+                                    <div class="row g-4">
+                                        <div class="col-lg-4 text-start">
+                                            <h1>My Wishlist</h1>
+                                        </div>
+                                    </div>
                                     <div class="col-md-6 col-lg-4 col-xl-3">
                                         <div class="rounded position-relative fruite-item">
                                             <div class="fruite-img">
@@ -56,9 +57,24 @@
                                         </div>
                                     </div>
                                     <% }) %>
-                                        <% } else { %>
-                                            <p>No products in your wishlist.</p>
-                                            <% } %>
+                                    <% } else { %>
+                                        <div class="empty-wishlist text-center my-5">
+                                          <img src="../img/emptywishlist.svg" 
+                                               alt="Empty Wishlist" 
+                                               class="img-fluid mb-4" 
+                                               style="max-width: 200px;">
+                                          
+                                          <h3 class="fw-bold">YOUR WISHLIST IS EMPTY</h3>
+                                          <p class="text-muted">
+                                            Add items that you like to your wishlist. Review them anytime and easily move them to the bag.
+                                          </p>
+                                      
+                                          <a href="/boys" class="btn btn-outline-primary rounded-pill px-4 mt-3">
+                                            CONTINUE SHOPPING
+                                          </a>
+                                        </div>
+                                      <% } %>
+                                      
                         </div>
                     </div>
                 </div>
