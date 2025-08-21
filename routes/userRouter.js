@@ -76,14 +76,19 @@ router.delete('/wishlist/:productId/:variantId', wishlistController.removeFromWi
 
 router.get('/cart', cartController.getCartPage);
 router.post('/cart/update-quantity', cartController.updateQuantity);
-router.get("/cart/remove/:productId/:varientId", cartController.removeFromCart);
+router.get("/cart/remove/:productId/:variantId", cartController.removeFromCart);
 
 router.get('/checkout', checkoutController.getCheckoutPage);
 
 router.post("/order/place", orderController.placeOrder);
 router.get("/orderplaced", orderController.loadOrderPlaced);
+router.get("/orders", orderController.getOrders);
+router.get("/order/:id", orderController.getOrderDetail);
+router.post("/order/:id/cancel", orderController.cancelOrder);
+router.post("/order/:orderId/cancel-item/:itemId", orderController.cancelItem);
 
-
+router.get("/order/:orderId/invoice", orderController.downloadInvoice);
+router.post("/order/:orderId/return-item/:itemId", orderController.returnItem);
 
 
 

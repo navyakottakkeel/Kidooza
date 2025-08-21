@@ -1,6 +1,6 @@
 const Product = require('../../models/productSchema');
 const User = require('../../models/userSchema');
-const Varient = require('../../models/varientSchema');
+const Variant = require('../../models/variantSchema');
 const Wishlist = require('../../models/wishlistSchema');
 
 

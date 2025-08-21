@@ -481,7 +481,7 @@
           <div class="cart-actions">
             <form id="addToCartForm">
                 <input type="hidden" name="productId" value="<%= product._id %>">
-                <input type="hidden" name="varientId" id="variantIdInput" value="">
+                <input type="hidden" name="variantId" id="variantIdInput" value="">
                 <div class="quantity-selector">
                   <button type="button" id="qty-decrease">-</button>
                   <span id="quantityDisplay">1</span>
@@ -615,7 +615,7 @@ document.getElementById('addToCartForm').addEventListener('submit', (e) => {
     e.preventDefault(); // ⛔ Prevent page reload
 
     const productId = "<%= product._id %>";
-    const varientId = findVariant(
+    const variantId = findVariant(
         document.getElementById('selectedSize').value,
         document.getElementById('selectedColour').value
     )?._id || null;
@@ -626,7 +626,7 @@ document.getElementById('addToCartForm').addEventListener('submit', (e) => {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ productId, varientId, quantity })
+        body: JSON.stringify({ productId, variantId, quantity })
     })
     .then(async res => {
     const data = await res.json();

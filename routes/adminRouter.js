@@ -5,7 +5,7 @@ const { userAuth, adminAuth } = require('../middlewares/auth');
 const customerController = require('../controllers/admin/customerController');
 const categoryController = require('../controllers/admin/categoryController');
 const productController = require('../controllers/admin/productController');
-const varientController = require('../controllers/admin/varientController');
+const variantController = require('../controllers/admin/variantController');
 
 const upload = require('../middlewares/multer');
 const Category = require('../models/categorySchema');
@@ -45,13 +45,13 @@ router.post('/products/update-image', upload.single('image'), productController.
 router.post('/products/add-image', upload.single('image'), productController.addProductImage);
 
 
-router.route('/varients')
-.get(varientController.loadVarient)
-// .post(upload.array('productImage', 5),varientController.addVarient)
-.put(varientController.updateVarient)
+router.route('/variants')
+.get(variantController.loadVariant)
+// .post(upload.array('productImage', 5),variantController.addVariant)
+.put(variantController.updateVariant)
 
-router.delete('/varients/:id',varientController.deleteVarient);
-router.post('/varients', upload.array('productImage', 5), varientController.addVarient);
+router.delete('/variants/:id',variantController.deleteVariant);
+router.post('/variants', upload.array('productImage', 5), variantController.addVariant);
 
 
 

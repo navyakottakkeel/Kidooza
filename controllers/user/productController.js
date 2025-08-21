@@ -1,7 +1,7 @@
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
 const User = require('../../models/userSchema');
-const Varient = require('../../models/varientSchema');
+const Variant = require('../../models/variantSchema');
 const Wishlist = require('../../models/wishlistSchema');
 
 const url = require("url");
@@ -113,8 +113,8 @@ const loadBoysPage = async (req, res) => {
 
 
         const brands = await Product.distinct("brand");
-        const colours = await Varient.distinct("colour");
-        const size = await Varient.distinct("size");
+        const colours = await Variant.distinct("colour");
+        const size = await Variant.distinct("size");
 
 
         const filter = { isBlock: false };
@@ -161,7 +161,7 @@ const loadBoysPage = async (req, res) => {
                 variantFilter.size = { $in: selectedSizes };
             }
 
-            const variantProductIds = await Varient.find(variantFilter).distinct("productId");
+            const variantProductIds = await Variant.find(variantFilter).distinct("productId");
 
             // If no matching variants, set filter to empty array to return no products
             if (variantProductIds.length === 0) {
@@ -180,7 +180,7 @@ const loadBoysPage = async (req, res) => {
 
 
         // 🔹 Ensure product has at least one variant
-        const productsWithVariants = await Varient.distinct("productId");
+        const productsWithVariants = await Variant.distinct("productId");
         filter._id = filter._id
             ? { $in: filter._id.$in.filter(id => productsWithVariants.includes(id)) }
             : { $in: productsWithVariants };
@@ -219,7 +219,7 @@ const loadBoysPage = async (req, res) => {
 
         // Attach defaultVariantId
         for (let product of allProducts) {
-            const variant = await Varient.findOne({ productId: product._id }).lean();
+            const variant = await Variant.findOne({ productId: product._id }).lean();
             product.defaultVariantId = variant ? variant._id : null;
         }
 
@@ -356,11 +356,11 @@ const loadProductDetail = async (req, res) => {
 
         const product = await Product.findById(productId).populate("category");
         const [colours, sizes] = await Promise.all([
-            Varient.distinct('colour', { productId }),
-            Varient.distinct('size', { productId }),
+            Variant.distinct('colour', { productId }),
+            Variant.distinct('size', { productId }),
         ]);
 
-        const variants = await Varient.find({ productId: productId }).select('size colour stock basePrice salePrice productImage');
+        const variants = await Variant.find({ productId: productId }).select('size colour stock basePrice salePrice productImage');
 
 
 

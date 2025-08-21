@@ -1,6 +1,6 @@
 const Product = require('../../models/productSchema');
 const User = require('../../models/userSchema');
-const Varient = require('../../models/varientSchema');
+const Variant = require('../../models/variantSchema');
 const Cart = require('../../models/cartSchema');
 const Wishlist = require('../../models/wishlistSchema'); 
 const Address = require('../../models/addressSchema');
@@ -39,7 +39,7 @@ const getCheckoutPage = async (req, res) => {
         select: "_id productName description"
       })
       .populate({
-        path: "items.varientId",
+        path: "items.variantId",
         select: "_id productImage basePrice salePrice size stock"
       })
       .lean();
@@ -50,7 +50,7 @@ const getCheckoutPage = async (req, res) => {
 
        // filter out out-of-stock items
        const stockedItems = cart.items.filter(item => {
-        const stock = item.varientId?.stock ?? item.productId?.stock ?? 0;
+        const stock = item.variantId?.stock ?? item.productId?.stock ?? 0;
         return stock > 0;
       });
   
@@ -62,8 +62,8 @@ const getCheckoutPage = async (req, res) => {
      // calculate totals only with stocked items
      let totalItemPrice = 0, itemDiscount = 0;
      const cartItems = stockedItems.map(item => {
-       const basePrice = item.varientId?.basePrice || item.productId?.basePrice || 0;
-       const salePrice = item.varientId?.salePrice || item.productId?.salePrice || basePrice;
+       const basePrice = item.variantId?.basePrice || item.productId?.basePrice || 0;
+       const salePrice = item.variantId?.salePrice || item.productId?.salePrice || basePrice;
  
        totalItemPrice += basePrice * item.quantity;
        if (basePrice > salePrice) {
@@ -72,10 +72,10 @@ const getCheckoutPage = async (req, res) => {
 
       return {
         productId: item.productId?._id,
-        varientId: item.varientId?._id || null,
+        variantId: item.variantId?._id || null,
         name: item.productId?.productName,
-        image: item.varientId?.productImage?.[0] || "/img/1.jpg",
-        size: item.varientId?.size,
+        image: item.variantId?.productImage?.[0] || "/img/1.jpg",
+        size: item.variantId?.size,
         quantity: item.quantity,
         salePrice,
         basePrice

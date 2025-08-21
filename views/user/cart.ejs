@@ -85,7 +85,7 @@
                                                 <form action="/cart/update-quantity" method="POST"
                                                     class="update-quantity-form" style="display:inline;">
                                                     <input type="hidden" name="productId" value="<%= item.productId %>">
-                                                    <input type="hidden" name="varientId" value="<%= item.varientId %>">
+                                                    <input type="hidden" name="varieantId" value="<%= item.variantId %>">
                                                     <select name="quantity" class="form-select form-select-sm"
                                                         onchange="this.form.dispatchEvent(new Event('submit'))">
                                                         <% for (let i=1; i <=5; i++) { %>
@@ -97,7 +97,7 @@
                                                     </select>
                                                 </form>
 
-                                                <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
+                                                <a href="/cart/remove/<%= item.productId %>/<%= item.variantId || '' %>"
                                                     class="text-danger ms-3 delete-cart-item">
                                                     <i class="fa fa-trash"></i>
                                                 </a>
@@ -149,7 +149,7 @@
                                                             <% } %>
                                                     </select>
 
-                                                    <a href="/cart/remove/<%= item.productId %>/<%= item.varientId || '' %>"
+                                                    <a href="/cart/remove/<%= item.productId %>/<%= item.variantId || '' %>"
                                                         class="text-danger ms-3 delete-cart-item">
                                                         <i class="fa fa-trash"></i>
                                                     </a>

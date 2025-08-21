@@ -17,7 +17,7 @@ const wishlistSchema = new Schema({
         },
         variantId: { 
           type: Schema.Types.ObjectId,
-          ref: "Varient"
+          ref: "Variant"
         },
         addedAt: {
           type: Date,
