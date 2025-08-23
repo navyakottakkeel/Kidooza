@@ -174,19 +174,43 @@
                                                     Order Cancelled
                                                 </span>
                                             </small>
-                                            <% } else if(item.status==="Deliverd" ) { %>
-                                                <form action="/order/<%= order._id %>/return-item/<%= item._id %>" method="POST" class="return-item-form">
-                                                    <div class="d-flex justify-content-center gap-3 mt-3">
-                                                        <button type="button"
-                                                            class="btn-cancel-item w-100 return-item-btn"
-                                                            data-orderid="<%= order._id %>"
-                                                            data-itemid="<%= item._id %>">
-                                                            RETURN ITEM
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                                
+
+                                            <% } else if (item.status === "Delivered") { %>
+                                                <% 
+                                                  let deliveredOn = new Date(item.deliveredOn); 
+                                                  let returnValidUntil = new Date(deliveredOn); 
+                                                  returnValidUntil.setDate(deliveredOn.getDate() + 14); 
+                                                  let today = new Date();
+                                                %>
+                                            
+                                                <% if (today <= returnValidUntil) { %>
+                                                    <!-- Show return button if still within 14 days -->
+                                                    <form action="/order/<%= order._id %>/return-item/<%= item._id %>" method="POST" class="return-item-form">
+                                                        <div class="d-flex justify-content-center gap-3 mt-3">
+                                                            <button type="button"
+                                                                class="btn-cancel-item w-100 return-item-btn"
+                                                                data-orderid="<%= order._id %>"
+                                                                data-itemid="<%= item._id %>">
+                                                                RETURN ITEM
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                    <small>
+                                                        <span class="fw-bold text-danger">
+                                                            Return valid until: <%= returnValidUntil.toDateString() %>
+                                                        </span>
+                                                    </small>
+                                                <% } else { %>
+                                                    <!-- If return window expired -->
+                                                    <small><br><br>
+                                                        <span class="fw-bold text-muted">
+                                                            <i class="bi bi-info-circle-fill text-secondary"></i>
+                                                           Return window expired on <%= returnValidUntil.toDateString() %>
+                                                        </span>
+                                                    </small>
                                                 <% } %>
+                                            <% } %>
+                                            
                             </div>
 
                         </div>
@@ -225,7 +249,7 @@
                       
                       <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Listing Price</span>
-                        <span><s>₹<%= order.totalPrice %></s></span>
+                        <span>₹<%= order.totalPrice %></span>
                       </div>
                   
                       <div class="d-flex justify-content-between mb-2">

@@ -842,15 +842,9 @@ window.addEventListener('DOMContentLoaded', () => {
   updateStockDisplay(variant ? variant.stock : 0);
   updatePriceAndDiscount(variant);
   updateImagesForColour(defaultColour);
-});
 
-if (variant) {
-    updateWishlistButton(variant._id);
-  }
 
-/////////////////////////////////////////////////////////////////////////////////////
-
-const zoomContainer = document.querySelector('.zoom-container');
+  const zoomContainer = document.querySelector('.zoom-container');
   const mainImage = document.getElementById('mainImage');
   const zoomLens = document.getElementById('zoomLens');
 
@@ -884,6 +878,18 @@ const zoomContainer = document.querySelector('.zoom-container');
   mainImage.addEventListener('mouseleave', () => {
     zoomLens.style.visibility = 'hidden';
   });
+
+
+  
+});
+
+if (variant) {
+    updateWishlistButton(variant._id);
+  }
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 

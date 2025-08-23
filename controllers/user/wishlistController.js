@@ -77,6 +77,16 @@ const addToWishlist = async (req, res) => {
 
 const getWishlistPage = async (req, res) => {
     try {
+
+        let user = null;
+        if (req.user) {
+          user = req.user;
+        } else if (req.session.user) {
+          user = await User.findById(req.session.user);
+        }
+    
+        res.locals.user = user;
+        
         const userId = req.user ? req.user._id : req.session.user;
         if (!userId) return res.redirect("/login");
 

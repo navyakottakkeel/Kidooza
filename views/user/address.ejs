@@ -82,8 +82,8 @@
                                                 <%= addr.name %>
                                             </strong> (<%= addr.addressType %>)</p>
                                         <p>
-                                            <%= addr.city %>, <%= addr.landmark %>,<br> <%= addr.state %> - <%= addr.pincode
-                                                            %>
+                                            <%= addr.city %>, <%= addr.landmark %>,<br>
+                                                    <%= addr.state %> - <%= addr.pincode %>
                                         </p>
                                         <p>Phone: <%= addr.phone %>
                                                 <% if (addr.altPhone) { %>, Alt: <%= addr.altPhone %>
@@ -208,6 +208,45 @@
                     phone: document.getElementById("phone").value,
                     altPhone: document.getElementById("altPhone").value
                 };
+
+
+                // ✅ Basic validation
+                if (!data.name || !data.city || !data.state || !data.pincode || !data.phone) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Missing Fields",
+                        text: "Please fill in all required fields (Name, City, State, Pincode, Phone)."
+                    });
+                    return;
+                }
+
+                if (!/^\d{6}$/.test(data.pincode)) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Invalid Pincode",
+                        text: "Pincode must be a 6-digit number."
+                    });
+                    return;
+                }
+
+                if (!/^\d{10}$/.test(data.phone)) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Invalid Phone",
+                        text: "Phone number must be 10 digits."
+                    });
+                    return;
+                }
+
+                if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Invalid Alt Phone",
+                        text: "Alt phone must be 10 digits."
+                    });
+                    return;
+                }
+
 
                 let url = "/address/save";
                 let method = "POST";

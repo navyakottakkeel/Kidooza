@@ -147,29 +147,23 @@ const loadBoysPage = async (req, res) => {
         const selectedColours = req.query.colour ? (Array.isArray(req.query.colour) ? req.query.colour : [req.query.colour]) : [];
         const selectedSizes = req.query.size ? (Array.isArray(req.query.size) ? req.query.size : [req.query.size]) : [];
 
-        let variantFilteredIds = null;
-
-        // Apply variant filters
-        if (selectedColours.length > 0 || selectedSizes.length > 0) {
-            const variantFilter = {};
-
-            if (selectedColours.length > 0) {
-                variantFilter.colour = { $in: selectedColours };
-            }
-
-            if (selectedSizes.length > 0) {
-                variantFilter.size = { $in: selectedSizes };
-            }
-
-            const variantProductIds = await Variant.find(variantFilter).distinct("productId");
-
-            // If no matching variants, set filter to empty array to return no products
-            if (variantProductIds.length === 0) {
-                filter._id = { $in: [] }; // No matches
-            } else {
-                filter._id = { $in: variantProductIds };
-            }
+        let variantFilter = {};
+        if (selectedColours.length > 0) {
+          variantFilter.colour = { $in: selectedColours };
         }
+        if (selectedSizes.length > 0) {
+          variantFilter.size = { $in: selectedSizes };
+        }
+        
+        const variantProductIds = await Variant.find(variantFilter).distinct("productId");
+        
+        // If no matches
+        if (variantProductIds.length === 0) {
+          filter._id = { $in: [] };
+        } else {
+          filter._id = { $in: variantProductIds };
+        }
+        
 
         // Price filter
         if (!isNaN(minPrice) || !isNaN(maxPrice)) {
@@ -178,14 +172,7 @@ const loadBoysPage = async (req, res) => {
             if (!isNaN(maxPrice)) filter.salePrice.$lte = parseInt(maxPrice);
         }
 
-
-        // 🔹 Ensure product has at least one variant
-        const productsWithVariants = await Variant.distinct("productId");
-        filter._id = filter._id
-            ? { $in: filter._id.$in.filter(id => productsWithVariants.includes(id)) }
-            : { $in: productsWithVariants };
-
-
+       
         // Sorting
         let sortOption = {};
         switch (sort) {

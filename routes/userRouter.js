@@ -9,6 +9,7 @@ const cartController = require("../controllers/user/cartController")
 const wishlistController = require("../controllers/user/wishlistController")
 const checkoutController = require("../controllers/user/checkoutController")
 const orderController = require("../controllers/user/orderController");
+const walletController = require("../controllers/user/walletController");
 
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
@@ -90,6 +91,9 @@ router.post("/order/:orderId/cancel-item/:itemId", orderController.cancelItem);
 router.get("/order/:orderId/invoice", orderController.downloadInvoice);
 router.post("/order/:orderId/return-item/:itemId", orderController.returnItem);
 
+
+router.get("/wallet", walletController.getWalletPage);
+router.post("/wallet/add", walletController.addMoney);
 
 
 

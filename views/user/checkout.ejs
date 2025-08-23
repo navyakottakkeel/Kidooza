@@ -50,7 +50,9 @@
     <div class="container py-5" style="margin-top:160px;">
         <div class="row">
             <!-- LEFT: Address Section -->
-            <div class="col-md-1"><p></p></div>
+            <div class="col-md-1">
+                <p></p>
+            </div>
             <div class="col-md-7">
                 <div class="container my-4">
                     <h3 style="font-family: math;">Select Delivery Address</h3><br>
@@ -181,7 +183,8 @@
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between fw-bold">
-                                <span>Total Amount</span> <span style="color: black;font-size: large;">₹<%= total.toLocaleString() %></span>
+                                <span>Total Amount</span> <span style="color: black;font-size: large;">₹<%=
+                                        total.toLocaleString() %></span>
                             </div>
 
 
@@ -223,53 +226,8 @@
     <!-- <input id="addressLine" class="swal2-input" placeholder="Address (House No, Street, Area)"> -->
 
     <script>
-        document.getElementById("addNewAddressBtn").addEventListener("click", () => {
-            Swal.fire({
-                title: "Add New Address",
-                html: `
-    <select id="addressType" class="swal2-input">
-      <option value="Home">Home</option>
-      <option value="Office">Office</option>
-    </select>
-      <input id="name" class="swal2-input" placeholder="Name">
-      <input id="pincode" class="swal2-input" placeholder="Pin Code">
-      <input id="landmark" class="swal2-input" placeholder="Locality / Town">
-      <input id="city" class="swal2-input" placeholder="City / District">
-      <input id="state" class="swal2-input" placeholder="State">
-      <input id="phone" class="swal2-input" placeholder="Mobile No">
-      <input id="altPhone" class="swal2-input" placeholder="Alternative Mobile No">
-    `,
-                confirmButtonText: "Save",
-                showCancelButton: true,
-                preConfirm: () => {
-                    const data = {
-                        addressType: document.getElementById("addressType").value,
-                        name: document.getElementById("name").value,
-                        pincode: document.getElementById("pincode").value,
-                        landmark: document.getElementById("landmark").value,
-                        city: document.getElementById("city").value,
-                        state: document.getElementById("state").value,
-                        phone: document.getElementById("phone").value,
-                        altPhone: document.getElementById("altPhone").value,
 
-                    };
-                    return fetch("/address/save", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(data)
-                    }).then(res => {
-                        if (!res.ok) throw new Error("Failed to save address");
-                        return res.json();
-                    });
-                }
-            }).then(result => {
-                if (result.isConfirmed) {
-                    Swal.fire("Saved!", "Your address has been added.", "success").then(() => {
-                        location.reload(); // refresh checkout page to show new address
-                    });
-                }
-            });
-        }); document.getElementById("addNewAddressBtn").addEventListener("click", () => {
+        document.getElementById("addNewAddressBtn").addEventListener("click", () => {
             Swal.fire({
                 title: "Add New Address",
                 html: `
@@ -316,6 +274,25 @@
                         phone: document.getElementById("phone").value,
                         altPhone: document.getElementById("altPhone").value,
                     };
+
+                    // 🔹 Validate
+                    if (!data.name || !data.city || !data.state || !data.pincode || !data.phone) {
+                        Swal.showValidationMessage("Please fill in all required fields (Name, City, State, Pincode, Phone).");
+                        return false;
+                    }
+                    if (!/^\d{6}$/.test(data.pincode)) {
+                        Swal.showValidationMessage("Pincode must be a 6-digit number.");
+                        return false;
+                    }
+                    if (!/^\d{10}$/.test(data.phone)) {
+                        Swal.showValidationMessage("Phone number must be 10 digits.");
+                        return false;
+                    }
+                    if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
+                        Swal.showValidationMessage("Alternate phone must be 10 digits.");
+                        return false;
+                    }
+
                     return fetch("/address/save", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -335,7 +312,7 @@
         });
 
 
- ///////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////
 
         document.querySelectorAll(".editAddressBtn").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -389,6 +366,26 @@
                             altPhone: document.getElementById("altPhone").value,
                         };
 
+
+                        
+    if (!data.name || !data.city || !data.state || !data.pincode || !data.phone) {
+        Swal.showValidationMessage("Please fill in all required fields (Name, City, State, Pincode, Phone).");
+        return false;
+    }
+    if (!/^\d{6}$/.test(data.pincode)) {
+        Swal.showValidationMessage("Pincode must be a 6-digit number.");
+        return false;
+    }
+    if (!/^\d{10}$/.test(data.phone)) {
+        Swal.showValidationMessage("Phone number must be 10 digits.");
+        return false;
+    }
+    if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
+        Swal.showValidationMessage("Alternate phone must be 10 digits.");
+        return false;
+    }
+
+    
                         return fetch(`/address/${id}`, {
                             method: "PATCH",  // ✅ updated for your route
                             headers: { "Content-Type": "application/json" },
@@ -408,7 +405,7 @@
             });
         });
 
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         function deleteAddress(id) {
             Swal.fire({
@@ -436,41 +433,41 @@
         }
 
 
-///////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////
 
 
-document.getElementById("placeOrderBtn").addEventListener("click", () => {
-    const selectedAddress = document.querySelector("input[name='address']:checked");
-    const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
+        document.getElementById("placeOrderBtn").addEventListener("click", () => {
+            const selectedAddress = document.querySelector("input[name='address']:checked");
+            const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
 
-    if (!selectedAddress) {
-        Swal.fire("Error", "Please select a delivery address", "warning");
-        return;
-    }
-    if (!selectedPayment) {
-        Swal.fire("Error", "Please select a payment method", "warning");
-        return;
-    }
+            if (!selectedAddress) {
+                Swal.fire("Error", "Please select a delivery address", "warning");
+                return;
+            }
+            if (!selectedPayment) {
+                Swal.fire("Error", "Please select a payment method", "warning");
+                return;
+            }
 
-    const data = {
-        addressId: selectedAddress.value,
-        paymentMethod: selectedPayment.value
-    };
+            const data = {
+                addressId: selectedAddress.value,
+                paymentMethod: selectedPayment.value
+            };
 
-    fetch("/order/place", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    }).then(res => res.json())
-      .then(result => {
-        if (result.success) {
-            Swal.fire("Success", "Order placed successfully!", "success")
-            .then(() => window.location.href = "/orderplaced");
-        } else {
-            Swal.fire("Error", result.message || "Failed to place order", "error");
-        }
-    });
-});
+            fetch("/order/place", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        Swal.fire("Success", "Order placed successfully!", "success")
+                            .then(() => window.location.href = "/orderplaced");
+                    } else {
+                        Swal.fire("Error", result.message || "Failed to place order", "error");
+                    }
+                });
+        });
 
 
 

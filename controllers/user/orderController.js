@@ -65,7 +65,7 @@ const placeOrder = async (req, res) => {
         size,
         color,
         total: itemTotal,
-        status:"Ordered"
+        status: "Ordered"
       };
     });
 
@@ -169,16 +169,16 @@ const getOrders = async (req, res) => {
 
     let filter = { user: userId };
 
-    if (search && search.trim() !== "") {
+    if (search) {
+      const s = search.trim();
       const regex = new RegExp(search, "i");
 
       filter.$or = [
-        { orderId: regex },                         // orderId search
-        { "orderedItems.productName": regex },      // product name
-        { "orderedItems.size": regex },             // size
+        { orderId: regex },
+        { "orderedItems.productName": { $regex: s, $options: "i" } },
+        { "orderedItems.size": { $regex: s, $options: "i" } },
       ];
 
-      // If search is numeric → check against price fields also
       if (!isNaN(search)) {
         const numSearch = Number(search);
         filter.$or.push({ "orderedItems.salePrice": numSearch });
@@ -188,10 +188,10 @@ const getOrders = async (req, res) => {
     }
 
 
-    const orders = await Order.find({ user: userId })
+    const orders = await Order.find(filter)
       .populate("orderedItems.product")
       .populate("orderedItems.variant")
-      .sort({ createdAt: -1 }); // latest first
+      .sort({ createdAt: -1 });
 
     res.render("orders", {
       orders,
@@ -234,6 +234,13 @@ const getOrderDetail = async (req, res) => {
       console.log("No order detail:");
 
     }
+
+    // const deliveryDate = order.orderedItems.deliveredOn; // Example delivery date
+    // const after14Days = new Date(deliveryDate);
+    // after14Days.setDate(after14Days.getDate() + 14);
+    // console.log("Return Valid Until:", after14Days.toDateString());
+    // console.log("Delivery Date:", deliveryDate.toDateString());
+
 
     res.render("order-detail", { order });
   } catch (err) {
@@ -381,28 +388,28 @@ const downloadInvoice = async (req, res) => {
 
 const returnItem = async (req, res) => {
   try {
-      const { orderId, itemId } = req.params;
-      const { reason } = req.body;
+    const { orderId, itemId } = req.params;
+    const { reason } = req.body;
 
-      const order = await Order.findById(orderId);
-      if (!order) return res.json({ success: false, message: "Order not found" });
+    const order = await Order.findById(orderId);
+    if (!order) return res.json({ success: false, message: "Order not found" });
 
-      const item = order.orderedItems.id(itemId);
-      if (!item) return res.json({ success: false, message: "Item not found" });
+    const item = order.orderedItems.id(itemId);
+    if (!item) return res.json({ success: false, message: "Item not found" });
 
-      if (item.status !== "Deliverd") {
-          return res.json({ success: false, message: "Return not available for this item" });
-      }
+    if (item.status !== "Delivered") {
+      return res.json({ success: false, message: "Return not available for this item" });
+    }
 
-      item.status = "Return Requested";
-      item.returnReason = reason;
+    item.status = "Return Requested";
+    item.returnReason = reason;
 
-      await order.save();
+    await order.save();
 
-      res.json({ success: true });
+    res.json({ success: true });
   } catch (err) {
-      console.error(err);
-      res.json({ success: false, message: "Server error" });
+    console.error(err);
+    res.json({ success: false, message: "Server error" });
   }
 };
 

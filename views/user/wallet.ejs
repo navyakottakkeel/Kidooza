@@ -1,0 +1,70 @@
+<%- include("../partials/user/header") %>
+
+<div class="container " style="margin-top: 11rem;">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb p-2 rounded">
+      <li class="breadcrumb-item">
+        <a href="/userProfile" class="text-decoration-none">Profile</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Wallet</li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-6 mx-auto">
+      <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-header bg-primary text-white text-center rounded-top-4">
+          <h4>💳 My Wallet</h4>
+        </div>
+        <div class="card-body">
+          <h5 class="text-center mb-3">Current Balance</h5>
+          <h2 class="text-center text-success mb-4">₹<%= wallet.balance %></h2>
+
+          <!-- Add Money Form (for testing/demo) -->
+          <form action="/wallet/add" method="POST" class="d-flex gap-2 mb-4 justify-content-center">
+            <input type="number" name="amount" class="form-control w-50" placeholder="Enter amount" required>
+            <button type="submit" class="btn btn-success">Add Money</button>
+          </form>
+
+          <h5 class="mt-4">Transaction History</h5>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if(wallet.transactions.length === 0) { %>
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">No transactions yet.</td>
+                  </tr>
+                <% } else { %>
+                  <% wallet.transactions.slice().reverse().forEach(txn => { %>
+                    <tr>
+                      <td><%= txn.date.toDateString() %></td>
+                      <td>
+                        <span class="<%= txn.type === 'credit' ? 'text-success' : 'text-danger' %> fw-bold">
+                          <%= txn.type %>
+                        </span>
+                      </td>
+                      <td>₹<%= txn.amount %></td>
+                      <td><%= txn.reason || '-' %></td>
+                    </tr>
+                  <% }) %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("../partials/user/footer") %>
