@@ -101,6 +101,7 @@ const orderSchema = new Schema(
         "Pending",
         "Processing",
         "Shipped",
+        "Out for Delivery",
         "Delivered",
         "Cancelled",
         "Return Request",

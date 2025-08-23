@@ -85,7 +85,7 @@
                                                 <form action="/cart/update-quantity" method="POST"
                                                     class="update-quantity-form" style="display:inline;">
                                                     <input type="hidden" name="productId" value="<%= item.productId %>">
-                                                    <input type="hidden" name="varieantId" value="<%= item.variantId %>">
+                                                    <input type="hidden" name="variantId" value="<%= item.variantId %>">
                                                     <select name="quantity" class="form-select form-select-sm"
                                                         onchange="this.form.dispatchEvent(new Event('submit'))">
                                                         <% for (let i=1; i <=5; i++) { %>
@@ -139,8 +139,7 @@
                                                     <h3 class="text-danger">Sold Out</h3>
                                                 </div>
                                                 <div>
-                                                    <select disabled name="quantity" class="form-select form-select-sm"
-                                                        onchange="this.form.dispatchEvent(new Event('submit'))">
+                                                    <select disabled name="quantity" class="form-select form-select-sm">
                                                         <% for (let i=1; i <=5; i++) { %>
                                                             <option value="<%= i %>" <%=i===item.quantity ? 'selected'
                                                                 : '' %>>
