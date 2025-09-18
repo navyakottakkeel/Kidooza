@@ -3,127 +3,22 @@ const Cart = require("../../models/cartSchema");
 const Address = require("../../models/addressSchema");
 const User = require("../../models/userSchema");
 const Variant = require("../../models/variantSchema");
+const Wallet = require("../../models/walletSchema");
+
 const PDFDocument = require("pdfkit");
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
+
+
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_SECRET,
+});
 
 
 
 
-
-
-const placeOrder = async (req, res) => {
-  try {
-    const userId = req.user ? req.user._id : req.session.user;
-    const { addressId, paymentMethod } = req.body;
-
-    // 1. Get cart
-    const cart = await Cart.findOne({ userId })
-      .populate("items.productId")
-      .populate("items.variantId");
-
-    if (!cart || cart.items.length === 0) {
-      return res.json({ success: false, message: "Cart is empty" });
-    }
-
-    // 2. Get address snapshot
-    const addressDoc = await Address.findOne({ userId });
-    const address = addressDoc.addresses.id(addressId); // subdoc by ID
-
-    if (!address) {
-      return res.json({ success: false, message: "Address not found" });
-    }
-
-    // 3. Prepare items with basePrice & salePrice snapshot
-    let totalPrice = 0, discount = 0;
-    const orderedItems = cart.items.map(item => {
-      const basePrice = item.variantId?.basePrice || item.productId?.basePrice || 0;
-      const salePrice = item.variantId?.salePrice || item.productId?.salePrice || basePrice;
-      const quantity = item.quantity;
-
-      // Snapshots
-      productName = item.productId.productName;
-      image = Array.isArray(item.variantId?.productImage)
-        ? item.variantId.productImage[0]
-        : (item.variantId?.productImage || item.productId.productImage[0])
-      size = item.variantId?.size;
-      color = item.variantId?.colour;
-
-      const itemTotal = salePrice * quantity;
-
-      totalPrice += basePrice * quantity;
-      if (basePrice > salePrice) {
-        discount += (basePrice - salePrice) * quantity;
-      }
-
-      return {
-        product: item.productId._id,
-        variant: item.variantId?._id || null,
-        quantity,
-        basePrice,
-        salePrice,
-        productName,
-        image,
-        size,
-        color,
-        total: itemTotal,
-        status: "Ordered"
-      };
-    });
-
-    const platformFee = 10;
-    const shippingFee = totalPrice > 599 ? 0 : 30;
-    const finalAmount = totalPrice - discount + platformFee + shippingFee;
-
-    // 4. Save order
-    const newOrder = new Order({
-      user: userId,
-      orderedItems,
-      totalPrice,
-      discount,
-      finalAmount,
-      shippingAddress: {
-        name: address.name,
-        phone: address.phone,
-        landmark: address.landmark,
-        city: address.city,
-        state: address.state,
-        pincode: address.pincode,
-      }, // store snapshot instead of just ObjectId
-      status: "Pending",
-      couponApplied: false,
-      invoiceDate: new Date(),
-      platformFee,
-      shippingFee,
-      paymentMethod,
-      paymentStatus: paymentMethod === "COD" ? "Pending" : "Paid"
-    });
-
-    await newOrder.save();
-
-
-    // 5. Decrease stock for each ordered variant
-    for (const item of orderedItems) {
-      if (item.variant) {
-        await Variant.findByIdAndUpdate(
-          item.variant,
-          { $inc: { stock: -item.quantity } }  // ✅ Decrease stock
-        );
-      }
-    }
-
-
-    // 6. Clear cart
-    await Cart.updateOne({ userId }, { $set: { items: [] } });
-
-    res.locals.cartCount = 0;
-
-
-    res.json({ success: true, orderId: newOrder.orderId });
-
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error" });
-  }
-};
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -260,16 +155,26 @@ const cancelOrder = async (req, res) => {
     const order = await Order.findById(id);
     if (!order) return res.json({ success: false, message: "Order not found" });
 
+    let refundAmount = 0;
+
     // ✅ Cancel all items & restore stock
     for (let item of order.orderedItems) {
       if (!["Shipped", "Out for Delivery", "Delivered"].includes(item.status)) {
+
+        if (item.status !== "Cancelled") {
+          // Only refund for items that are being cancelled now
+          refundAmount += item.salePrice * item.quantity;
+
+          await Variant.findByIdAndUpdate(
+            item.variant,
+            { $inc: { stock: item.quantity } }
+          );
+        }
+
         item.status = "Cancelled";
         item.cancelReason = reason || "Order cancelled";
 
-        await Variant.findByIdAndUpdate(
-          item.variant,
-          { $inc: { stock: item.quantity } }
-        );
+       
       }
     }
 
@@ -277,9 +182,37 @@ const cancelOrder = async (req, res) => {
     order.cancelReason = reason || "Order cancelled";
     order.cancelledAt = new Date();
 
+
+        // ✅ Refund if payment done
+        if (order.paymentStatus === "Paid" && refundAmount > 0) {
+    
+          await Wallet.findOneAndUpdate(
+            { userId: order.user },
+            {
+              $inc: { balance: refundAmount },
+              $push: {
+                transactions: {
+                  type: "credit",
+                  amount: refundAmount,
+                  reason: `Refund for cancelled order #${order._id}`,
+                  date: new Date()
+                }
+              }
+            },
+            { upsert: true, new: true }
+          );
+        }
+
+
     await order.save();
 
-    res.json({ success: true, message: "Order cancelled successfully" });
+    res.json({
+      success: true,
+      message: refundAmount > 0
+        ? `Order cancelled & ₹${refundAmount} refunded to wallet`
+        : "Order cancelled (no refund needed)"
+    });
+  
   } catch (error) {
     console.error(error);
     res.json({ success: false, message: "Server error" });
@@ -313,6 +246,27 @@ const cancelItem = async (req, res) => {
       item.variant, // correct field from schema
       { $inc: { stock: item.quantity } }
     );
+
+            // ✅ Refund if payment done
+            if (order.paymentStatus === "Paid") {
+              const refundAmount = item.salePrice * item.quantity;
+        
+              await Wallet.findOneAndUpdate(
+                { userId: order.user },
+                {
+                  $inc: { balance: refundAmount },
+                  $push: {
+                    transactions: {
+                      type: "credit",
+                      amount: refundAmount,
+                      reason: `Refund for cancelled order #${order._id}`,
+                      date: new Date()
+                    }
+                  }
+                },
+                { upsert: true, new: true }
+              );
+            }
 
 
     await order.save();
@@ -416,6 +370,399 @@ const returnItem = async (req, res) => {
 //////////////////////////////////////////////////////////////////////////////////////////
 
 
+// ------------------ Helper: compute order snapshot (shared) ------------------
+async function buildOrderSnapshot(userId, addressId) {
+  // fetch cart & address; compute totals; return { orderedItems, totalPrice, discount, finalAmount, shippingFee, platformFee, address }
+  const cart = await Cart.findOne({ userId }).populate("items.productId").populate("items.variantId");
+  if (!cart || cart.items.length === 0) throw new Error("Cart is empty");
+
+  const addressDoc = await Address.findOne({ userId });
+  const address = addressDoc?.addresses?.id(addressId);
+  if (!address) throw new Error("Address not found");
+
+  let totalPrice = 0, discount = 0;
+  const orderedItems = cart.items.map(item => {
+    const basePrice = item.variantId?.basePrice || item.productId?.basePrice || 0;
+    const salePrice = item.variantId?.salePrice || item.productId?.salePrice || basePrice;
+    const quantity = item.quantity;
+
+    const productName = item.productId.productName;
+    const image = Array.isArray(item.variantId?.productImage)
+      ? item.variantId.productImage[0]
+      : (item.variantId?.productImage || item.productId.productImage?.[0] || "");
+    const size = item.variantId?.size;
+    const color = item.variantId?.colour;
+
+    const itemTotal = salePrice * quantity;
+    totalPrice += basePrice * quantity;
+    if (basePrice > salePrice) discount += (basePrice - salePrice) * quantity;
+
+    return {
+      product: item.productId._id,
+      variant: item.variantId?._id || null,
+      quantity,
+      basePrice,
+      salePrice,
+      productName,
+      image,
+      size,
+      color,
+      total: itemTotal,
+      status: "Ordered"
+    };
+  });
+
+  const platformFee = 10;
+  const shippingFee = totalPrice > 599 ? 0 : 30;
+  const finalAmount = totalPrice - discount + platformFee + shippingFee;
+
+  return { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount, address, cart };
+}
+
+// ------------------ 1) COD & Wallet handler ------------------
+// NOTE: this route will be POST /order/place
+const placeOrder = async (req, res) => {
+  try {
+    const userId = req.user ? req.user._id : req.session.user;
+    const { addressId, paymentMethod } = req.body;
+
+    // build order details from server (never trust client)
+    const { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount, address, cart } =
+      await buildOrderSnapshot(userId, addressId);
+
+    // ----- COD rule: COD only allowed when finalAmount > 1000 (your requirement) -----
+    if (paymentMethod === "COD") {
+      if (!(finalAmount > 1000)) {
+        return res.json({ success: false, message: "Cash on Delivery is only available for orders above ₹1000." });
+      }
+
+      // create and save order (COD pending)
+      const newOrder = new Order({
+        user: userId,
+        orderedItems,
+        totalPrice,
+        discount,
+        finalAmount,
+        shippingAddress: {
+          name: address.name,
+          phone: address.phone,
+          landmark: address.landmark,
+          city: address.city,
+          state: address.state,
+          pincode: address.pincode,
+        },
+        status: "Pending",
+        couponApplied: false,
+        invoiceDate: new Date(),
+        platformFee,
+        shippingFee,
+        paymentMethod: "COD",
+        paymentStatus: "Pending"
+      });
+
+      await newOrder.save();
+
+      // decrement stock immediately for COD
+      for (const item of orderedItems) {
+        if (item.variant) {
+          await Variant.findByIdAndUpdate(item.variant, { $inc: { stock: -item.quantity } });
+        }
+      }
+
+      // clear cart
+      await Cart.updateOne({ userId }, { $set: { items: [] } });
+      res.locals.cartCount = 0;
+
+      return res.json({ success: true, orderId: newOrder._id, message: "Order placed with COD" });
+    }
+
+    // ----- Wallet payment -----
+    if (paymentMethod === "Wallet") {
+      let wallet = await Wallet.findOne({ userId });
+
+      if (!wallet || wallet.balance < finalAmount) {
+        return res.json({ success: false, message: "Insufficient wallet balance" });
+      }
+
+
+      if (wallet.balance < finalAmount) {
+        return res.json({ success: false, message: "Insufficient wallet balance" });
+      }
+
+      // Create order and mark paid
+      const newOrder = new Order({
+        user: userId,
+        orderedItems,
+        totalPrice,
+        discount,
+        finalAmount,
+        shippingAddress: {
+          name: address.name,
+          phone: address.phone,
+          landmark: address.landmark,
+          city: address.city,
+          state: address.state,
+          pincode: address.pincode,
+        },
+        status: "Ordered",
+        couponApplied: false,
+        invoiceDate: new Date(),
+        platformFee,
+        shippingFee,
+        paymentMethod: "Wallet",
+        paymentStatus: "Paid"
+      });
+
+      await newOrder.save();
+
+      // Deduct from wallet and log transaction
+      wallet.balance -= finalAmount;
+      wallet.transactions.push({
+        type: "debit",
+        amount: finalAmount,
+        reason: "Order Payment"
+      });
+      await wallet.save();
+
+      // decrement stock & clear cart
+      for (const item of orderedItems) {
+        if (item.variant) {
+          await Variant.findByIdAndUpdate(item.variant, { $inc: { stock: -item.quantity } });
+        }
+      }
+      await Cart.updateOne({ userId }, { $set: { items: [] } });
+      res.locals.cartCount = 0;
+
+      return res.json({ success: true, redirectUrl: "/orderplaced" });
+
+      // return res.json({ success: true, orderId: newOrder._id, message: "Order placed using wallet" });
+    }
+
+    // If paymentMethod is Razorpay or anything else return instruction to use Razorpay flow
+    return res.json({
+      success: true,
+      useRazorpay: true,
+      amount: finalAmount,
+      message: "Proceed to online payment",
+      // frontend will then call /payment/razorpay/create to create gateway order & pending order
+    });
+  } catch (err) {
+    console.error("placeOrder error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ------------------ 2) Create Razorpay order + create Pending DB order ------------------
+
+// POST /payment/razorpay/create
+const createRazorpayOrder = async (req, res) => {
+  try {
+    const userId = req.user ? req.user._id : req.session.user;
+    const { addressId } = req.body;
+
+    // build snapshot
+    const { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount, address, cart } =
+      await buildOrderSnapshot(userId, addressId);
+
+    // Create Razorpay order (amount in paise)
+    const rzpOrder = await razorpay.orders.create({
+      amount: Math.round(finalAmount * 100),
+      currency: "INR",
+      receipt: "rcpt_" + Date.now()
+    });
+
+    // Create our DB order with status Pending (to later mark Paid on verification)
+    const newOrder = new Order({
+      user: userId,
+      orderedItems,
+      totalPrice,
+      discount,
+      finalAmount,
+      shippingAddress: {
+        name: address.name,
+        phone: address.phone,
+        landmark: address.landmark,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode,
+      },
+      status: "Pending",
+      couponApplied: false,
+      invoiceDate: new Date(),
+      platformFee,
+      shippingFee,
+      paymentMethod: "Razorpay",
+      paymentStatus: "Pending",
+      // optional: store gateway order id
+      paymentGatewayOrderId: rzpOrder.id
+    });
+    await newOrder.save();
+
+    // Return required data to front-end
+    return res.json({
+      success: true,
+      key: process.env.RAZORPAY_KEY_ID,
+      amount: rzpOrder.amount,
+      currency: rzpOrder.currency,
+      razorpayOrderId: rzpOrder.id,
+      orderId: newOrder._id.toString()
+    });
+  } catch (err) {
+    console.error("createRazorpayOrder error:", err);
+    return res.status(500).json({ success: false, message: "Failed to initialize payment" });
+  }
+};
+
+// ------------------ 3) Verify Razorpay signature and finalize order ------------------
+
+// POST /payment/razorpay/verify
+const verifyRazorpayPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    // Fetch our pending order using DB _id (passed from frontend)
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.json({ success: false, redirectUrl: "/orders" });
+    }
+
+    if (expectedSignature === razorpay_signature) {
+      // ✅ Payment success
+      order.paymentStatus = "Paid";
+      order.status = "Ordered";
+      order.orderedItems.forEach(item => {
+        item.status = "Ordered";
+      });
+      await order.save();
+
+      // Deduct stock
+      for (const item of order.orderedItems) {
+        if (item.variant) {
+          await Variant.findByIdAndUpdate(item.variant, { $inc: { stock: -item.quantity } });
+        }
+      }
+
+      // Clear cart
+      await Cart.updateOne({ userId: order.user }, { $set: { items: [] } });
+
+      return res.json({ success: true, redirectUrl: "/orderplaced" });
+    } else {
+      // ❌ Payment failed
+      order.paymentStatus = "Failed";
+      order.status = "Order Not Placed";
+      order.orderedItems.forEach(item => {
+        item.status = "Order Not Placed";
+      });
+      await order.save();
+
+      await Cart.updateOne({ userId: order.user }, { $set: { items: [] } });
+
+      return res.json({ success: false, redirectUrl: `/order/failure/${order._id}` });
+    }
+  } catch (err) {
+    console.error("Error verifying Razorpay:", err);
+    return res.json({ success: false, redirectUrl: "/order/failure" });
+  }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// POST /payment/razorpay/retry
+const retryPayment = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    if (order.paymentStatus === "Paid") {
+      return res.status(400).json({ success: false, message: "Order already paid" });
+    }
+
+    // Create a new Razorpay order
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_SECRET
+    });
+
+    const options = {
+      amount: order.finalAmount * 100, // in paise
+      currency: "INR",
+      receipt: "rcpt_" + Date.now(),
+    };
+
+    const rzpOrder = await razorpay.orders.create(options);
+
+    // store latest rzp order id in DB for tracking
+    order.razorpayOrderId = rzpOrder.id;
+    order.paymentStatus = "Pending";
+    await order.save();
+
+    return res.json({ success: true, rzpOrder });
+  } catch (err) {
+    console.error("Retry payment error:", err);
+    return res.status(500).json({ success: false });
+  }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+const loadOrderFailure = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).populate("user");
+
+    if (!order) {
+      return res.redirect("/orders"); // fallback
+    }
+
+    res.render("orderFailure", { order, user: order.user });
+  } catch (err) {
+    console.error("Error loading failure page:", err);
+    res.redirect("/orders");
+  }
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// POST /payment/razorpay/failure
+const razorpayFailure = async (req, res) => {
+  try {
+    const { orderId, error } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false });
+
+    // mark failed
+    order.paymentStatus = "Failed";
+    order.status = "Order Not Placed";
+    order.orderedItems.forEach(item => {
+      item.status = "Order Not Placed";
+    });
+    await order.save();
+
+    await Cart.updateOne({ userId: order.user }, { $set: { items: [] } });
+
+    // DO NOT clear cart here — failed order means user might retry
+    // So cart should remain untouched (that’s why in your case it's not being cleared, which is correct design)
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("razorpayFailure error:", err);
+    return res.status(500).json({ success: false });
+  }
+};
+
+
 
 module.exports = {
   placeOrder,
@@ -425,5 +772,11 @@ module.exports = {
   cancelOrder,
   cancelItem,
   downloadInvoice,
-  returnItem
+  returnItem,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  retryPayment,
+  loadOrderFailure,
+  razorpayFailure
+
 };

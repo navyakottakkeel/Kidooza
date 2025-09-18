@@ -52,6 +52,56 @@
             background: #fff0ee;
             /* Light red on hover */
         }
+        .order-failure-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  background: #fff4f4;
+  border: 1px solid #f5c2c7;
+  border-left: 5px solid #dc3545; /* Red border */
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.failure-icon {
+  font-size: 22px;
+  color: #dc3545;
+  margin-top: 3px;
+}
+
+.failure-content h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #b02a37;
+  font-weight: 600;
+}
+
+.failure-content p {
+  margin: 6px 0 12px;
+  font-size: 14px;
+  color: #555;
+}
+
+.retry-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    color: #2874f0;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s ease;
+    width: 100%;
+    border-color: #2874f0;
+    border: 1px solid;
+    text-align: center;
+}
+
+
+.retry-btn:hover {
+  background-color: #96b9ee;
+}
+
     </style>
 
 
@@ -108,6 +158,25 @@
 
 
                         </div>
+
+                        <% if(order.status==="Order Not Placed" ) { %>
+
+
+                            <div class="order-failure-box">
+                                <div class="failure-icon">✘</div>
+                                <div class="failure-content">
+                                  <h4>Order not placed. Try ordering again</h4>
+                                  <p>
+                                    Due to an error with the payment, this order could not be placed.
+                                    Please place a new order.<br />
+                                    Payment was not successful. If money was deducted, please contact your bank.
+                                  </p>
+                                  <button id="retryBtn" class="retry-btn">Retry Payment</button>
+                                  <!-- <a href="/products" id="retryBtn" class="retry-btn">Buy Again</a> -->
+                                </div>
+                              </div>
+                              
+                            <% } %>
 
                     </div>
 
@@ -466,6 +535,80 @@ document.querySelectorAll(".return-item-btn").forEach(button => {
 
 
     </script>
+
+      <!-- Razorpay Script -->
+      <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+      <script>
+          document.getElementById("retryBtn").addEventListener("click", async () => {
+              const orderId = "<%= order._id %>"; // pass from EJS
+  
+              const res = await fetch("/payment/razorpay/retry", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ orderId })
+              });
+  
+              const data = await res.json();
+  
+              if (data.success) {
+                  const options = {
+                      key: "<%= process.env.RAZORPAY_KEY_ID %>",
+                      amount: data.rzpOrder.amount,
+                      currency: "INR",
+                      name: "Kidooza",
+                      description: "Retry Payment",
+                      order_id: data.rzpOrder.id,
+                      handler: async function (response) {
+                          try {
+                              // Verify payment with backend
+                              const verifyRes = await fetch("/payment/razorpay/verify", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                      orderId,
+                                      razorpay_payment_id: response.razorpay_payment_id,
+                                      razorpay_order_id: response.razorpay_order_id,
+                                      razorpay_signature: response.razorpay_signature
+                                  })
+                              });
+  
+                              const verifyData = await verifyRes.json();
+  
+                              // Redirect based on verification
+                              if (verifyData.success) {
+                                  window.location.href = "/orderplaced"; // ✅ success redirect
+                              } else {
+                                  window.location.href = `/order/failure/${orderId}`; // ❌ failure redirect
+                              }
+                          } catch (err) {
+                              console.error("Verify error:", err);
+                              window.location.href = `/order/failure/${orderId}`;
+                          }
+                      },
+                      theme: { color: "#3399cc" }
+                  };
+  
+                  const rzp = new Razorpay(options);
+                  rzp.on("payment.failed", function (response) {
+                      fetch("/payment/razorpay/failure", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                              orderId: orderId,
+                              error: response.error
+                          })
+                      }).finally(() => {
+                          // redirect user to failure page
+                          window.location.href = `/order/failure/${orderId}`;
+                      });
+                  });
+  
+                  rzp.open();
+              }
+          });
+      </script>
+  
 
 
 

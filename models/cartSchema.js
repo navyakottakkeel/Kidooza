@@ -30,6 +30,10 @@ const cartSchema = new Schema({
             total: {
                 type: Number,
                 required: true
+            },
+            createdAt: {            // ✅ track order of adding
+                type: Date,
+                default: Date.now
             }
         }
     ],

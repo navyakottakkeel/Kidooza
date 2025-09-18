@@ -30,6 +30,7 @@ const getWalletPage = async (req, res) => {
   }
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ✅ Add Money to Wallet (for testing/demo purpose)
 const addMoney = async (req, res) => {
@@ -57,6 +58,8 @@ const addMoney = async (req, res) => {
   }
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 // ✅ Deduct Money (on order, cancel, etc.)
 const deductMoney = async (userId, amount, reason) => {
   let wallet = await Wallet.findOne({ userId });
@@ -78,6 +81,8 @@ const deductMoney = async (userId, amount, reason) => {
   await wallet.save();
   return wallet;
 };
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ✅ Credit Money (on refund/return/cancel)
 const creditMoney = async (userId, amount, reason) => {

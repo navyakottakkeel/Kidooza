@@ -1,118 +1,376 @@
 <%- include("../../views/partials/user/header") %>
 
+  <style>
+    .discount-tag {
+      background-color: #5d8355;
+      color: #fff;
+      padding: 2px 8px;
+      font-size: 0.85rem;
+      border-radius: 5px;
+    }
+
+    .colour-box {
+      transition: transform 0.2s;
+    }
+
+    .colour-box:hover {
+      transform: scale(1.1);
+    }
+
+    .size-btn.active {
+      background: black !important;
+      color: white !important;
+    }
+  </style>
 
 
-
-    <div class="container-fluid fruite py-5" style="margin-top:180px ;">
-        <div class="container py-5">
-            <div class="tab-class text-center">
-                
-
-                <div class="tab-content">
-                    <div id="tab-all" class="tab-pane fade show p-0 active">
-                        <div class="row g-4">
-                            <% if (wishlistProducts && wishlistProducts.length> 0) { %>
-                                <% wishlistProducts.forEach(product=> { %>
-                                    <div class="row g-4">
-                                        <div class="col-lg-4 text-start">
-                                            <h1>My Wishlist</h1>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 col-lg-4 col-xl-3">
-                                        <div class="rounded position-relative fruite-item">
-                                            <div class="fruite-img">
-                                                <a href="/productDetail/<%= product._id %>">
-                                                    <img src="<%= product.variantId.productImage?.[0] || '/img/1.jpg' %>"
-                                                        class="img-fluid w-100 rounded-top" alt="">
-                                                </a>
+  <div class="container-fluid fruite py-5" style="margin-top:180px ;">
+    <div class="container py-5">
+      <div class="tab-class text-center">
 
 
-                                            </div>
-
-                                            <div class="border border-secondary border-top-0 rounded-bottom"
-                                                style="text-align: justify;padding: 10px">
-                                                <h4>
-                                                    <%= product.productName %>
-                                                </h4>
-                                                <p class="">
-                                                    <%= product.description %>
-                                                </p>
-                                                
-                                                <div class="d-flex justify-content-between flex-lg-wrap">
-
-                                                    <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice %>
-                                                        <span><s style="color:grey;font-size: small;">₹<%=
-                                                                    product.basePrice %></s> </span>
-                                                </p>
-
-                                                    <button
-                                                        class="btn border border-danger rounded-pill px-3 text-danger delete-wishlist"
-                                                        data-product-id="<%= product._id %>"
-                                                        data-variant-id="<%= product.variantId._id %>">
-                                                        <i class="fa fa-trash"></i>
-                                                    </button>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <% }) %>
-                                    <% } else { %>
-                                        <div class="empty-wishlist text-center my-5">
-                                          <img src="../img/emptywishlist.svg" 
-                                               alt="Empty Wishlist" 
-                                               class="img-fluid mb-4" 
-                                               style="max-width: 200px;">
-                                          
-                                          <h3 class="fw-bold">YOUR WISHLIST IS EMPTY</h3>
-                                          <p class="text-muted">
-                                            Add items that you like to your wishlist. Review them anytime and easily move them to the bag.
-                                          </p>
-                                      
-                                          <a href="/boys" class="btn btn-outline-primary rounded-pill px-4 mt-3">
-                                            CONTINUE SHOPPING
-                                          </a>
-                                        </div>
-                                      <% } %>
-                                      
-                        </div>
-                    </div>
+        <div class="tab-content">
+          <div id="tab-all" class="tab-pane fade show p-0 active">
+            <div class="row g-4">
+              <% if (wishlistProducts && wishlistProducts.length> 0) { %>
+                <div class="row g-4">
+                  <div class="col-lg-4 text-start">
+                    <h1>My Wishlist</h1>
+                  </div>
                 </div>
+                <% wishlistProducts.forEach(product=> { %>
+
+                  <div class="col-md-6 col-lg-4 col-xl-2">
+                    <div class="rounded position-relative fruite-item">
+                      <div class="fruite-img">
+                        <a href="/productDetail/<%= product._id %>">
+                          <img id="product-img-<%= product._id %>" src="<%= product.defaultImage %>"
+                            class="img-fluid w-100 rounded-top" alt="">
+                        </a>
+
+
+                      </div>
+
+                      <div class="border border-secondary border-top-0 rounded-bottom"
+                        style="text-align: justify;padding: 10px">
+                        <h5>
+                          <%= product.name %>
+                        </h5>
+                        <!-- <p class="text-truncate">
+                          <%= product.description %>
+                        </p> -->
+
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                          <% if (product.variantsByColour && product.variantsByColour.length> 0) { %>
+                            <% product.variantsByColour.forEach(v=> { %>
+                              <span class="colour-circle" style="width: 15px;height: 15px;
+                                                              border-radius: 15%;background-color:<%= v.colour %>;"
+                                data-product="<%= product._id %>" data-image="<%= v.image %>"
+                                data-colour="<%= v.colour %>" title="<%= v.colour %>">
+                              </span>
+                              <% }) %>
+                                <% } %>
+                        </div>
+
+                        <div class="d-flex justify-content-between flex-lg-wrap">
+
+                          <p class="text-dark fs-5 fw-bold mb-0">
+                            <span class="sale-price" style="font-size:medium">₹<%= product.salePrice.toLocaleString() %>
+                                </span>
+
+                            <s class="base-price" style="font-size:small">₹<%= product.basePrice.toLocaleString() %></s>
+                            <span class="discount-tag">
+                              <%= Math.round(((product.basePrice - product.salePrice) / product.basePrice) * 100) %>%
+                                OFF
+                            </span>
+                          </p>
+
+
+                        </div>
+
+                        <br>
+                        <div class="d-flex justify-content-between flex-lg-wrap">
+
+
+                          <button style="font-size: 0.8rem;"
+                            class="btn border border-success rounded-pill px-3 text-success add-to-cart"
+                            data-product-id="<%= product._id %>" data-colour="<%= product.colour %>">
+                            Add to Cart
+                          </button>
+
+
+                          <button style="font-size: 0.8rem;"
+                            class="btn border border-danger rounded-pill px-3 text-danger remove-wishlist"
+                            data-product-id="<%= product._id %>">
+                            <i class="fa fa-trash"></i>
+                          </button>
+
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <% }) %>
+                    <% } else { %>
+                      <div class="empty-wishlist text-center my-5">
+                        <img src="../img/emptywishlist.svg" alt="Empty Wishlist" class="img-fluid mb-4"
+                          style="max-width: 200px;">
+
+                        <h3 class="fw-bold">YOUR WISHLIST IS EMPTY</h3>
+                        <p class="text-muted">
+                          Add items that you like to your wishlist. Review them anytime and easily move them to the bag.
+                        </p>
+
+                        <a href="/boys" class="btn btn-outline-primary rounded-pill px-4 mt-3">
+                          CONTINUE SHOPPING
+                        </a>
+                      </div>
+                      <% } %>
+
             </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.delete-wishlist').forEach(button => {
-                button.addEventListener('click', async function () {
-                    const productId = this.dataset.productId;
-                    const variantId = this.dataset.variantId;
+  <!-- Variant Selection Modal -->
+  <div class="modal fade" id="variantModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-3">
+        <div class="modal-header">
+          <h5 class="modal-title">Select Variant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Product details -->
+          <div class="d-flex gap-3 mb-3">
+            <img id="variantProductImg" src="" alt=""
+              style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+            <div>
+              <h6 id="variantProductName" class="mb-1"></h6>
+              <p class="mb-0">
+                <span id="variantSalePrice" class="fw-bold text-success"></span>
+                <s id="variantBasePrice" class="text-muted small ms-2"></s>
+                <span id="variantDiscount" class="badge bg-success ms-2"></span>
+              </p>
+            </div>
+          </div>
 
-                    try {
-                        const res = await fetch(`/wishlist/${productId}/${variantId}`, {
-                            method: 'DELETE'
-                        });
+          <!-- Colour options -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Select Colour:</label>
+            <div id="variantColours" class="d-flex gap-2 flex-wrap"></div>
+          </div>
 
-                        const data = await res.json();
-                        if (data.success) {
-                            // Remove product card from DOM
-                            this.closest('.col-md-6, .col-lg-4, .col-xl-3').remove();
-                        } else {
-                            alert(data.message || 'Failed to remove');
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('Error removing from wishlist');
-                    }
-                });
+          <!-- Size options -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Select Size:</label>
+            <div id="variantSizes" class="d-flex gap-2 flex-wrap"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-success" id="confirmVariantAdd">Move to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      // delete button click
+      document.querySelectorAll(".remove-wishlist").forEach(btn => {
+        btn.addEventListener("click", async function () {
+          const productId = this.dataset.productId;
+
+          if (!productId) {
+            alert("Missing product info");
+            return;
+          }
+
+          fetch(`/wishlist/${productId}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId })
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                if (data.action === "removed") {
+                  const card = this.closest(".col-md-6, .col-lg-4, .col-xl-2");
+                  if (card) card.remove();
+                  Swal.fire({
+                    toast: true,
+                    position: "bottom-end",
+                    background: "#000",
+                    color: "#fff",
+                    icon: "info",
+                    title: "Removed from your Wishlist",
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+
+                  });
+                }
+              } else {
+                Swal.fire("Error", data.message || "Wishlist update failed", "error");
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              Swal.fire("Error", "Something went wrong", "error");
             });
         });
-    </script>
+      });
+
+
+
+      // ------------------- Colour circle switching -------------------
+
+      document.querySelectorAll(".colour-circle").forEach(circle => {
+        circle.addEventListener("click", function () {
+          const productId = this.dataset.product;
+          const image = this.dataset.image;
+          const colour = this.dataset.colour;
+
+
+          // Change main image
+          const imgTag = document.getElementById("product-img-" + productId);
+          if (imgTag) {
+            imgTag.src = image;
+          }
+
+          // Change product detail link
+          const link = imgTag.closest("a");
+          if (link) {
+            link.href = `/productDetail/${productId}?colour=${colour}`;
+          }
+
+          // Highlight selected circle
+          this.parentElement.querySelectorAll(".colour-circle")
+            .forEach(sib => sib.classList.remove("active"));
+          this.classList.add("active");
+        });
+
+      });
+
+      //...........................................................................
+
+
+      // Handle "Add to Cart" click from wishlist
+      document.querySelectorAll(".add-to-cart").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const productId = btn.dataset.productId;
+          document.getElementById("variantModal").dataset.productId = productId;
+
+
+          // Fetch variants
+          const res = await fetch(`/product/${productId}/variants`);
+          const data = await res.json();
+
+          if (!data.success) {
+            alert("No variants available");
+            return;
+          }
+
+          // Fill product info (dummy example, replace with real product details)
+          const productCard = btn.closest(".fruite-item");
+          document.getElementById("variantProductImg").src = productCard.querySelector("img").src;
+          document.getElementById("variantProductName").innerText = productCard.querySelector("h5").innerText;
+          document.getElementById("variantSalePrice").innerText = productCard.querySelector(".sale-price").innerText;
+          document.getElementById("variantBasePrice").innerText = productCard.querySelector(".base-price").innerText;
+          document.getElementById("variantDiscount").innerText = productCard.querySelector(".discount-tag").innerText;
+
+          // Fill colour options
+          const coloursDiv = document.getElementById("variantColours");
+          coloursDiv.innerHTML = "";
+          Object.keys(data.groupedByColour).forEach(colour => {
+            const div = document.createElement("div");
+            div.className = "colour-box";
+            div.style = `width:30px;height:30px;border-radius:50%;cursor:pointer;background:${colour};border:2px solid #ccc;`;
+            div.dataset.colour = colour;
+            div.onclick = () => {
+              document.querySelectorAll("#variantColours .colour-box").forEach(c => c.style.border = "2px solid #ccc");
+              div.style.border = "3px solid black";
+
+              // Load sizes for this colour
+              const sizes = data.groupedByColour[colour];
+              const sizeDiv = document.getElementById("variantSizes");
+              sizeDiv.innerHTML = "";
+              sizes.forEach(s => {
+                const btn = document.createElement("button");
+                btn.className = "btn btn-outline-dark size-btn";
+                btn.innerText = s.size;
+                btn.dataset.id = s._id;
+                btn.onclick = () => {
+                  document.querySelectorAll("#variantSizes .size-btn").forEach(b => b.classList.remove("active"));
+                  btn.classList.add("active");
+                  document.getElementById("confirmVariantAdd").dataset.variantId = s._id;
+                };
+                sizeDiv.appendChild(btn);
+              });
+            };
+            coloursDiv.appendChild(div);
+          });
+
+          // Show modal
+          new bootstrap.Modal(document.getElementById("variantModal")).show();
+        });
+      });
+
+      // Confirm add to cart
+      document.getElementById("confirmVariantAdd").addEventListener("click", async function () {
+        const variantId = this.dataset.variantId;
+        if (!variantId) {
+          alert("Please select colour and size");
+          return;
+        }
+
+        const productId = document.getElementById("variantModal").dataset.productId;
+        const resp = await fetch("/cart/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, variantId, quantity: 1 })
+        });
+        const result = await resp.json();
+
+        if (result.error) {
+          alert(result.error);
+        } else {
+          bootstrap.Modal.getInstance(document.getElementById("variantModal")).hide();
+          // ✅ Remove from wishlist DOM
+          const card = document.querySelector(`[data-product-id='${productId}']`)?.closest(".col-md-6, .col-lg-4, .col-xl-2");
+          if (card) card.remove();
+
+          Swal.fire({
+            toast: true,
+            position: "bottom-end",
+            background: "#000",
+            color: "#fff",
+            icon: "success",
+            title: "Moved to cart",
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true
+          });
+        }
+      });
 
 
 
 
-    <%- include("../../views/partials/user/footer") %>
+    });
+
+  </script>
+
+
+  <%- include("../../views/partials/user/footer") %>

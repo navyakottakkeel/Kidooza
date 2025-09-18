@@ -1,0 +1,98 @@
+<%- include("../../views/partials/user/header") %>
+
+    <div class="container text-center" style="margin-top:180px; max-width:600px;">
+        <!-- Failure Illustration -->
+        <img src="/img/failure.webp" alt="Payment Failed" style="width:200px; margin-bottom:20px;">
+
+        <!-- Failure Message -->
+        <h2 class="text-danger">Payment Failed!</h2>
+        <p>Your order <strong>
+                <%= order._id %>
+            </strong> could not be processed because the payment was unsuccessful.</p>
+        <p>Status: <span class="badge bg-danger">
+                <%= order.status %>
+            </span></p>
+
+        <!-- Retry + Orders Buttons -->
+        <div style="margin-top:30px;">
+            <button id="retryBtn" class="btn btn-primary me-2">Retry Payment</button>
+
+            <a href="/orders" class="btn btn-secondary">Go to Orders</a>
+        </div>
+    </div>
+
+    <!-- Razorpay Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script>
+        document.getElementById("retryBtn").addEventListener("click", async () => {
+            const orderId = "<%= order._id %>"; // pass from EJS
+
+            const res = await fetch("/payment/razorpay/retry", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                const options = {
+                    key: "<%= process.env.RAZORPAY_KEY_ID %>",
+                    amount: data.rzpOrder.amount,
+                    currency: "INR",
+                    name: "Kidooza",
+                    description: "Retry Payment",
+                    order_id: data.rzpOrder.id,
+                    handler: async function (response) {
+                        try {
+                            // Verify payment with backend
+                            const verifyRes = await fetch("/payment/razorpay/verify", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    orderId,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            const verifyData = await verifyRes.json();
+
+                            // Redirect based on verification
+                            if (verifyData.success) {
+                                window.location.href = "/orderplaced"; // ✅ success redirect
+                            } else {
+                                window.location.href = `/order/failure/${orderId}`; // ❌ failure redirect
+                            }
+                        } catch (err) {
+                            console.error("Verify error:", err);
+                            window.location.href = `/order/failure/${orderId}`;
+                        }
+                    },
+                    theme: { color: "#3399cc" }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on("payment.failed", function (response) {
+                    fetch("/payment/razorpay/failure", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            orderId: orderId,
+                            error: response.error
+                        })
+                    }).finally(() => {
+                        // redirect user to failure page
+                        window.location.href = `/order/failure/${orderId}`;
+                    });
+                });
+
+                rzp.open();
+            }
+        });
+    </script>
+
+
+    <%- include("../../views/partials/user/footer") %>

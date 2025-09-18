@@ -4,6 +4,7 @@ const Variant = require('../../models/variantSchema');
 const Cart = require('../../models/cartSchema');
 const Wishlist = require('../../models/wishlistSchema'); 
 const Address = require('../../models/addressSchema');
+const Wallet = require("../../models/walletSchema");
 
 
 
@@ -86,6 +87,7 @@ const getCheckoutPage = async (req, res) => {
     const shippingFee = totalItemPrice > 599 ? 0 : 30;
     const total = totalItemPrice - itemDiscount + platformFee + shippingFee;
 
+    const wallet = await Wallet.findOne({ userId });
 
     res.render("checkout", {
       defaultAddress,
@@ -95,7 +97,10 @@ const getCheckoutPage = async (req, res) => {
       itemDiscount,
       platformFee,
       shippingFee,
-      total
+      total,
+      user,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      walletBalance: wallet ? wallet.balance : 0
     });
 
   } catch (err) {

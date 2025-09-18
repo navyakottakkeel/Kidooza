@@ -64,6 +64,7 @@ router.get('/profile-change-password',profileController.loadchangePassword);
 router.post('/profile-change-password',profileController.changePassword);
 
 
+
 router.get('/address',addressController.loadAddressPage);
 router.post("/address/save",addressController.saveAddress);
 router.patch("/address/:id/default", addressController.setDefaultAddress);
@@ -73,7 +74,11 @@ router.delete('/address/:id', addressController.deleteAddress);
 
 router.post("/wishlist/add", wishlistController.addToWishlist);
 router.get('/wishlist', wishlistController.getWishlistPage);
-router.delete('/wishlist/:productId/:variantId', wishlistController.removeFromWishlist);
+router.delete('/wishlist/:productId', wishlistController.removeFromWishlist);
+router.post("/wishlist/toggle", wishlistController.toggleWishlist);
+router.get("/product/:id/variants", wishlistController.getVariantsByProduct);
+
+
 
 router.get('/cart', cartController.getCartPage);
 router.post('/cart/update-quantity', cartController.updateQuantity);
@@ -95,6 +100,14 @@ router.post("/order/:orderId/return-item/:itemId", orderController.returnItem);
 router.get("/wallet", walletController.getWalletPage);
 router.post("/wallet/add", walletController.addMoney);
 
+// Razorpay create + verify
+router.post("/payment/razorpay/create",orderController.createRazorpayOrder);
+router.post("/payment/razorpay/verify",orderController.verifyRazorpayPayment);
+
+// Retry payment
+router.post("/payment/razorpay/retry", orderController.retryPayment);
+router.get("/order/failure/:orderId", orderController.loadOrderFailure);
+router.post("/payment/razorpay/failure", orderController.razorpayFailure);
 
 
 

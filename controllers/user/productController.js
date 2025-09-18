@@ -66,7 +66,11 @@ const loadAllProducts = async (req, res) => {
 const loadBoysPage = async (req, res) => {
     try {
 
-        
+        const userId = req.user ? req.user._id : req.session.user;
+
+        //const {colour } = req.query;
+        //console.log("Selected colour:", colour);
+
         let user = null;
         if (req.user) {
             user = req.user;
@@ -77,17 +81,18 @@ const loadBoysPage = async (req, res) => {
         productQuery = { isBlock: false }
 
         const products = await Product.find(productQuery);
-
+        
         let wishlistItems = [];
         if (user) {
-            const wishlist = await Wishlist.findOne({ userId: user._id });
+            const wishlist = await Wishlist.findOne({ userId }).lean();
             if (wishlist) {
                 wishlistItems = wishlist.items.map(item => ({
-                    productId: item.productId.toString(),
-                    variantId: item.variantId.toString()
+                    productId: item.productId ? item.productId.toString() : null,
+                    colour: item.colour || null  // ✅ Now we store colour instead of variantId
                 }));
             }
         }
+
 
 
         const perPage = 6;
@@ -107,7 +112,7 @@ const loadBoysPage = async (req, res) => {
         sort = sort.trim();
 
         if (Array.isArray(search)) {
-            search = search.filter(s => s.trim() !== '')[0] || ''; 
+            search = search.filter(s => s.trim() !== '')[0] || '';
         }
 
 
@@ -147,23 +152,32 @@ const loadBoysPage = async (req, res) => {
         const selectedColours = req.query.colour ? (Array.isArray(req.query.colour) ? req.query.colour : [req.query.colour]) : [];
         const selectedSizes = req.query.size ? (Array.isArray(req.query.size) ? req.query.size : [req.query.size]) : [];
 
-        let variantFilter = {};
-        if (selectedColours.length > 0) {
-          variantFilter.colour = { $in: selectedColours };
+        let variantFilteredIds = null;
+        let variantProductIds = null;
+
+
+        // Apply variant filters
+        if (selectedColours.length > 0 || selectedSizes.length > 0) {
+            const variantFilter = {};
+
+            if (selectedColours.length > 0) {
+                variantFilter.colour = { $in: selectedColours };
+            }
+
+            if (selectedSizes.length > 0) {
+                variantFilter.size = { $in: selectedSizes };
+            }
+
+            const variantProductIds = await Variant.distinct("productId", variantFilter);
+
+            if (variantProductIds.length > 0) {
+                filter._id = { $in: variantProductIds };
+            } else {
+                filter._id = { $in: [] }; // no matches → return empty result
+            }
         }
-        if (selectedSizes.length > 0) {
-          variantFilter.size = { $in: selectedSizes };
-        }
-        
-        const variantProductIds = await Variant.find(variantFilter).distinct("productId");
-        
-        // If no matches
-        if (variantProductIds.length === 0) {
-          filter._id = { $in: [] };
-        } else {
-          filter._id = { $in: variantProductIds };
-        }
-        
+
+
 
         // Price filter
         if (!isNaN(minPrice) || !isNaN(maxPrice)) {
@@ -172,7 +186,18 @@ const loadBoysPage = async (req, res) => {
             if (!isNaN(maxPrice)) filter.salePrice.$lte = parseInt(maxPrice);
         }
 
-       
+
+        // 🔹 Ensure product has at least one variant
+        const productsWithVariants = await Variant.distinct("productId");
+
+        if (filter._id && filter._id.$in) {
+            // keep only products that both match colour/size AND have variants
+            filter._id = { $in: filter._id.$in.filter(id => productsWithVariants.some(vId => vId.toString() === id.toString())) };
+        } else {
+            // no colour/size filter → just ensure they have variants
+            filter._id = { $in: productsWithVariants };
+        }
+
         // Sorting
         let sortOption = {};
         switch (sort) {
@@ -204,11 +229,48 @@ const loadBoysPage = async (req, res) => {
             .limit(perPage);
 
 
-        // Attach defaultVariantId
         for (let product of allProducts) {
-            const variant = await Variant.findOne({ productId: product._id }).lean();
-            product.defaultVariantId = variant ? variant._id : null;
+            const variants = await Variant.find({ productId: product._id }).lean();
+
+            const groupedByColour = {};
+
+            variants.forEach(v => {
+                if (!groupedByColour[v.colour]) {
+                    groupedByColour[v.colour] = {
+                        colour: v.colour,
+                        image: v.productImage[0], // default image for this colour
+                        sizes: []
+                    };
+                }
+            
+                groupedByColour[v.colour].sizes.push({
+                    id: v._id,
+                    size: v.size,
+                    stock: v.stock,
+                    image: v.productImage[0]
+                });
+            });
+            
+            product.variantsByColour = Object.values(groupedByColour);
+            
+            // pick default image from first colour
+            if (product.variantsByColour.length > 0) {
+                product.defaultImage = product.variantsByColour[0].image;
+            }
+            
+            // ✅ check if *any variant of first colour* is in wishlist
+            if (req.user && product.variantsByColour[0].sizes.length > 0) {
+                const wishlistItem = await Wishlist.findOne({
+                    userId: req.user._id,
+                    "items.variantId": product.variantsByColour[0].sizes[0].id
+                });
+            
+                product.inWishlist = !!wishlistItem;
+            }
+            
         }
+
+
 
 
         const categories = await Category.find({ isDeleted: false });
@@ -258,7 +320,7 @@ const loadBoysPage = async (req, res) => {
 
     } catch (error) {
         console.error("Error loading boys page:", error.message);
-        res.status(500).send("Server error");
+        res.status(500).send("Server error", error);
     }
 };
 
@@ -297,7 +359,7 @@ const loadNewArrivals = async (req, res) => {
             );
         });
 
-       
+
         res.locals.user = user;
 
         res.render("new-arrivals", {
@@ -319,6 +381,9 @@ const loadNewArrivals = async (req, res) => {
 
 const loadProductDetail = async (req, res) => {
     try {
+
+        const userId = req.user ? req.user._id : req.session.user;
+
         let user = null;
         if (req.user) {
             user = req.user;
@@ -326,14 +391,16 @@ const loadProductDetail = async (req, res) => {
             user = await User.findById(req.session.user);
         }
 
+        res.locals.user = user;
+
 
         let wishlistItems = [];
         if (user) {
-            const wishlist = await Wishlist.findOne({ userId: user._id });
+            const wishlist = await Wishlist.findOne({ userId });
             if (wishlist) {
                 wishlistItems = wishlist.items.map(item => ({
-                    productId: item.productId.toString(),
-                    variantId: item.variantId.toString()
+                    productId: item.productId ? item.productId.toString() : null,
+                    variantId: item.variantId ? item.variantId.toString() : null
                 }));
             }
         }
@@ -355,7 +422,6 @@ const loadProductDetail = async (req, res) => {
             return res.status(404).send("Product not found");
         }
 
-        res.locals.user = user;
 
 
         const originalPrice = product.basePrice;
@@ -387,10 +453,6 @@ const loadProductDetail = async (req, res) => {
         res.status(500).send("Server error");
     }
 };
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 

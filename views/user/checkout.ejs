@@ -129,7 +129,8 @@
                                             <% } %>
 
                                                 <!-- Add New Address -->
-                                                <button id="addNewAddressBtn" class="btn btn-outline-success mt-3">+ Add
+                                                <button id="addNewAddressBtn" class="btn btn-outline-success mt-3">+
+                                                    Add
                                                     New Address</button>
                 </div>
             </div>
@@ -202,7 +203,7 @@
                                 <input class="form-check-input" type="radio" name="paymentMethod" id="razorpay"
                                     value="Razorpay">
                                 <label class="form-check-label" for="razorpay">
-                                    Razorpay / UPI / Card / Net Banking
+                                    Razorpay ( UPI / Credit / Debit card)
                                 </label>
                             </div>
                             <div class="form-check mb-3">
@@ -214,7 +215,8 @@
                             </div>
 
 
-                            <button id="placeOrderBtn" class="btn btn-danger w-100 mt-3">CONTINUE</button>
+                            <button id="placeOrderBtn" type="button" onclick="handlePlaceOrder()"
+                                class="btn btn-danger w-100 mt-3">CONTINUE</button>
                 </div>
             </div>
         </div>
@@ -367,25 +369,25 @@
                         };
 
 
-                        
-    if (!data.name || !data.city || !data.state || !data.pincode || !data.phone) {
-        Swal.showValidationMessage("Please fill in all required fields (Name, City, State, Pincode, Phone).");
-        return false;
-    }
-    if (!/^\d{6}$/.test(data.pincode)) {
-        Swal.showValidationMessage("Pincode must be a 6-digit number.");
-        return false;
-    }
-    if (!/^\d{10}$/.test(data.phone)) {
-        Swal.showValidationMessage("Phone number must be 10 digits.");
-        return false;
-    }
-    if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
-        Swal.showValidationMessage("Alternate phone must be 10 digits.");
-        return false;
-    }
 
-    
+                        if (!data.name || !data.city || !data.state || !data.pincode || !data.phone) {
+                            Swal.showValidationMessage("Please fill in all required fields (Name, City, State, Pincode, Phone).");
+                            return false;
+                        }
+                        if (!/^\d{6}$/.test(data.pincode)) {
+                            Swal.showValidationMessage("Pincode must be a 6-digit number.");
+                            return false;
+                        }
+                        if (!/^\d{10}$/.test(data.phone)) {
+                            Swal.showValidationMessage("Phone number must be 10 digits.");
+                            return false;
+                        }
+                        if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
+                            Swal.showValidationMessage("Alternate phone must be 10 digits.");
+                            return false;
+                        }
+
+
                         return fetch(`/address/${id}`, {
                             method: "PATCH",  // ✅ updated for your route
                             headers: { "Content-Type": "application/json" },
@@ -433,45 +435,181 @@
         }
 
 
-        ///////////////////////////////////////////////////////////////////////////////////////
 
-
-        document.getElementById("placeOrderBtn").addEventListener("click", () => {
-            const selectedAddress = document.querySelector("input[name='address']:checked");
-            const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
-
-            if (!selectedAddress) {
-                Swal.fire("Error", "Please select a delivery address", "warning");
-                return;
-            }
-            if (!selectedPayment) {
-                Swal.fire("Error", "Please select a payment method", "warning");
-                return;
-            }
-
-            const data = {
-                addressId: selectedAddress.value,
-                paymentMethod: selectedPayment.value
-            };
-
-            fetch("/order/place", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            }).then(res => res.json())
-                .then(result => {
-                    if (result.success) {
-                        Swal.fire("Success", "Order placed successfully!", "success")
-                            .then(() => window.location.href = "/orderplaced");
-                    } else {
-                        Swal.fire("Error", result.message || "Failed to place order", "error");
-                    }
-                });
-        });
-
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     </script>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script>
+        (function () {
+            // total, razorpayKeyId, walletBalance are rendered into the template by backend:
+            // <%= total %>, <%= razorpayKeyId %>, <%= user?.walletBalance || 0 %>
+
+            const totalAmount = Number(<%= total %> || 0); // total in ₹
+            const razorpayKeyId = "<%= razorpayKeyId %>";
+            const walletBalance = Number(<%= walletBalance %>);
+
+            // Disable COD if total <= 1000 (your rule)
+            window.addEventListener('DOMContentLoaded', () => {
+                const codInput = document.getElementById("cod");
+                const codLabel = codInput?.closest("label") || null;
+                if (codInput) {
+                    if (!(totalAmount > 1000)) {
+                        codInput.disabled = true;
+                        // optionally show tooltip/text
+                        const note = document.createElement("div");
+                        note.className = "text-muted small";
+                        note.innerText = "COD available only for orders above ₹1000";
+                        codInput.parentElement.appendChild(note);
+                    }
+                }
+
+                // If wallet balance insufficient, show note
+                if (walletBalance < totalAmount) {
+                    const walletInput = document.getElementById("wallet");
+                    if (walletInput) {
+                        const note = document.createElement("div");
+                        note.className = "text-muted small";
+                        note.innerText = `Wallet balance ₹${walletBalance.toFixed(2)} — insufficient for this order`;
+                        walletInput.parentElement.appendChild(note);
+                    }
+                } else {
+                    const walletInput = document.getElementById("wallet");
+                    if (walletInput) {
+                        const note = document.createElement("div");
+                        note.className = "text-muted small";
+                        note.innerText = `Wallet balance ₹${walletBalance.toFixed(2)}`;
+                        walletInput.parentElement.appendChild(note);
+                    }
+                }
+            });
+
+            // Main click handler
+            document.getElementById("placeOrderBtn").addEventListener("click", async () => {
+                const selectedAddress = document.querySelector("input[name='address']:checked");
+                const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
+
+                if (!selectedAddress) {
+                    Swal.fire("Error", "Please select a delivery address", "warning");
+                    return;
+                }
+                if (!selectedPayment) {
+                    Swal.fire("Error", "Please select a payment method", "warning");
+                    return;
+                }
+
+                const addressId = selectedAddress.value;
+                const paymentMethod = selectedPayment.value;
+
+                // 1) Call /order/place — backend will either finalize for COD/Wallet or instruct to use Razorpay
+                try {
+                    const placeRes = await fetch("/order/place", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ addressId, paymentMethod })
+                    });
+                    const placeData = await placeRes.json();
+
+                    if (!placeData.success) {
+                        Swal.fire("Error", placeData.message || "Failed to place order", "error");
+                        return;
+                    }
+
+                    // If backend returned useRazorpay -> proceed to online payment flow
+                    if (placeData.useRazorpay) {
+                        // call create Razorpay order which also creates a pending DB order and returns key + orderId
+                        const initRes = await fetch("/payment/razorpay/create", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ addressId })
+                        });
+                        const init = await initRes.json();
+                        if (!init.success) {
+                            Swal.fire("Error", init.message || "Failed to initialize payment", "error");
+                            return;
+                        }
+
+                        // Razorpay options
+                        const options = {
+                            key: init.key || razorpayKeyId,
+                            amount: init.amount, // in paise
+                            currency: init.currency || "INR",
+                            name: "KIDOOZA Boys Fashion",
+                            description: "Order Payment",
+                            order_id: init.razorpayOrderId,
+                            handler: async function (response) {
+                                // send response to server to verify & finalize
+                                const verifyRes = await fetch("/payment/razorpay/verify", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        orderId: init.orderId
+                                    })
+                                });
+                                const verifyData = await verifyRes.json();
+                                if (verifyData.success) {
+                                    Swal.fire("Payment Success", "Your order is confirmed.", "success")
+                                        .then(() => window.location.href = verifyData.redirectUrl);
+                                } else {
+                                    window.location.href = `/order/failure/${init.orderId}`;
+
+
+                                    //Swal.fire("Payment Failed", verifyData.message || "Verification failed", "error");
+                                }
+                            },
+                            prefill: {
+                                // optional: pass logged in user info if available
+                                // name: "<%= user?.name || '' %>"
+                            },
+                            theme: { color: "#F37254" }
+                        };
+
+                        const rzp = new Razorpay(options);
+                        rzp.on("payment.failed", function (response) {
+                            fetch("/payment/razorpay/failure", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    orderId: init.orderId,
+                                    error: response.error
+                                })
+                            }).finally(() => {
+                                // redirect user to failure page
+                                window.location.href = `/order/failure/${init.orderId}`;
+                            });
+                        });
+
+                        rzp.open();
+
+                    } else {
+                        // COD or Wallet finished server-side; we can redirect to success page
+                        if (placeData.success) {
+                            Swal.fire("Success", placeData.message || "Order placed successfully", "success")
+                                .then(() => {
+                                    window.location.href = "/orderplaced";
+                                });
+                        } else {
+                            Swal.fire("Error", placeData.message || "Something went wrong", "error");
+                        }
+
+                    }
+                } catch (err) {
+                    console.error("Place order error:", err);
+                    Swal.fire("Error", "Something went wrong. Try again.", err);
+                }
+            });
+        })();
+
+
+    </script>
+
+
 
 
 

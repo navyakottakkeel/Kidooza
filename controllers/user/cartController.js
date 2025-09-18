@@ -84,7 +84,7 @@ const addToCart = async (req, res) => {
         // ✅ Remove from wishlist if exists
         await Wishlist.updateOne(
             { userId },
-            { $pull: { items: { productId, ...(variantId ? { variantId: variantId } : {}) } } }
+            { $pull: { items: { productId } } }
         );
 
 
@@ -140,6 +140,9 @@ const getCartPage = async (req, res) => {
                 total: 0,
                 soldOutItems : 0
             });
+        }else{
+            cart.items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
         }
 
         let totalItemPrice = 0;
