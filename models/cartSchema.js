@@ -14,9 +14,9 @@ const cartSchema = new Schema({
                 ref: "Product",
                 required: true
             },
-            varientId: {
+            variantId: {
                 type: Schema.Types.ObjectId,
-                ref: "Varient" 
+                ref: "Variant" 
             },
             quantity: {
                 type: Number,
@@ -30,6 +30,10 @@ const cartSchema = new Schema({
             total: {
                 type: Number,
                 required: true
+            },
+            createdAt: {            // ✅ track order of adding
+                type: Date,
+                default: Date.now
             }
         }
     ],

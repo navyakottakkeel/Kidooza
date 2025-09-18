@@ -50,12 +50,15 @@ const addCategory = async (req, res) => {
             return res.redirect('/admin/category?msg=Description cannot be empty');
         }
 
-        const exists = await Category.findOne({ name, isDeleted: false });
+        const exists = await Category.findOne({ 
+            name: { $regex: new RegExp("^" + name + "$", "i") }, 
+            isDeleted: false 
+        });
         if (exists) {
             return res.redirect('/admin/category?msg=Category already exists');
         }
 
-        const newCat = new Category({ name,descriptio });
+        const newCat = new Category({ name,description });
         await newCat.save();
         res.redirect('/admin/category?msg=Category added successfully');
     } catch (err) {

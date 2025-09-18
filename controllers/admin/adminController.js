@@ -22,7 +22,7 @@ const login = async (req,res) => {
         if(admin){
             const passwordMatch = await bcrypt.compare(password,admin.password);
             if(passwordMatch){
-                req.session.admin = true;
+                req.session.admin = admin._id;   // after successful login
                 return res.redirect("/admin/dashboard");
             }else{
                 return res.render("admin-login", { message: "Password mismatch" });

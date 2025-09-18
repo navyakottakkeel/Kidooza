@@ -10,6 +10,7 @@
     <meta content="" name="description">
 
     <!-- Google Web Fonts -->
+    <link rel="icon" type="image/png" href="img/logo.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -131,7 +132,7 @@
                             <a href="/cart" class="position-relative me-4 my-auto">
                                 <i class="fa fa-shopping-cart fa-2x"></i>
                                 <% if (cartCount > 0) { %>
-                                    <span
+                                    <span id="cart-count"
                                         class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
                                         style="top: -5px; left: 15px; height: 20px; min-width: 20px; font-size: 0.8rem;">
                                         <%= cartCount %>

@@ -334,25 +334,28 @@
 }
 
 .wishlist-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background-color: white;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: white;
       border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s ease-in-out;
+      transition: all 0.2s ease;
     }
 
     .wishlist-btn i {
-      font-size: 1.2rem;
-      color: #dc3545
+      color: #555;
+      font-size: 18px;
     }
 
     .wishlist-btn.active {
-      background-color: #dc3545;
+      background: red;
     }
 
     .wishlist-btn.active i {
@@ -396,18 +399,22 @@
                         <img id="mainImage" src="<%= product.productImage[0] %>" class="zoom-image" alt="Product Image" />
                         <div class="zoom-lens" id="zoomLens"></div>
 
-                        <% 
-                        const isWishlistedMain = wishlistItems.some(w =>
-                            w.productId === product._id.toString() &&
-                            w.variantId === (product.defaultVariantId ? product.defaultVariantId.toString() : "")
-                        );
-                    %>
-                    <button id="wishlistMainBtn"
-                        class="wishlist-btn position-absolute top-0 end-0 m-2 <%= isWishlistedMain ? 'active' : '' %>"
+                        <% const isWishlisted=wishlistItems.some( item=> item.productId.toString() ===
+                                  product._id.toString() 
+                                  ); %>
+
+                                  <button class="wishlist-btn position-absolute top-0 end-0 m-2 <%= isWishlisted ? 'active' : '' %>"
+                                    data-product-id="<%= product._id %>" data-colour=" ">
+                                    <i class="fa fa-heart"></i>
+                                  </button>
+                                  
+
+                    <!-- <button id="wishlistMainBtn"
+                        class="wishlist-btn position-absolute top-0 end-0 m-2 <%= isWishlisted ? 'active' : '' %>"
                         data-product-id="<%= product._id %>"
-                        data-variant-id="">
+                        data-variant-id=""  
                         <i class="fa fa-heart"></i>
-                    </button>
+                    </button> -->
 
 
                       </div>
@@ -481,7 +488,7 @@
           <div class="cart-actions">
             <form id="addToCartForm">
                 <input type="hidden" name="productId" value="<%= product._id %>">
-                <input type="hidden" name="varientId" id="variantIdInput" value="">
+                <input type="hidden" name="variantId" id="variantIdInput" value="">
                 <div class="quantity-selector">
                   <button type="button" id="qty-decrease">-</button>
                   <span id="quantityDisplay">1</span>
@@ -560,7 +567,8 @@
   document.querySelectorAll('.wishlist-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const productId = this.dataset.productId;
-      const variantId = this.dataset.variantId;
+      //const variantId = this.dataset.variantId;
+      const colour = this.dataset.colour;
 
       // Check if user is logged in (server will pass this in res.locals.user)
       const isLoggedIn = <%= user ? 'true' : 'false' %>;
@@ -583,24 +591,54 @@
         return; // Stop here if not logged in
       }
 
-      // If logged in → proceed to add/remove from wishlist
-      fetch('/wishlist/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, variantId })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            if (data.action === "added") {
-              this.classList.add('active');
+            // Toggle wishlist
+            fetch(`/wishlist/toggle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, colour })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              if (data.action === "added") {
+                this.classList.add('active');
+                Swal.fire({
+                  toast: true,
+                  position: "bottom-end",
+                  background: "#000",
+                  color: "#fff",
+                  icon: "success",
+                  title: "Added to your Wishlist",
+                  showConfirmButton: false,
+                  timer: 4000,
+                  timerProgressBar: true,
+                  customClass: {
+                    popup: 'swal-toast-dark'  // optional for more custom CSS
+                  }
+                });
+              } else if (data.action === "removed") {
+                this.classList.remove('active');
+                Swal.fire({
+                  toast: true,
+                  position: "bottom-end",
+                  background: "#000",
+                  color: "#fff",
+                  icon: "info",
+                  title: "Removed from your Wishlist",
+                  showConfirmButton: false,
+                  timer: 4000,
+                  timerProgressBar: true,
+                  
+                });
+              }
             } else {
-              this.classList.remove('active');
+              Swal.fire("Error", data.message || "Wishlist update failed", "error");
             }
-          } else {
-            alert(data.message || 'Wishlist update failed');
-          }
-        });
+          })
+          .catch(err => {
+            console.error(err);
+            Swal.fire("Error", "Something went wrong", "error");
+          });
     });
   });
 
@@ -615,7 +653,7 @@ document.getElementById('addToCartForm').addEventListener('submit', (e) => {
     e.preventDefault(); // ⛔ Prevent page reload
 
     const productId = "<%= product._id %>";
-    const varientId = findVariant(
+    const variantId = findVariant(
         document.getElementById('selectedSize').value,
         document.getElementById('selectedColour').value
     )?._id || null;
@@ -626,7 +664,7 @@ document.getElementById('addToCartForm').addEventListener('submit', (e) => {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ productId, varientId, quantity })
+        body: JSON.stringify({ productId, variantId, quantity })
     })
     .then(async res => {
     const data = await res.json();
@@ -842,15 +880,9 @@ window.addEventListener('DOMContentLoaded', () => {
   updateStockDisplay(variant ? variant.stock : 0);
   updatePriceAndDiscount(variant);
   updateImagesForColour(defaultColour);
-});
 
-if (variant) {
-    updateWishlistButton(variant._id);
-  }
 
-/////////////////////////////////////////////////////////////////////////////////////
-
-const zoomContainer = document.querySelector('.zoom-container');
+  const zoomContainer = document.querySelector('.zoom-container');
   const mainImage = document.getElementById('mainImage');
   const zoomLens = document.getElementById('zoomLens');
 
@@ -884,6 +916,18 @@ const zoomContainer = document.querySelector('.zoom-container');
   mainImage.addEventListener('mouseleave', () => {
     zoomLens.style.visibility = 'hidden';
   });
+
+
+  
+});
+
+if (variant) {
+    updateWishlistButton(variant._id);
+  }
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 

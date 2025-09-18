@@ -1,0 +1,97 @@
+<%-include("../../views/partials/admin/main") %>
+
+<div class="container-fluid py-4">
+  <h3 class="mb-3">Order Management</h3>
+
+  <!-- Search / Filter / Sort -->
+  <form class="row g-2 mb-3" action="/admin/orders" method="GET">
+    <div class="col-md-4">
+      <input name="search" class="form-control" placeholder="Search by OrderID / User / Product / Size / Price"
+             value="<%= query.search || '' %>">
+    </div>
+    <div class="col-md-2">
+      <select name="status" class="form-select">
+        <option value="">All Status</option>
+        <% ["Pending","Processing","Shipped","Out for Delivery","Delivered","Cancelled","Return Requested","Returned"].forEach(s=>{ %>
+          <option value="<%= s %>" <%= (query.status===s?'selected':'') %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select name="sort" class="form-select">
+        <option value="date_desc" <%= query.sort==='date_desc'?'selected':'' %>>Newest</option>
+        <option value="date_asc"  <%= query.sort==='date_asc'?'selected':'' %>>Oldest</option>
+        <option value="amount_desc" <%= query.sort==='amount_desc'?'selected':'' %>>Amount ↓</option>
+        <option value="amount_asc"  <%= query.sort==='amount_asc'?'selected':'' %>>Amount ↑</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select name="limit" class="form-select">
+        <% [10,20,50].forEach(l=>{ %>
+          <option value="<%= l %>" <%= (+query.limit===l?'selected':'') %>><%= l %> / page</option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button class="btn btn-primary w-50">Apply</button>
+      <a href="/admin/orders" class="btn btn-secondary w-50">Clear</a>
+    </div>
+  </form>
+
+  <!-- Orders Table -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>OrderID</th>
+            <th>Date</th>
+            <th>User</th>
+            <th>Total (₹)</th>
+            <th>Status</th>
+            <th>Items</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        <% orders.forEach(o=>{ %>
+          <tr id="row-<%= o._id %>">
+            <td><span class="fw-semibold"><%= o.orderId %></span></td>
+            <td><small><%= new Date(o.createdAt).toLocaleString("en-IN") %></small></td>
+            <td>
+              <div><%= o.shippingAddress?.name || "-" %></div>
+              <small class="text-muted"><%= o.shippingAddress?.phone || "" %></small>
+            </td>
+            <td><%= o.finalAmount %></td>
+            <td>
+              <span class="badge bg-secondary"><%= o.status %></span>
+            </td>
+            <td><%= o.orderedItems.length %></td>
+            <td class="text-end">
+              <a href="/admin/orders/<%= o._id %>" class="btn btn-sm btn-outline-primary">View</a>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <small>Total: <%= total %></small>
+      <nav>
+        <ul class="pagination mb-0">
+          <% for (let p=1; p<=pages; p++){ %>
+            <li class="page-item <%= p===page?'active':'' %>">
+              <a class="page-link"
+                 href="/admin/orders?<%= `search=${encodeURIComponent(query.search||'')}&status=${encodeURIComponent(query.status||'')}&sort=${query.sort||'date_desc'}&limit=${query.limit||10}&page=${p}` %>">
+                 <%= p %>
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+

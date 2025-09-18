@@ -1,6 +1,6 @@
 const Product = require('../../models/productSchema');
 const User = require('../../models/userSchema');
-const Varient = require('../../models/varientSchema');
+const Variant = require('../../models/variantSchema');
 const Cart = require('../../models/cartSchema');
 const Wishlist = require('../../models/wishlistSchema'); 
 
@@ -17,7 +17,7 @@ const addToCart = async (req, res) => {
             return res.status(401).json({ error: 'Not logged in' });
         }
 
-        const { productId, varientId, quantity } = req.body;
+        const { productId, variantId, quantity } = req.body;
 
         // Fetch product + variant
         const product = await Product.findById(productId).populate('category');
@@ -32,11 +32,11 @@ const addToCart = async (req, res) => {
         let stockAvailable;
         let price;
 
-        if (varientId) {
-            const varient = await Varient.findById(varientId);
-            if (!varient) return res.status(404).json({ error: 'Variant not found' });
-            stockAvailable = varient.stock;
-            price = varient.salePrice;
+        if (variantId) {
+            const variant = await Variant.findById(variantId);
+            if (!variant) return res.status(404).json({ error: 'Variant not found' });
+            stockAvailable = variant.stock;
+            price = variant.salePrice;
         } else {
             stockAvailable = 0;
             price = product.salePrice;
@@ -56,7 +56,7 @@ const addToCart = async (req, res) => {
         if (!cart) cart = new Cart({ userId, items: [] });
 
         const existingItemIndex = cart.items.findIndex(
-            i => i.productId.equals(productId) && (!varientId || i.varientId?.equals(varientId))
+            i => i.productId.equals(productId) && (!variantId || i.variantId?.equals(variantId))
         );
 
         if (existingItemIndex > -1) {
@@ -75,7 +75,7 @@ const addToCart = async (req, res) => {
             }
             cart.items.push({
                 productId,
-                varientId: varientId || null,
+                variantId: variantId || null,
                 quantity,
                 price,
                 total: price * quantity
@@ -84,7 +84,7 @@ const addToCart = async (req, res) => {
         // ✅ Remove from wishlist if exists
         await Wishlist.updateOne(
             { userId },
-            { $pull: { items: { productId, ...(varientId ? { variantId: varientId } : {}) } } }
+            { $pull: { items: { productId } } }
         );
 
 
@@ -93,6 +93,8 @@ const addToCart = async (req, res) => {
         cart.totalPrice = cart.items.reduce((sum, item) => sum + item.total, 0);
 
         await cart.save();
+
+        const count = cart.items.length;
 
         res.json({ message: 'Added to cart', cart, removedFromWishlist: true });
     } catch (err) {
@@ -121,11 +123,12 @@ const getCartPage = async (req, res) => {
                 select: "_id productName description" // only these fields from Product schema
             })
             .populate({
-                path: "items.varientId",
-                select: "_id productImage basePrice salePrice size stock" // only these fields from Varient schema
+                path: "items.variantId",
+                select: "_id productImage basePrice salePrice size stock" // only these fields from Variant schema
             })
             .lean();
 
+            res.locals.user = user;
 
         if (!cart || cart.items.length === 0) {
             return res.render("cart", {
@@ -137,6 +140,9 @@ const getCartPage = async (req, res) => {
                 total: 0,
                 soldOutItems : 0
             });
+        }else{
+            cart.items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
         }
 
         let totalItemPrice = 0;
@@ -147,9 +153,9 @@ const getCartPage = async (req, res) => {
 
         // Map items for rendering
         const cartItems = cart.items.map(item => {
-            const basePrice = item.varientId?.basePrice || 0;
-            const salePrice = item.varientId?.salePrice || basePrice;
-            const stock = item.varientId?.stock ?? 0;
+            const basePrice = item.variantId?.basePrice || 0;
+            const salePrice = item.variantId?.salePrice || basePrice;
+            const stock = item.variantId?.stock ?? 0;
             const isSoldOut = stock <= 0;
 
           if (isSoldOut) {
@@ -168,14 +174,14 @@ const getCartPage = async (req, res) => {
 
             return {
                 productId: item.productId?._id, // ✅ Add product ID
-                varientId: item.varientId?._id || null, // ✅ Add variant ID
+                variantId: item.variantId?._id || null, // ✅ Add variant ID
                 quantity: item.quantity,
                 name: item.productId?.productName || "",
                 description: item.productId?.description || "",
-                image: item.varientId?.productImage?.[0] || "/img/1.jpg",
+                image: item.variantId?.productImage?.[0] || "/img/1.jpg",
                 basePrice,
                 salePrice,
-                size: item.varientId?.size || "",
+                size: item.variantId?.size || "",
                 stock,
                 isSoldOut            };
         });
@@ -185,7 +191,6 @@ const getCartPage = async (req, res) => {
         let shippingFee = totalItemPrice > 599 ? 0 : 30;
         const total = totalItemPrice - itemDiscount + platformFee + shippingFee;
 
-        res.locals.user = user;
 
         res.render("cart", {
             cartItems,
@@ -210,7 +215,7 @@ const getCartPage = async (req, res) => {
 
 const updateQuantity = async (req, res) => {
     try {
-        const { productId, varientId, quantity } = req.body;
+        const { productId, variantId, quantity } = req.body;
         const userId = req.user ? req.user._id : req.session.user;
 
         const parsedQty = parseInt(quantity);
@@ -222,8 +227,8 @@ const updateQuantity = async (req, res) => {
         let stockAvailable;
         let price;
 
-        if (varientId && varientId.trim() !== '') {
-            const variant = await Varient.findById(varientId);
+        if (variantId && variantId.trim() !== '') {
+            const variant = await Variant.findById(variantId);
             if (!variant) {
                 return res.status(404).json({ success: false, message: "Variant not found" });
             }
@@ -247,9 +252,9 @@ const updateQuantity = async (req, res) => {
         }
 
         // 3️⃣ Update cart item
-        const filter = varientId && varientId.trim() !== ''
-            ? { userId, "items.productId": productId, "items.varientId": varientId }
-            : { userId, "items.productId": productId, "items.varientId": null };
+        const filter = variantId && variantId.trim() !== ''
+            ? { userId, "items.productId": productId, "items.variantId": variantId }
+            : { userId, "items.productId": productId, "items.variantId": null };
 
         await Cart.updateOne(filter, {
             $set: { 
@@ -281,15 +286,15 @@ const updateQuantity = async (req, res) => {
 const removeFromCart = async (req, res) => {
     try {
         const userId = req.user ? req.user._id : req.session.user;
-        let { productId, varientId } = req.params;
+        let { productId, variantId } = req.params;
 
         // Convert empty string to null
-        varientId = varientId && varientId.trim() !== '' ? varientId : null;
+        variantId = variantId && variantId.trim() !== '' ? variantId : null;
 
         // Step 1: Remove the item
         await Cart.updateOne(
             { userId },
-            { $pull: { items: { productId, varientId } } }
+            { $pull: { items: { productId, variantId } } }
         );
 
         // Step 2: Recalculate totals
@@ -315,7 +320,6 @@ const removeFromCart = async (req, res) => {
         res.status(500).send("Server Error");
     }
 };
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////

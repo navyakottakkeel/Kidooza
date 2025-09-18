@@ -1,0 +1,616 @@
+<%- include("../../views/partials/user/header") %>
+
+
+    <style>
+        /* Custom SweetAlert2 Address Form Styling */
+        .swal-address-popup {
+            width: 600px !important;
+            /* Bigger width for form */
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .swal-address-form {
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 20px;
+            text-align: left;
+        }
+
+        .swal-address-form label {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 3px;
+            grid-column: span 2;
+        }
+
+        .swal-address-form input,
+        .swal-address-form select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            width: 94%;
+            font-size: 14px;
+        }
+
+        .swal-confirm-btn {
+            background-color: #28a745 !important;
+            border-radius: 8px !important;
+            padding: 10px 25px !important;
+            font-size: 15px !important;
+        }
+
+        .swal-cancel-btn {
+            background-color: #dc3545 !important;
+            border-radius: 8px !important;
+            padding: 10px 25px !important;
+            font-size: 15px !important;
+        }
+    </style>
+
+    <div class="container py-5" style="margin-top:160px;">
+        <div class="row">
+            <!-- LEFT: Address Section -->
+            <div class="col-md-1">
+                <p></p>
+            </div>
+            <div class="col-md-7">
+                <div class="container my-4">
+                    <h3 style="font-family: math;">Select Delivery Address</h3><br>
+
+                    <!-- Default Address Section -->
+                    <% if (defaultAddress) { %>
+                        <p style="color: black;">DEFAULT ADDRESS</p>
+                        <div class="card p-3 mb-3">
+                            <label class="d-flex align-items-center">
+                                <input type="radio" name="address" value="<%= defaultAddress._id %>" checked>
+                                <div class="ms-3">
+                                    <strong>
+                                        <%= defaultAddress.name %>
+                                    </strong>
+                                    <span class="badge" style="border-color: green;color: green;border: solid;">
+                                        <%= defaultAddress.addressType %>
+                                    </span><br>
+                                    <%= defaultAddress.city %>, <%= defaultAddress.landmark %>,<br>
+                                            <%= defaultAddress.state %> - <%= defaultAddress.pincode %><br><br>
+                                                    Mobile: <%= defaultAddress.phone %>
+                                </div>
+                            </label>
+                            <div class="mt-2">
+                                <button class="btn btn-outline-danger btn-sm"
+                                    onclick="deleteAddress('<%= defaultAddress._id %>')">Remove</button>
+                                <button class="btn btn-outline-primary btn-sm editAddressBtn"
+                                    data-id="<%= defaultAddress._id %>" data-type="<%= defaultAddress.addressType %>"
+                                    data-name="<%= defaultAddress.name %>" data-pincode="<%= defaultAddress.pincode %>"
+                                    data-landmark="<%= defaultAddress.landmark %>"
+                                    data-city="<%= defaultAddress.city %>" data-state="<%= defaultAddress.state %>"
+                                    data-phone="<%= defaultAddress.phone %>" data-alt="<%= defaultAddress.altPhone %>">
+                                    Edit
+                                </button>
+                            </div>
+                        </div>
+                        <% } %>
+                            <br>
+                            <!-- Other Addresses Section -->
+                            <p style="color: black;">OTHER ADDRESSES</p>
+                            <% if (otherAddresses && otherAddresses.length> 0) { %>
+                                <% otherAddresses.forEach(addr=> { %>
+                                    <div class="card p-3 mb-3">
+                                        <label class="d-flex align-items-center">
+                                            <input type="radio" name="address" value="<%= addr._id %>">
+                                            <div class="ms-3">
+                                                <strong>
+                                                    <%= addr.name %>
+                                                </strong>
+                                                <span class="badge"
+                                                    style="border-color: green;color: green;border: solid;">
+                                                    <%= addr.addressType %>
+                                                </span><br>
+                                                <%= addr.city %>, <%= addr.landmark %>,<br>
+                                                        <%= addr.state %> - <%= addr.pincode %><br><br>
+                                                                Mobile: <%= addr.phone %>
+                                            </div>
+                                        </label>
+                                        <div class="mt-2">
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                onclick="deleteAddress('<%= addr._id %>')">Remove</button>
+                                            <button class="btn btn-outline-primary btn-sm editAddressBtn"
+                                                data-id="<%= addr._id %>" data-type="<%= addr.addressType %>"
+                                                data-name="<%= addr.name %>" data-pincode="<%= addr.pincode %>"
+                                                data-landmark="<%= addr.landmark %>" data-city="<%= addr.city %>"
+                                                data-state="<%= addr.state %>" data-phone="<%= addr.phone %>"
+                                                data-alt="<%= addr.altPhone %>">
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <% }) %>
+                                        <% } else { %>
+                                            <p>No other addresses saved.</p>
+                                            <% } %>
+
+                                                <!-- Add New Address -->
+                                                <button id="addNewAddressBtn" class="btn btn-outline-success mt-3">+
+                                                    Add
+                                                    New Address</button>
+                </div>
+            </div>
+
+
+            <!-- RIGHT: Order Summary -->
+            <div class="col-md-4">
+                <div class="card shadow-sm p-4">
+                    <h5 class="fw-bold mb-3">Delivery Estimates</h5>
+                    <% cartItems.forEach(item=> { %>
+                        <div class="d-flex align-items-center mb-2">
+                            <img src="<%= item.image %>" width="60" class="me-2" />
+                            <div style="width: 100%;">
+                                <small>
+                                    <%= item.name %>
+                                </small>
+                                <small style="float: right;">
+                                    <strong style="color: black;font-size: revert;font-family: math;">₹ <%=
+                                            (item.salePrice * item.quantity).toLocaleString() %></strong>
+                                    <% if (item.basePrice> item.salePrice) { %>
+                                        &nbsp;&nbsp; <del class="text-muted"> ₹ <%= (item.basePrice *
+                                                item.quantity).toLocaleString() %></del>
+                                        <% } %>
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <%= item.quantity %> items
+                                </small>
+
+                            </div>
+                        </div>
+                        <% }) %>
+
+                            <hr>
+                            <h5 class="fw-bold mb-3">Price Details</h5>
+                            <div class="d-flex justify-content-between">
+                                <span>Total MRP</span> <span>₹<%= totalItemPrice.toLocaleString() %></span>
+                            </div>
+                            <div class="d-flex justify-content-between text-success">
+                                <span>Discount</span> <span>-₹<%= itemDiscount.toLocaleString() %></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Platform Fee</span> <span>
+                                    <%= platformFee===0 ? 'FREE' : '₹' +platformFee %>
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Shipping Fee</span> <span>
+                                    <%= shippingFee===0 ? 'FREE' : '₹' +shippingFee %>
+                                </span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Total Amount</span> <span style="color: black;font-size: large;">₹<%=
+                                        total.toLocaleString() %></span>
+                            </div>
+
+
+                            <!-- ✅ Payment Options -->
+                            <hr>
+                            <h5 class="fw-bold mb-3">Select Payment Method</h5>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="COD"
+                                    checked>
+                                <label class="form-check-label" for="cod">
+                                    Cash on Delivery (COD)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="razorpay"
+                                    value="Razorpay">
+                                <label class="form-check-label" for="razorpay">
+                                    Razorpay ( UPI / Credit / Debit card)
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="wallet"
+                                    value="Wallet">
+                                <label class="form-check-label" for="wallet">
+                                    Wallet Payment
+                                </label>
+                            </div>
+
+
+                            <button id="placeOrderBtn" type="button" onclick="handlePlaceOrder()"
+                                class="btn btn-danger w-100 mt-3">CONTINUE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- <input id="addressLine" class="swal2-input" placeholder="Address (House No, Street, Area)"> -->
+
+    <script>
+
+        document.getElementById("addNewAddressBtn").addEventListener("click", () => {
+            Swal.fire({
+                title: "Add New Address",
+                html: `
+      <div class="swal-address-form">
+        <select id="addressType" class="swal2-select">
+          <option value="Home">Home</option>
+          <option value="Office">Office</option>
+        </select>
+
+        <input id="name" class="swal2-input" placeholder="Full Name">
+
+       <input id="pincode" class="swal2-input" placeholder="Pin Code">
+
+        <input id="landmark" class="swal2-input" placeholder="Locality / Town">
+
+        <input id="city" class="swal2-input" placeholder="City / District">
+
+        <input id="state" class="swal2-input" placeholder="State">
+
+        <input id="phone" class="swal2-input" placeholder="Mobile No">
+
+        <input id="altPhone" class="swal2-input" placeholder="Alt Mobile No">
+      </div>
+    `,
+                focusConfirm: false,
+                confirmButtonText: "<i class='fa fa-save'></i> Save Address",
+                confirmButtonColor: "#28a745",
+                cancelButtonText: "Cancel",
+                cancelButtonColor: "#d33",
+                showCancelButton: true,
+                customClass: {
+                    popup: "swal-address-popup",
+                    confirmButton: "swal-confirm-btn",
+                    cancelButton: "swal-cancel-btn"
+                },
+                preConfirm: () => {
+                    const data = {
+                        addressType: document.getElementById("addressType").value,
+                        name: document.getElementById("name").value,
+                        pincode: document.getElementById("pincode").value,
+                        landmark: document.getElementById("landmark").value,
+                        city: document.getElementById("city").value,
+                        state: document.getElementById("state").value,
+                        phone: document.getElementById("phone").value,
+                        altPhone: document.getElementById("altPhone").value,
+                    };
+
+                    // 🔹 Validate
+                    if (!data.name || !data.city || !data.state || !data.pincode || !data.phone) {
+                        Swal.showValidationMessage("Please fill in all required fields (Name, City, State, Pincode, Phone).");
+                        return false;
+                    }
+                    if (!/^\d{6}$/.test(data.pincode)) {
+                        Swal.showValidationMessage("Pincode must be a 6-digit number.");
+                        return false;
+                    }
+                    if (!/^\d{10}$/.test(data.phone)) {
+                        Swal.showValidationMessage("Phone number must be 10 digits.");
+                        return false;
+                    }
+                    if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
+                        Swal.showValidationMessage("Alternate phone must be 10 digits.");
+                        return false;
+                    }
+
+                    return fetch("/address/save", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data)
+                    }).then(res => {
+                        if (!res.ok) throw new Error("Failed to save address");
+                        return res.json();
+                    });
+                }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    Swal.fire("Saved!", "Your address has been added.", "success").then(() => {
+                        location.reload();
+                    });
+                }
+            });
+        });
+
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+        document.querySelectorAll(".editAddressBtn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.dataset.id;
+
+                Swal.fire({
+                    title: "Edit Address",
+                    html: `
+        <div class="swal-address-form">
+          <label>Address Type</label>
+          <select id="addressType" class="swal2-select">
+            <option value="Home" ${btn.dataset.type === "Home" ? "selected" : ""}>Home</option>
+            <option value="Office" ${btn.dataset.type === "Office" ? "selected" : ""}>Office</option>
+          </select>
+
+          <input id="name" class="swal2-input" value="${btn.dataset.name}" placeholder="Full Name">
+
+          <input id="pincode" class="swal2-input" value="${btn.dataset.pincode}" placeholder="Pin Code">
+
+          <input id="landmark" class="swal2-input" value="${btn.dataset.landmark}" placeholder="Locality / Town">
+
+          <input id="city" class="swal2-input" value="${btn.dataset.city}" placeholder="City / District">
+
+          <input id="state" class="swal2-input" value="${btn.dataset.state}" placeholder="State">
+
+          <input id="phone" class="swal2-input" value="${btn.dataset.phone}" placeholder="Mobile No">
+
+          <input id="altPhone" class="swal2-input" value="${btn.dataset.alt}" placeholder="Alt Mobile No">
+        </div>
+      `,
+                    focusConfirm: false,
+                    confirmButtonText: "<i class='fa fa-save'></i> Update Address",
+                    confirmButtonColor: "#28a745",
+                    cancelButtonText: "Cancel",
+                    cancelButtonColor: "#d33",
+                    showCancelButton: true,
+                    customClass: {
+                        popup: "swal-address-popup",
+                        confirmButton: "swal-confirm-btn",
+                        cancelButton: "swal-cancel-btn"
+                    },
+                    preConfirm: () => {
+                        const data = {
+                            addressType: document.getElementById("addressType").value,
+                            name: document.getElementById("name").value,
+                            pincode: document.getElementById("pincode").value,
+                            landmark: document.getElementById("landmark").value,
+                            city: document.getElementById("city").value,
+                            state: document.getElementById("state").value,
+                            phone: document.getElementById("phone").value,
+                            altPhone: document.getElementById("altPhone").value,
+                        };
+
+
+
+                        if (!data.name || !data.city || !data.state || !data.pincode || !data.phone) {
+                            Swal.showValidationMessage("Please fill in all required fields (Name, City, State, Pincode, Phone).");
+                            return false;
+                        }
+                        if (!/^\d{6}$/.test(data.pincode)) {
+                            Swal.showValidationMessage("Pincode must be a 6-digit number.");
+                            return false;
+                        }
+                        if (!/^\d{10}$/.test(data.phone)) {
+                            Swal.showValidationMessage("Phone number must be 10 digits.");
+                            return false;
+                        }
+                        if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
+                            Swal.showValidationMessage("Alternate phone must be 10 digits.");
+                            return false;
+                        }
+
+
+                        return fetch(`/address/${id}`, {
+                            method: "PATCH",  // ✅ updated for your route
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(data)
+                        }).then(res => {
+                            if (!res.ok) throw new Error("Failed to update address");
+                            return res.json();
+                        });
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        Swal.fire("Updated!", "Your address has been updated.", "success").then(() => {
+                            location.reload();
+                        });
+                    }
+                });
+            });
+        });
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        function deleteAddress(id) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "This address will be permanently deleted.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Yes, delete it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/address/${id}`, { method: "DELETE" })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire("Deleted!", "Your address has been deleted.", "success")
+                                    .then(() => location.reload());
+                            } else {
+                                Swal.fire("Error!", data.message || "Unable to delete address", "error");
+                            }
+                        });
+                }
+            });
+        }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    </script>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script>
+        (function () {
+            // total, razorpayKeyId, walletBalance are rendered into the template by backend:
+            // <%= total %>, <%= razorpayKeyId %>, <%= user?.walletBalance || 0 %>
+
+            const totalAmount = Number(<%= total %> || 0); // total in ₹
+            const razorpayKeyId = "<%= razorpayKeyId %>";
+            const walletBalance = Number(<%= walletBalance %>);
+
+            // Disable COD if total <= 1000 (your rule)
+            window.addEventListener('DOMContentLoaded', () => {
+                const codInput = document.getElementById("cod");
+                const codLabel = codInput?.closest("label") || null;
+                if (codInput) {
+                    if (!(totalAmount > 1000)) {
+                        codInput.disabled = true;
+                        // optionally show tooltip/text
+                        const note = document.createElement("div");
+                        note.className = "text-muted small";
+                        note.innerText = "COD available only for orders above ₹1000";
+                        codInput.parentElement.appendChild(note);
+                    }
+                }
+
+                // If wallet balance insufficient, show note
+                if (walletBalance < totalAmount) {
+                    const walletInput = document.getElementById("wallet");
+                    if (walletInput) {
+                        const note = document.createElement("div");
+                        note.className = "text-muted small";
+                        note.innerText = `Wallet balance ₹${walletBalance.toFixed(2)} — insufficient for this order`;
+                        walletInput.parentElement.appendChild(note);
+                    }
+                } else {
+                    const walletInput = document.getElementById("wallet");
+                    if (walletInput) {
+                        const note = document.createElement("div");
+                        note.className = "text-muted small";
+                        note.innerText = `Wallet balance ₹${walletBalance.toFixed(2)}`;
+                        walletInput.parentElement.appendChild(note);
+                    }
+                }
+            });
+
+            // Main click handler
+            document.getElementById("placeOrderBtn").addEventListener("click", async () => {
+                const selectedAddress = document.querySelector("input[name='address']:checked");
+                const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
+
+                if (!selectedAddress) {
+                    Swal.fire("Error", "Please select a delivery address", "warning");
+                    return;
+                }
+                if (!selectedPayment) {
+                    Swal.fire("Error", "Please select a payment method", "warning");
+                    return;
+                }
+
+                const addressId = selectedAddress.value;
+                const paymentMethod = selectedPayment.value;
+
+                // 1) Call /order/place — backend will either finalize for COD/Wallet or instruct to use Razorpay
+                try {
+                    const placeRes = await fetch("/order/place", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ addressId, paymentMethod })
+                    });
+                    const placeData = await placeRes.json();
+
+                    if (!placeData.success) {
+                        Swal.fire("Error", placeData.message || "Failed to place order", "error");
+                        return;
+                    }
+
+                    // If backend returned useRazorpay -> proceed to online payment flow
+                    if (placeData.useRazorpay) {
+                        // call create Razorpay order which also creates a pending DB order and returns key + orderId
+                        const initRes = await fetch("/payment/razorpay/create", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ addressId })
+                        });
+                        const init = await initRes.json();
+                        if (!init.success) {
+                            Swal.fire("Error", init.message || "Failed to initialize payment", "error");
+                            return;
+                        }
+
+                        // Razorpay options
+                        const options = {
+                            key: init.key || razorpayKeyId,
+                            amount: init.amount, // in paise
+                            currency: init.currency || "INR",
+                            name: "KIDOOZA Boys Fashion",
+                            description: "Order Payment",
+                            order_id: init.razorpayOrderId,
+                            handler: async function (response) {
+                                // send response to server to verify & finalize
+                                const verifyRes = await fetch("/payment/razorpay/verify", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        orderId: init.orderId
+                                    })
+                                });
+                                const verifyData = await verifyRes.json();
+                                if (verifyData.success) {
+                                    Swal.fire("Payment Success", "Your order is confirmed.", "success")
+                                        .then(() => window.location.href = verifyData.redirectUrl);
+                                } else {
+                                    window.location.href = `/order/failure/${init.orderId}`;
+
+
+                                    //Swal.fire("Payment Failed", verifyData.message || "Verification failed", "error");
+                                }
+                            },
+                            prefill: {
+                                // optional: pass logged in user info if available
+                                // name: "<%= user?.name || '' %>"
+                            },
+                            theme: { color: "#F37254" }
+                        };
+
+                        const rzp = new Razorpay(options);
+                        rzp.on("payment.failed", function (response) {
+                            fetch("/payment/razorpay/failure", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    orderId: init.orderId,
+                                    error: response.error
+                                })
+                            }).finally(() => {
+                                // redirect user to failure page
+                                window.location.href = `/order/failure/${init.orderId}`;
+                            });
+                        });
+
+                        rzp.open();
+
+                    } else {
+                        // COD or Wallet finished server-side; we can redirect to success page
+                        if (placeData.success) {
+                            Swal.fire("Success", placeData.message || "Order placed successfully", "success")
+                                .then(() => {
+                                    window.location.href = "/orderplaced";
+                                });
+                        } else {
+                            Swal.fire("Error", placeData.message || "Something went wrong", "error");
+                        }
+
+                    }
+                } catch (err) {
+                    console.error("Place order error:", err);
+                    Swal.fire("Error", "Something went wrong. Try again.", err);
+                }
+            });
+        })();
+
+
+    </script>
+
+
+
+
+
+    <%- include("../../views/partials/user/footer") %>

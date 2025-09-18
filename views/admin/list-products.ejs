@@ -96,7 +96,7 @@
             <th>Status</th>
             <th>Actions</th>
             <th>Delete</th>
-            <th>Varients</th>
+            <th>Variants</th>
           </tr>
         </thead>
         <tbody>
@@ -153,11 +153,11 @@
                   onclick="confirmDelete('<%= data[i]._id %>')">Delete</button>
               </td>
               <td>
-                <form action="/admin/varients" method="GET">
+                <form action="/admin/variants" method="GET">
                   <input type="hidden" name="productId" value="<%= data[i]._id %>">
                   <input type="hidden" name="productName" value="<%= data[i].productName %>">
                   <button style="background-color:rgb(9, 70, 86);color:white" class="btn btn-success">
-                    Add / View Varients
+                    Add / View Variants
                   </button>
                 </form>
               </td>

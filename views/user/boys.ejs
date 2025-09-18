@@ -66,27 +66,27 @@
       justify-content: center;
       cursor: pointer;
       transition: all 0.2s ease-in-out;
+      font-size: 22px;
+      color: gray;
     }
 
-    .wishlist-btn i {
-      font-size: 1.2rem;
-      color: #dc3545
-    }
-
-    .wishlist-btn.active {
-      background-color: #dc3545;
-    }
 
     .wishlist-btn.active i {
-      color: white;
+      color: red;
     }
+
     .discount-tag {
-    background-color:#5d8355;
-    color: #fff;
-    padding: 2px 8px;
-    font-size: 0.85rem;
-    border-radius: 5px;
-  }
+      background-color: #5d8355;
+      color: #fff;
+      padding: 2px 8px;
+      font-size: 0.85rem;
+      border-radius: 5px;
+    }
+    .swal2-popup.swal-toast-dark {
+  font-size: 15px;
+  border-radius: 8px;
+  font-weight: 500;
+}
 
   </style>
 
@@ -281,36 +281,32 @@
                 <!-- All Products Tab Content -->
                 <div id="tab-all" class="tab-pane fade show p-0 active">
                   <div class="row g-4">
-
-
-
                     <% if (allProducts && allProducts.length> 0) { %>
                       <% allProducts.forEach(product=> { %>
                         <div class="col-md-6 col-lg-4 col-xl-4">
                           <div class="rounded position-relative fruite-item">
-                            <div class="fruite-img">
-                              <% if (product.productImage && product.productImage.length> 0) { %>
-                                <a href="/productDetail/<%= product._id %>">
-                                  <img src="<%= product.productImage[0] %>" class="img-fluid w-100 rounded-top" alt="">
-                                </a>
-                                <% } else { %>
-                                  <img src="/img/1.jpg" class="img-fluid w-100 rounded-top" alt="No image">
-                                  <% } %>
 
-                                    <!-- Wishlist Heart Icon -->
-<!-- 
-                                    <% const isWishlisted=wishlistItems.some(w=>
-                                      w.productId === product._id.toString() &&
-                                      w.variantId === (product.defaultVariantId ? product.defaultVariantId.toString() :
-                                      "")
-                                      );
-                                      %>
-                                      <button onclick="addToWishlist('<%= product._id %>', '<%= product.defaultVariantId %>')"
-                                        class="wishlist-btn position-absolute top-0 end-0 m-2 <%= isWishlisted ? 'active' : '' %>"
-                                        data-product-id="<%= product._id %>"
-                                        data-variant-id="<%= product.defaultVariantId %>">
-                                        <i class="fa fa-heart"></i>
-                                      </button> -->
+                            <div class="fruite-img">
+                              <a href="/productDetail/<%= product._id %>?variant=<%= product.variantsByColour[0].id%>">
+                                <img id="product-img-<%= product._id %>" src="<%= product.defaultImage %>"
+                                  class="img-fluid w-100 rounded-top" alt="">
+                              </a>
+
+
+                              <!-- Wishlist button -->
+                             
+                                <% const isWishlisted=wishlistItems.some( item=> item.productId.toString() ===
+                                  product._id.toString() 
+                                  ); %>
+
+                                  <button class="wishlist-btn <%= isWishlisted ? 'active' : '' %>"
+                                    data-product-id="<%= product._id %>" 
+                                    data-colour=" ">
+                                    <i class="fa fa-heart"></i>
+                                  </button>
+
+
+
 
                             </div>
 
@@ -322,19 +318,35 @@
                                 <%= product.description %>
                               </p>
 
-                              
+                              <div class="d-flex flex-wrap gap-2 mt-2">
+                                <% if (product.variantsByColour && product.variantsByColour.length> 0) { %>
+                                  <% product.variantsByColour.forEach(v=> { %>
+                                    <span class="colour-circle" style="width: 15px;height: 15px;
+                                          border-radius: 15%;background-color:<%= v.colour %>;"
+                                      data-product="<%= product._id %>" data-image="<%= v.image %>"
+                                      data-colour="<%= v.colour %>" title="<%= v.colour %>">
+                                    </span>
+                                    <% }) %>
+                                      <% } %>
+                              </div>
+
+
 
 
                               <div class="d-flex justify-content-between flex-lg-wrap">
-                                <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice.toLocaleString() %> &nbsp;&nbsp;
-                                  <s style="color:grey;font-size: small;">₹<%=
-                                    product.basePrice.toLocaleString() %></s>
+                                <p class="text-dark fs-5 fw-bold mb-0">₹<%= product.salePrice.toLocaleString() %>
+                                    &nbsp;&nbsp;
+                                    <s style="color:grey;font-size: small;">₹<%= product.basePrice.toLocaleString() %>
+                                    </s>
                                 </p>
                                 <p class="text-dark fs-5 fw-bold mb-0">
-                                  <span class="discount-tag"><%= Math.round(((product.basePrice - product.salePrice) / product.basePrice) * 100) %>% OFF</span>
+                                  <span class="discount-tag">
+                                    <%= Math.round(((product.basePrice - product.salePrice) / product.basePrice) * 100)
+                                      %>% OFF
+                                  </span>
 
                                 </p>
-                               
+
                               </div>
 
 
@@ -396,15 +408,18 @@
     </ul>
   </nav>
 
-<!-- 
+
+
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
   <script>
     document.querySelectorAll('.wishlist-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         const productId = this.dataset.productId;
-        const variantId = this.dataset.variantId;
+        // const variantId = this.dataset.variantId;
+        const colour = this.dataset.colour;
 
-        // Check if user is logged in (server will pass this in res.locals.user)
         const isLoggedIn = <%= user ? 'true' : 'false' %>;
 
         if (!isLoggedIn) {
@@ -419,63 +434,147 @@
             cancelButtonColor: '#d33'
           }).then((result) => {
             if (result.isConfirmed) {
-              window.location.href = '/login'; // Redirect to login
+              window.location.href = '/login';
             }
           });
-          return; // Stop here if not logged in
+          return;
         }
 
-        // If logged in → proceed to add/remove from wishlist
-        fetch('/wishlist/add', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId, variantId })
+        // Toggle wishlist
+        fetch(`/wishlist/toggle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, colour })
         })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
               if (data.action === "added") {
                 this.classList.add('active');
-              } else {
+                Swal.fire({
+                  toast: true,
+                  position: "bottom-end",
+                  background: "#000",
+                  color: "#fff",
+                  icon: "success",
+                  title: "Added to your Wishlist",
+                  showConfirmButton: false,
+                  timer: 4000,
+                  timerProgressBar: true,
+                  customClass: {
+                    popup: 'swal-toast-dark'  // optional for more custom CSS
+                  }
+                });
+              } else if (data.action === "removed") {
                 this.classList.remove('active');
+                Swal.fire({
+                  toast: true,
+                  position: "bottom-end",
+                  background: "#000",
+                  color: "#fff",
+                  icon: "info",
+                  title: "Removed from your Wishlist",
+                  showConfirmButton: false,
+                  timer: 4000,
+                  timerProgressBar: true,
+                  
+                });
               }
             } else {
-              alert(data.message || 'Wishlist update failed');
+              Swal.fire("Error", data.message || "Wishlist update failed", "error");
             }
+          })
+          .catch(err => {
+            console.error(err);
+            Swal.fire("Error", "Something went wrong", "error");
           });
       });
     });
+  </script>
 
 
-    async function addToWishlist(productId, variantId) {
-      fetch('/wishlist/add', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, variantId })
-})
-.then(res => res.json())
-.then(data => {
-    if (data.success) {
-        updateWishlistCount(data.wishlistCount);
-    }
-});
 
-}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      // ------------------- Colour circle switching -------------------
+
+      document.querySelectorAll(".colour-circle").forEach(circle => {
+        circle.addEventListener("click", function () {
+          const productId = this.dataset.product;
+          const image = this.dataset.image;
+          const colour = this.dataset.colour;
 
 
-function updateWishlistCount(count) {
-    const el = document.getElementById("wishlist-count");
-    if (el) {
-        el.textContent = count;
-        el.style.display = count > 0 ? "flex" : "none";
-    }
-}
+          // Change main image
+          const imgTag = document.getElementById("product-img-" + productId);
+          if (imgTag) {
+            imgTag.src = image;
+          }
+
+          // Change product detail link
+          const link = imgTag.closest("a");
+          if (link) {
+            link.href = `/productDetail/${productId}?colour=${colour}`;
+          }
+
+          // Highlight selected circle
+          this.parentElement.querySelectorAll(".colour-circle")
+            .forEach(sib => sib.classList.remove("active"));
+          this.classList.add("active");
+        });
+
+      });
 
 
+    });
 
   </script>
- -->
 
+
+  <style>
+    .colour-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-block;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .colour-circle.active {
+      border: 2px solid #f27c1f;
+    }
+
+    .wishlist-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: white;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .wishlist-btn i {
+      color: #555;
+      font-size: 18px;
+    }
+
+    .wishlist-btn.active {
+      background: red;
+    }
+
+    .wishlist-btn.active i {
+      color: white;
+    }
+  </style>
 
 
 

@@ -7,7 +7,9 @@ const profileController = require("../controllers/user/profileController")
 const addressController = require("../controllers/user/addressController")
 const cartController = require("../controllers/user/cartController")
 const wishlistController = require("../controllers/user/wishlistController")
-
+const checkoutController = require("../controllers/user/checkoutController")
+const orderController = require("../controllers/user/orderController");
+const walletController = require("../controllers/user/walletController");
 
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
@@ -62,6 +64,7 @@ router.get('/profile-change-password',profileController.loadchangePassword);
 router.post('/profile-change-password',profileController.changePassword);
 
 
+
 router.get('/address',addressController.loadAddressPage);
 router.post("/address/save",addressController.saveAddress);
 router.patch("/address/:id/default", addressController.setDefaultAddress);
@@ -71,21 +74,40 @@ router.delete('/address/:id', addressController.deleteAddress);
 
 router.post("/wishlist/add", wishlistController.addToWishlist);
 router.get('/wishlist', wishlistController.getWishlistPage);
-router.delete('/wishlist/:productId/:variantId', wishlistController.removeFromWishlist);
+router.delete('/wishlist/:productId', wishlistController.removeFromWishlist);
+router.post("/wishlist/toggle", wishlistController.toggleWishlist);
+router.get("/product/:id/variants", wishlistController.getVariantsByProduct);
+
+
 
 router.get('/cart', cartController.getCartPage);
 router.post('/cart/update-quantity', cartController.updateQuantity);
-router.get("/cart/remove/:productId/:varientId", cartController.removeFromCart);
+router.get("/cart/remove/:productId/:variantId", cartController.removeFromCart);
+
+router.get('/checkout', checkoutController.getCheckoutPage);
+
+router.post("/order/place", orderController.placeOrder);
+router.get("/orderplaced", orderController.loadOrderPlaced);
+router.get("/orders", orderController.getOrders);
+router.get("/order/:id", orderController.getOrderDetail);
+router.post("/order/:id/cancel", orderController.cancelOrder);
+router.post("/order/:orderId/cancel-item/:itemId", orderController.cancelItem);
+
+router.get("/order/:orderId/invoice", orderController.downloadInvoice);
+router.post("/order/:orderId/return-item/:itemId", orderController.returnItem);
 
 
+router.get("/wallet", walletController.getWalletPage);
+router.post("/wallet/add", walletController.addMoney);
 
+// Razorpay create + verify
+router.post("/payment/razorpay/create",orderController.createRazorpayOrder);
+router.post("/payment/razorpay/verify",orderController.verifyRazorpayPayment);
 
-
-
-
-
-
-
+// Retry payment
+router.post("/payment/razorpay/retry", orderController.retryPayment);
+router.get("/order/failure/:orderId", orderController.loadOrderFailure);
+router.post("/payment/razorpay/failure", orderController.razorpayFailure);
 
 
 

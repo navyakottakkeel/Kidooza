@@ -1,0 +1,136 @@
+<%-include("../../views/partials/admin/main") %>
+
+
+<div class="container py-4">
+  
+  <div class="row" style="margin-top: 2rem;">
+
+    <h4 style="    font-family: math;">Order Id : <%= order.orderId %></h4>
+  <div class="mb-3 text-muted"><small><%= new Date(order.createdAt).toLocaleString("en-IN") %></small></div>
+
+
+    <div class="col-lg-8">
+      <% order.orderedItems.forEach(it => { %>
+        <div class="card mb-2">
+          <div class="card-body d-flex align-items-center gap-3">
+            <img src="<%= (it.image && it.image[0]) || '/img/placeholder.png' %>" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">
+            <div class="flex-grow-1">
+              <div class="fw-semibold"><%= it.productName %></div>
+              <small class="text-muted">Size: <%= it.size || '-' %> • Qty: <%= it.quantity %></small><br>
+              <small>Total: ₹<%= it.total %></small>
+            </div>
+
+            <div class="text-end" style="min-width:260px;">
+              <div class="mb-1"><span class="badge bg-info"><%= it.status %></span></div>
+              <% if (it.status === "Cancelled") { %>
+                <% } else { %>
+              <div class="input-group input-group-sm">
+                <select class="form-select item-status" data-orderid="<%= order._id %>" data-itemid="<%= it._id %>">
+                  <% ["Ordered","Shipped","Out for Delivery","Delivered","Return Requested","Returned"].forEach(s => { %>
+                    <option value="<%= s %>" <%= (it.status===s?'selected':'') %>><%= s %></option>
+                  <% }) %>
+                </select>
+                <button class="btn btn-outline-primary btn-sm apply-item-status">Apply</button>
+              </div>
+              <% } %>
+
+              <% if (it.status === "Return Requested") { %>
+                <div class="mt-2 d-flex gap-2">
+                  <button class="btn btn-success btn-sm verify-return" data-action="accept"
+                          data-orderid="<%= order._id %>" data-itemid="<%= it._id %>">Accept Return</button>
+                  <button class="btn btn-outline-danger btn-sm verify-return" data-action="reject"
+                          data-orderid="<%= order._id %>" data-itemid="<%= it._id %>">Reject</button>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header">Customer</div>
+        <div class="card-body">
+          <div class="fw-semibold"><%= order.shippingAddress?.name %></div>
+          <div><%= order.shippingAddress?.phone %></div>
+          <div class="text-muted"><%= order.shippingAddress?.landmark %>, <%= order.shippingAddress?.city %>, <%= order.shippingAddress?.state %> - <%= order.shippingAddress?.pincode %></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Order Status</div>
+        <div class="card-body">
+          <div class="mb-2"><span class="badge bg-secondary"><%= order.status %></span></div>
+          <% if (order.status === "Cancelled") { %>
+            <% } else { %>
+          <form id="wholeOrderForm">
+            <div class="input-group input-group-sm">
+              <select name="status" class="form-select">
+                <% ["Pending","Processing","Shipped","Out for Delivery","Delivered","Cancelled","Returned"].forEach(s => { %>
+                  <option value="<%= s %>" <%= (order.status===s?'selected':'') %>><%= s %></option>
+                <% }) %>
+              </select>
+              <button class="btn btn-outline-primary btn-sm">Update</button>
+            </div>
+          </form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll(".apply-item-status").forEach(btn=>{
+  btn.addEventListener("click", async (e)=>{
+    const row = e.target.closest(".card-body");
+    const sel = row.querySelector(".item-status");
+    const orderId = sel.dataset.orderid;
+    const itemId = sel.dataset.itemid;
+    const status = sel.value;
+
+    const res = await fetch(`/admin/orders/${orderId}/items/${itemId}/status`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if(data.success) location.reload();
+    else alert(data.message || "Failed");
+  });
+});
+
+document.getElementById("wholeOrderForm")?.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const orderId = "<%= order._id %>";
+  const form = e.target;
+  const status = form.status.value;
+  const res = await fetch(`/admin/orders/${orderId}/status`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ status })
+  });
+  const data = await res.json();
+  if(data.success) location.reload();
+  else alert(data.message || "Failed");
+});
+
+document.querySelectorAll(".verify-return").forEach(btn=>{
+  btn.addEventListener("click", async ()=>{
+    const orderId = btn.dataset.orderid;
+    const itemId = btn.dataset.itemid;
+    const action = btn.dataset.action; // accept | reject
+    const res = await fetch(`/admin/orders/${orderId}/returns/${itemId}/verify`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if(data.success) location.reload();
+    else alert(data.message || "Failed");
+  });
+});
+</script>
+

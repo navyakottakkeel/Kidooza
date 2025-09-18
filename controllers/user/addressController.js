@@ -3,7 +3,6 @@ const Address = require('../../models/addressSchema');
 const mongoose = require("mongoose");
 
 
-
 const loadAddressPage = async (req, res) => {
     try {
 
@@ -37,6 +36,25 @@ const saveAddress = async (req, res) => {
 
         let userAddressDoc = await Address.findOne({ userId });
 
+        const isFirstAddress = !userAddressDoc || userAddressDoc.addresses.length === 0;
+
+        if (!req.body.name || !req.body.city || !req.body.state || !req.body.pincode || !req.body.phone) {
+            return res.status(400).json({ success: false, message: "All required fields must be filled." });
+        }
+        
+        if (!/^\d{6}$/.test(req.body.pincode)) {
+            return res.status(400).json({ success: false, message: "Invalid pincode format." });
+        }
+        
+        if (!/^\d{10}$/.test(req.body.phone)) {
+            return res.status(400).json({ success: false, message: "Invalid phone number format." });
+        }
+        
+        if (req.body.altPhone && !/^\d{10}$/.test(req.body.altPhone)) {
+            return res.status(400).json({ success: false, message: "Invalid alternate phone format." });
+        }
+        
+
         const newAddress = {
             addressType: req.body.addressType,
             name: req.body.name,
@@ -46,7 +64,7 @@ const saveAddress = async (req, res) => {
             pincode: req.body.pincode,
             phone: req.body.phone,
             altPhone: req.body.altPhone || null,
-            isDefault: req.body.isDefault || false
+            isDefault: isFirstAddress ? true : (req.body.isDefault || false) // 👈 First one default
         };
 
         if (!userAddressDoc) {

@@ -1,5 +1,5 @@
 const Product = require('../../models/productSchema');
-const Varients = require('../../models/varientSchema');
+const Variants = require('../../models/variantSchema');
 const mongoose = require("mongoose");
 const sharp = require('sharp');
 const fs = require('fs');
@@ -9,7 +9,7 @@ const path = require('path');
 
 ////////////////////////////////////////////////////////////////////
 
-const loadVarient = async (req, res) => {
+const loadVariant = async (req, res) => {
     try {
 
         const productId = req.query.productId;
@@ -23,15 +23,15 @@ const loadVarient = async (req, res) => {
         const limit = 6;
 
 
-        const varients = await Varients.find({ productId: new mongoose.Types.ObjectId(productId) })
+        const variants = await Variants.find({ productId: new mongoose.Types.ObjectId(productId) })
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
 
-        const count = await Varients.countDocuments({productId});
+        const count = await Variants.countDocuments({productId});
 
-        res.render("product-varient", {
-            data: varients,
+        res.render("product-variant", {
+            data: variants,
             currentPage: page,
             totalPages: Math.ceil(count / limit),
             msg: req.query.msg || null,
@@ -51,7 +51,7 @@ const loadVarient = async (req, res) => {
 
 ///////////////////////////////////////////////////////////////////////////
 
-const addVarient = async (req, res) => {
+const addVariant = async (req, res) => {
   try {
     const { productId, productName, size, colour, basePrice, salePrice, stock } = req.body;
     const productImage = req.files;
@@ -81,7 +81,7 @@ const addVarient = async (req, res) => {
       imagePaths.push('/uploads/products/' + filename);
     }
 
-    const newVarient = new Varients({
+    const newVariant = new Variants({
       productId,
       size,
       colour,
@@ -91,11 +91,11 @@ const addVarient = async (req, res) => {
       productImage: imagePaths
     });
 
-    await newVarient.save();
+    await newVariant.save();
 
     return res.json({ success: true });
   } catch (error) {
-    console.error("Error while adding varient:", error);
+    console.error("Error while adding variant:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error"
@@ -107,30 +107,30 @@ const addVarient = async (req, res) => {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-const deleteVarient = async (req, res) => {
+const deleteVariant = async (req, res) => {
     try {
       const { id } = req.params;
   
-      const deleted = await Varients.findByIdAndDelete(id);
+      const deleted = await Variants.findByIdAndDelete(id);
   
       if (!deleted) {
-        return res.status(404).json({ success: false, message: "Varient not found" });
+        return res.status(404).json({ success: false, message: "Variant not found" });
       }
   
       return res.status(200).json({
         success: true,
-        message: "Varient deleted successfully",
+        message: "Variant deleted successfully",
         productId: deleted.productId,
       });
     } catch (error) {
-      console.error("Error deleting varient:", error);
+      console.error("Error deleting variant:", error);
       return res.status(500).json({ success: false, message: "Server error" });
     }
   };
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  const updateVarient = async (req, res) => {
+  const updateVariant = async (req, res) => {
     try {
       const { id, size, colour, stock, basePrice, salePrice } = req.body;
   
@@ -138,7 +138,7 @@ const deleteVarient = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid variant ID" });
       }
   
-      const updated = await Varients.findByIdAndUpdate(
+      const updated = await Variants.findByIdAndUpdate(
         id,
         { size, colour, stock, basePrice, salePrice },
         { new: true }
@@ -159,8 +159,8 @@ const deleteVarient = async (req, res) => {
   ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-    loadVarient,
-    addVarient,
-    deleteVarient,
-    updateVarient
+    loadVariant,
+    addVariant,
+    deleteVariant,
+    updateVariant
 }

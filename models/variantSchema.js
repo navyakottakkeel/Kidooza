@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const {Schema} = mongoose;
 
-const varientSchema = new Schema({
+const variantSchema = new Schema({
     productId : {
         type : Schema.Types.ObjectId,
         ref : "Product",
@@ -38,5 +38,5 @@ const varientSchema = new Schema({
 })
 
 
-const Varient = mongoose.model("Varient",varientSchema);
-module.exports = Varient;
+const Variant = mongoose.model("Variant",variantSchema);
+module.exports = Variant;
