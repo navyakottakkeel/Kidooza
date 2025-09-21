@@ -325,6 +325,13 @@
                         <span class="text-muted">Discount</span>
                         <span class="text-success">-₹<%= order.discount %></span>
                       </div>
+
+                      <% if(order.couponApplied && order.couponDiscount > 0) { %>
+                        <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Coupon (<%= order.couponCode %>)</span>
+                          <span class="text-success">-₹<%= order.couponDiscount %></span>
+                        </div>
+                      <% } %>                      
                   
                       <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Platform Fee</span>

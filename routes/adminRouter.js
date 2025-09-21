@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/admin/adminController");
-const { userAuth, adminAuth } = require('../middlewares/auth');
+const {adminAuth } = require('../middlewares/auth');
 const customerController = require('../controllers/admin/customerController');
 const categoryController = require('../controllers/admin/categoryController');
 const productController = require('../controllers/admin/productController');
 const variantController = require('../controllers/admin/variantController');
 const orderController = require('../controllers/admin/orderController');
+const couponController = require('../controllers/admin/couponController');
+
 
 
 
@@ -62,7 +64,9 @@ router.post("/orders/:orderId/status", orderController.updateOrderStatus);
 router.post("/orders/:orderId/items/:itemId/status", orderController.updateItemStatus);
 router.post("/orders/:orderId/returns/:itemId/verify", orderController.verifyReturn);
 
-
+router.get("/coupons", couponController.getCoupons);
+router.post("/coupons/create", couponController.createCoupon);
+router.delete("/coupons/:id", couponController.deleteCoupon);
 
 
 

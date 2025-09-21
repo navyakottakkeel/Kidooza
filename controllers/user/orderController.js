@@ -4,6 +4,8 @@ const Address = require("../../models/addressSchema");
 const User = require("../../models/userSchema");
 const Variant = require("../../models/variantSchema");
 const Wallet = require("../../models/walletSchema");
+const Coupon = require("../../models/couponSchema");
+
 
 const PDFDocument = require("pdfkit");
 const Razorpay = require("razorpay");
@@ -174,7 +176,7 @@ const cancelOrder = async (req, res) => {
         item.status = "Cancelled";
         item.cancelReason = reason || "Order cancelled";
 
-       
+
       }
     }
 
@@ -183,25 +185,25 @@ const cancelOrder = async (req, res) => {
     order.cancelledAt = new Date();
 
 
-        // ✅ Refund if payment done
-        if (order.paymentStatus === "Paid" && refundAmount > 0) {
-    
-          await Wallet.findOneAndUpdate(
-            { userId: order.user },
-            {
-              $inc: { balance: refundAmount },
-              $push: {
-                transactions: {
-                  type: "credit",
-                  amount: refundAmount,
-                  reason: `Refund for cancelled order #${order._id}`,
-                  date: new Date()
-                }
-              }
-            },
-            { upsert: true, new: true }
-          );
-        }
+    // ✅ Refund if payment done
+    if (order.paymentStatus === "Paid" && refundAmount > 0) {
+
+      await Wallet.findOneAndUpdate(
+        { userId: order.user },
+        {
+          $inc: { balance: refundAmount },
+          $push: {
+            transactions: {
+              type: "credit",
+              amount: refundAmount,
+              reason: `Refund for cancelled order #${order._id}`,
+              date: new Date()
+            }
+          }
+        },
+        { upsert: true, new: true }
+      );
+    }
 
 
     await order.save();
@@ -212,7 +214,7 @@ const cancelOrder = async (req, res) => {
         ? `Order cancelled & ₹${refundAmount} refunded to wallet`
         : "Order cancelled (no refund needed)"
     });
-  
+
   } catch (error) {
     console.error(error);
     res.json({ success: false, message: "Server error" });
@@ -247,26 +249,26 @@ const cancelItem = async (req, res) => {
       { $inc: { stock: item.quantity } }
     );
 
-            // ✅ Refund if payment done
-            if (order.paymentStatus === "Paid") {
-              const refundAmount = item.salePrice * item.quantity;
-        
-              await Wallet.findOneAndUpdate(
-                { userId: order.user },
-                {
-                  $inc: { balance: refundAmount },
-                  $push: {
-                    transactions: {
-                      type: "credit",
-                      amount: refundAmount,
-                      reason: `Refund for cancelled order #${order._id}`,
-                      date: new Date()
-                    }
-                  }
-                },
-                { upsert: true, new: true }
-              );
+    // ✅ Refund if payment done
+    if (order.paymentStatus === "Paid") {
+      const refundAmount = item.salePrice * item.quantity;
+
+      await Wallet.findOneAndUpdate(
+        { userId: order.user },
+        {
+          $inc: { balance: refundAmount },
+          $push: {
+            transactions: {
+              type: "credit",
+              amount: refundAmount,
+              reason: `Refund for cancelled order #${order._id}`,
+              date: new Date()
             }
+          }
+        },
+        { upsert: true, new: true }
+      );
+    }
 
 
     await order.save();
@@ -321,6 +323,11 @@ const downloadInvoice = async (req, res) => {
     // Summary
     doc.text(`Subtotal: ₹${order.totalPrice}`);
     doc.text(`Discount: -₹${order.discount}`);
+    // ✅ Add Coupon Row if applied
+    if (order.couponApplied && order.couponDiscount > 0) {
+      doc.fillColor("green").text(`Coupon (${order.couponCode}): -₹${order.couponDiscount}`);
+      doc.fillColor("black"); // reset back to normal text color
+    }
     doc.text(`Platform Fee: -₹${order.platformFee}`);
     doc.text(`Shipping Fee: -₹${order.shippingFee}`);
     doc.text(`Final Amount: ₹${order.finalAmount}`);
@@ -371,7 +378,7 @@ const returnItem = async (req, res) => {
 
 
 // ------------------ Helper: compute order snapshot (shared) ------------------
-async function buildOrderSnapshot(userId, addressId) {
+async function buildOrderSnapshot(userId, addressId, couponCode) {
   // fetch cart & address; compute totals; return { orderedItems, totalPrice, discount, finalAmount, shippingFee, platformFee, address }
   const cart = await Cart.findOne({ userId }).populate("items.productId").populate("items.variantId");
   if (!cart || cart.items.length === 0) throw new Error("Cart is empty");
@@ -380,7 +387,7 @@ async function buildOrderSnapshot(userId, addressId) {
   const address = addressDoc?.addresses?.id(addressId);
   if (!address) throw new Error("Address not found");
 
-  let totalPrice = 0, discount = 0;
+  let totalPrice = 0, discount = 0; sellPrice = 0;
   const orderedItems = cart.items.map(item => {
     const basePrice = item.variantId?.basePrice || item.productId?.basePrice || 0;
     const salePrice = item.variantId?.salePrice || item.productId?.salePrice || basePrice;
@@ -396,6 +403,7 @@ async function buildOrderSnapshot(userId, addressId) {
     const itemTotal = salePrice * quantity;
     totalPrice += basePrice * quantity;
     if (basePrice > salePrice) discount += (basePrice - salePrice) * quantity;
+    sellPrice = totalPrice - discount;
 
     return {
       product: item.productId._id,
@@ -414,9 +422,45 @@ async function buildOrderSnapshot(userId, addressId) {
 
   const platformFee = 10;
   const shippingFee = totalPrice > 599 ? 0 : 30;
-  const finalAmount = totalPrice - discount + platformFee + shippingFee;
 
-  return { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount, address, cart };
+  let couponDiscount = 0;
+
+
+  // ✅ If coupon passed, validate & apply
+  if (couponCode) {
+    const coupon = await Coupon.findOne({ code: couponCode, isActive: true });
+    if (coupon) {
+      if (coupon.discountType === "fixed") {
+        couponDiscount = coupon.discountValue;
+      } else if (coupon.discountType === "percentage") {
+        console.log("cpds: ",coupon.discountValue )
+        console.log("Sell : ",sellPrice);
+        couponDiscount = Math.floor((sellPrice * coupon.discountValue) / 100);
+      }
+    }
+  }
+
+  const finalAmount = totalPrice - discount - couponDiscount + platformFee + shippingFee;
+
+  console.log("FINAL : ",finalAmount);
+  console.log("discount : ",discount);
+  console.log("couponDiscount : ",couponDiscount);
+  console.log("platformFee : ",platformFee);
+  console.log("shippingFee : ",shippingFee);
+
+  return {
+    orderedItems,
+    totalPrice,
+    discount,
+    couponDiscount,
+    couponApplied: !!couponDiscount,
+    couponCode: couponCode || "",
+    platformFee,
+    shippingFee,
+    finalAmount,
+    address,
+    cart
+  };
 }
 
 // ------------------ 1) COD & Wallet handler ------------------
@@ -424,11 +468,13 @@ async function buildOrderSnapshot(userId, addressId) {
 const placeOrder = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : req.session.user;
-    const { addressId, paymentMethod } = req.body;
+    const { addressId, paymentMethod, couponCode, couponDiscount } = req.body;
 
     // build order details from server (never trust client)
-    const { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount, address, cart } =
-      await buildOrderSnapshot(userId, addressId);
+    const { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount,
+      address, cart, couponApplied } =
+      await buildOrderSnapshot(userId, addressId, couponCode);
+
 
     // ----- COD rule: COD only allowed when finalAmount > 1000 (your requirement) -----
     if (paymentMethod === "COD") {
@@ -452,13 +498,19 @@ const placeOrder = async (req, res) => {
           pincode: address.pincode,
         },
         status: "Pending",
-        couponApplied: false,
         invoiceDate: new Date(),
         platformFee,
         shippingFee,
         paymentMethod: "COD",
-        paymentStatus: "Pending"
+        paymentStatus: "Pending",
+
+        // ✅ Coupon details
+        couponApplied: !!req.session.appliedCoupon,
+        couponCode: req.session.appliedCoupon?.code || "",
+        couponDiscount: req.session.appliedCoupon?.couponDiscount || 0,
       });
+
+
 
       await newOrder.save();
 
@@ -476,7 +528,8 @@ const placeOrder = async (req, res) => {
       return res.json({ success: true, orderId: newOrder._id, message: "Order placed with COD" });
     }
 
-    // ----- Wallet payment -----
+    // ---------------- Wallet payment -----------------------------
+    
     if (paymentMethod === "Wallet") {
       let wallet = await Wallet.findOne({ userId });
 
@@ -505,13 +558,19 @@ const placeOrder = async (req, res) => {
           pincode: address.pincode,
         },
         status: "Ordered",
-        couponApplied: false,
         invoiceDate: new Date(),
         platformFee,
         shippingFee,
         paymentMethod: "Wallet",
-        paymentStatus: "Paid"
+        paymentStatus: "Paid",
+        // ✅ Save coupon details
+        couponApplied: !!req.session.appliedCoupon,
+        couponCode: req.session.appliedCoupon?.code || "",
+        couponDiscount: req.session.appliedCoupon?.couponDiscount || 0,
       });
+
+      
+      
 
       await newOrder.save();
 
@@ -558,11 +617,12 @@ const placeOrder = async (req, res) => {
 const createRazorpayOrder = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : req.session.user;
-    const { addressId } = req.body;
+    const { addressId,  couponCode } = req.body;
 
     // build snapshot
-    const { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount, address, cart } =
-      await buildOrderSnapshot(userId, addressId);
+    const { orderedItems, totalPrice, discount, couponDiscount, couponApplied, platformFee, shippingFee, finalAmount, address, cart } =
+    await buildOrderSnapshot(userId, addressId, couponCode);
+
 
     // Create Razorpay order (amount in paise)
     const rzpOrder = await razorpay.orders.create({
@@ -593,8 +653,10 @@ const createRazorpayOrder = async (req, res) => {
       shippingFee,
       paymentMethod: "Razorpay",
       paymentStatus: "Pending",
-      // optional: store gateway order id
-      paymentGatewayOrderId: rzpOrder.id
+      paymentGatewayOrderId: rzpOrder.id,
+      couponApplied: !!req.session.appliedCoupon,
+        couponCode: req.session.appliedCoupon?.code || "",
+        couponDiscount: req.session.appliedCoupon?.couponDiscount || 0,
     });
     await newOrder.save();
 

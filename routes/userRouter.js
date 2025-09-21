@@ -10,6 +10,7 @@ const wishlistController = require("../controllers/user/wishlistController")
 const checkoutController = require("../controllers/user/checkoutController")
 const orderController = require("../controllers/user/orderController");
 const walletController = require("../controllers/user/walletController");
+const couponController = require("../controllers/user/couponController");
 
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
@@ -109,6 +110,9 @@ router.post("/payment/razorpay/retry", orderController.retryPayment);
 router.get("/order/failure/:orderId", orderController.loadOrderFailure);
 router.post("/payment/razorpay/failure", orderController.razorpayFailure);
 
+
+router.post("/coupon/apply",couponController.applyCoupon);
+router.post("/coupon/remove",couponController.removeCoupon);
 
 
 module.exports = router;

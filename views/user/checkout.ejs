@@ -136,6 +136,8 @@
             </div>
 
 
+
+
             <!-- RIGHT: Order Summary -->
             <div class="col-md-4">
                 <div class="card shadow-sm p-4">
@@ -165,28 +167,58 @@
                         <% }) %>
 
                             <hr>
+
+
+                            <div class="coupon-section mt-3">
+                                <label for="couponCode" class="form-label">Have a Coupon?</label>
+                                <div class="input-group">
+                                    <input type="text" id="couponCode" class="form-control"
+                                        placeholder="Enter coupon code">
+                                    <button id="applyCouponBtn" class="btn btn-success">Apply</button>
+                                    <button id="removeCouponBtn" class="btn btn-danger d-none">Remove</button>
+                                </div>
+                                <small id="couponMessage" class="text-muted"></small>
+                            </div>
+
+                            <hr>
                             <h5 class="fw-bold mb-3">Price Details</h5>
                             <div class="d-flex justify-content-between">
-                                <span>Total MRP</span> <span>₹<%= totalItemPrice.toLocaleString() %></span>
+                                <span>Total MRP</span>
+                                <span id="subtotal">
+                                    <%= totalItemPrice.toLocaleString() %>
+                                </span>
                             </div>
                             <div class="d-flex justify-content-between text-success">
-                                <span>Discount</span> <span>-₹<%= itemDiscount.toLocaleString() %></span>
+                                <span>Product Discount</span>
+                                <span>-₹<span id="discount">
+                                        <%= itemDiscount.toLocaleString() %>
+                                    </span></span>
                             </div>
+
+                            <div class="d-flex justify-content-between text-success d-none" id="couponDiscountRow">
+                                <span>Coupon Discount</span>
+                                <span>-₹<span id="couponDiscount">0</span></span>
+                            </div>
+
                             <div class="d-flex justify-content-between">
-                                <span>Platform Fee</span> <span>
+                                <span>Platform Fee</span>
+                                <span id="platformFee">
                                     <%= platformFee===0 ? 'FREE' : '₹' +platformFee %>
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between">
-                                <span>Shipping Fee</span> <span>
+                                <span>Shipping Fee</span>
+                                <span id="shippingFee">
                                     <%= shippingFee===0 ? 'FREE' : '₹' +shippingFee %>
                                 </span>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between fw-bold">
-                                <span>Total Amount</span> <span style="color: black;font-size: large;">₹<%=
-                                        total.toLocaleString() %></span>
+                                <span>Total Amount</span>
+                                <span id="grandTotal" style="color: black;font-size: large;">₹<%= total.toLocaleString()
+                                        %></span>
                             </div>
+
 
 
                             <!-- ✅ Payment Options -->
@@ -224,10 +256,14 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <!-- <input id="addressLine" class="swal2-input" placeholder="Address (House No, Street, Area)"> -->
 
     <script>
+
+        let appliedCouponCode = null;
+        let appliedCouponDiscount = 0;
 
         document.getElementById("addNewAddressBtn").addEventListener("click", () => {
             Swal.fire({
@@ -436,14 +472,102 @@
 
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    </script>
+        const rawSubtotal = document.getElementById("subtotal").innerText;
+        const subtotal = Number(rawSubtotal.replace(/[^0-9.-]/g, "")); // removes ₹ , and commas
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+        const itemDiscount0 = document.getElementById("discount").innerText;
+        const itemDiscount = Number(itemDiscount0.replace(/[^0-9.-]/g, ""));
 
-    <script>
+        const platformFee0 = document.getElementById("platformFee").innerText;
+        const platformFee = Number(platformFee0.replace(/[^0-9.-]/g, ""));
+
+        let shippingFee = document.getElementById("shippingFee")?.innerText?.trim();
+
+        if (shippingFee?.toUpperCase() === "FREE") {
+            shippingFee = 0;
+        } else {
+            shippingFee = Number(shippingFee.replace(/[^0-9.-]/g, ""));
+        }
+
+
+        document.getElementById("applyCouponBtn").addEventListener("click", async () => {
+            const code = document.getElementById("couponCode").value.trim();
+            if (!code) {
+                Swal.fire("Error", "Please enter a coupon code", "warning");
+                return;
+            }
+
+            const res = await fetch("/coupon/apply", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code, total: subtotal, itemDiscount, platformFee, shippingFee })
+            });
+            const data = await res.json();
+
+            const messageEl = document.getElementById("couponMessage");
+
+            if (data.success) {
+                appliedCouponCode = data.code;          // ✅ store applied coupon
+                appliedCouponDiscount = data.couponDiscount;
+                document.getElementById("couponDiscount").innerText = data.couponDiscount;
+                document.getElementById("couponDiscountRow").classList.remove("d-none");
+
+                document.getElementById("grandTotal").innerText = "₹" + data.grandTotal;
+                messageEl.innerText = `Coupon "${data.code}" applied!`;
+                messageEl.classList.add("text-success");
+                messageEl.classList.remove("text-danger");
+
+                document.getElementById("applyCouponBtn").classList.add("d-none");
+                document.getElementById("removeCouponBtn").classList.remove("d-none");
+            }
+            else {
+                messageEl.innerText = data.message;
+                messageEl.classList.add("text-danger");
+                messageEl.classList.remove("text-success");
+            }
+        });
+
+        document.getElementById("removeCouponBtn").addEventListener("click", async () => {
+            const res = await fetch("/coupon/remove", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    total: subtotal,
+                    itemDiscount,
+                    platformFee,
+                    shippingFee
+                })
+            });
+
+            const data = await res.json();
+            const messageEl = document.getElementById("couponMessage");
+
+            if (data.success) {
+                appliedCouponCode = null;
+                appliedCouponDiscount = 0;
+                document.getElementById("couponDiscount").innerText = data.couponDiscount;
+                document.getElementById("couponDiscountRow").classList.add("d-none"); // hide row
+
+                document.getElementById("grandTotal").innerText = "₹" + data.grandTotal;
+                messageEl.innerText = data.message;
+                messageEl.classList.remove("text-danger");
+                messageEl.classList.add("text-success");
+
+                document.getElementById("applyCouponBtn").classList.remove("d-none");
+                document.getElementById("removeCouponBtn").classList.add("d-none");
+            }
+        });
+
+
+
+
+
+
+
+
         (function () {
             // total, razorpayKeyId, walletBalance are rendered into the template by backend:
             // <%= total %>, <%= razorpayKeyId %>, <%= user?.walletBalance || 0 %>
@@ -503,13 +627,20 @@
 
                 const addressId = selectedAddress.value;
                 const paymentMethod = selectedPayment.value;
+                const couponCode = document.getElementById("couponCode").value.trim();
+                const couponDiscount = Number(document.getElementById("couponDiscount").innerText) || 0;
 
                 // 1) Call /order/place — backend will either finalize for COD/Wallet or instruct to use Razorpay
                 try {
                     const placeRes = await fetch("/order/place", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ addressId, paymentMethod })
+                        body: JSON.stringify({
+                            addressId,
+                            paymentMethod,
+                            couponCode: appliedCouponCode,   // ✅ send the applied coupon
+                            couponDiscount: appliedCouponDiscount
+                        })
                     });
                     const placeData = await placeRes.json();
 
@@ -524,7 +655,7 @@
                         const initRes = await fetch("/payment/razorpay/create", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ addressId })
+                            body: JSON.stringify({ addressId,couponCode: appliedCouponCode,couponDiscount: appliedCouponDiscount })
                         });
                         const init = await initRes.json();
                         if (!init.success) {

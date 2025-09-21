@@ -129,6 +129,8 @@ const orderSchema = new Schema(
     invoiceDate: Date,
 
     couponApplied: { type: Boolean, default: false },
+    couponCode: { type: String, default: "" },
+    couponDiscount: { type: Number, default: 0 },
     platformFee: { type: Number, default: 10 },
     shippingFee: { type: Number, default: 0 },
 
