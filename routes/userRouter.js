@@ -84,8 +84,10 @@ router.get("/product/:id/variants", wishlistController.getVariantsByProduct);
 router.get('/cart', cartController.getCartPage);
 router.post('/cart/update-quantity', cartController.updateQuantity);
 router.get("/cart/remove/:productId/:variantId", cartController.removeFromCart);
+router.get("/cart/validate", cartController.validateCart);
 
 router.get('/checkout', checkoutController.getCheckoutPage);
+router.get('/coupon/list', checkoutController.couponList);
 
 router.post("/order/place", orderController.placeOrder);
 router.get("/orderplaced", orderController.loadOrderPlaced);

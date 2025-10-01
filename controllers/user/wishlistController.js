@@ -2,6 +2,7 @@ const Product = require('../../models/productSchema');
 const User = require('../../models/userSchema');
 const Variant = require('../../models/variantSchema');
 const Wishlist = require('../../models/wishlistSchema');
+const Offer = require('../../models/offerSchema');
 
 
 
@@ -79,6 +80,112 @@ const addToWishlist = async (req, res) => {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+// const getWishlistPage = async (req, res) => {
+//     try {
+//       const userId = req.user ? req.user._id : req.session.user;
+//       if (!userId) return res.redirect("/login");
+  
+//       let user = null;
+//       if (req.user) {
+//         user = req.user;
+//       } else if (req.session.user) {
+//         user = await User.findById(req.session.user);
+//       }
+//       res.locals.user = user;
+  
+//       const wishlist = await Wishlist.findOne({ userId })
+//         .populate("items.productId")
+//         .lean();
+
+//         const sortedItems = (wishlist?.items || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+//       // Group by productId
+//       const productMap = new Map();
+  
+//       sortedItems.forEach(item => {
+//         if (!item.productId) return;
+//         const pid = item.productId._id.toString();
+  
+//         if (!productMap.has(pid)) {
+//           productMap.set(pid, {
+//             _id: item.productId._id,
+//             name: item.productId.productName,
+//             description : item.productId.description,
+//             basePrice: item.productId.basePrice,
+//             salePrice: item.productId.salePrice,
+//             images: item.productId.images,
+//             variantsByColour: item.productId.variantsByColour, // from your schema
+//             wishlistedColours: []
+//           });
+//         }
+  
+//         productMap.get(pid).wishlistedColours.push(item.colour);
+//       });
+  
+//       const products = Array.from(productMap.values());
+
+//       /////////////////////////////////
+
+//       for (let product of products) {
+//         const variants = await Variant.find({ productId: product._id }).lean();
+
+//         const groupedByColour = {};
+
+//         variants.forEach(v => {
+//             if (!groupedByColour[v.colour]) {
+//                 groupedByColour[v.colour] = {
+//                     colour: v.colour,
+//                     image: v.productImage[0], // default image for this colour
+//                     sizes: []
+//                 };
+//             }
+        
+//             groupedByColour[v.colour].sizes.push({
+//                 id: v._id,
+//                 size: v.size,
+//                 stock: v.stock,
+//                 image: v.productImage[0]
+//             });
+//         });
+        
+//         product.variantsByColour = Object.values(groupedByColour);
+        
+//         // pick default image from first colour
+//         if (product.variantsByColour.length > 0) {
+//             product.defaultImage = product.variantsByColour[0].image;
+//         }
+        
+//         // ✅ check if *any variant of first colour* is in wishlist
+//         if (req.user && product.variantsByColour[0].sizes.length > 0) {
+//             const wishlistItem = await Wishlist.findOne({
+//                 userId: req.user._id,
+//                 "items.variantId": product.variantsByColour[0].sizes[0].id
+//             });
+        
+//             product.inWishlist = !!wishlistItem;
+//         }
+        
+//     }
+
+//     ////////////////////////////////////
+  
+//       let cartCount = 0;
+//       try {
+//         cartCount = await getCartCount(userId);
+//       } catch {}
+  
+//       res.render("wishlist", {
+//         wishlistProducts: products,
+//         user,
+//         cartCount,
+//         wishlistCount: products.length
+//       });
+//     } catch (err) {
+//       console.error("Wishlist page error:", err);
+//       res.redirect("/");
+//     }
+//   };
+
 const getWishlistPage = async (req, res) => {
     try {
       const userId = req.user ? req.user._id : req.session.user;
@@ -95,13 +202,15 @@ const getWishlistPage = async (req, res) => {
       const wishlist = await Wishlist.findOne({ userId })
         .populate("items.productId")
         .lean();
-
-        const sortedItems = (wishlist?.items || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+      const sortedItems = (wishlist?.items || []).sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
   
       // Group by productId
       const productMap = new Map();
   
-      sortedItems.forEach(item => {
+      sortedItems.forEach((item) => {
         if (!item.productId) return;
         const pid = item.productId._id.toString();
   
@@ -109,11 +218,12 @@ const getWishlistPage = async (req, res) => {
           productMap.set(pid, {
             _id: item.productId._id,
             name: item.productId.productName,
-            description : item.productId.description,
+            description: item.productId.description,
             basePrice: item.productId.basePrice,
             salePrice: item.productId.salePrice,
             images: item.productId.images,
-            variantsByColour: item.productId.variantsByColour, // from your schema
+            category: item.productId.category,
+            variantsByColour: item.productId.variantsByColour,
             wishlistedColours: []
           });
         }
@@ -122,68 +232,109 @@ const getWishlistPage = async (req, res) => {
       });
   
       const products = Array.from(productMap.values());
-
+  
       /////////////////////////////////
-
       for (let product of products) {
+        // 🔹 1. Get variants grouped by colour
         const variants = await Variant.find({ productId: product._id }).lean();
-
         const groupedByColour = {};
+  
+        variants.forEach((v) => {
+          if (!groupedByColour[v.colour]) {
+            groupedByColour[v.colour] = {
+              colour: v.colour,
+              image: v.productImage[0],
+              sizes: []
+            };
+          }
+  
+          groupedByColour[v.colour].sizes.push({
+            id: v._id,
+            size: v.size,
+            stock: v.stock,
+            image: v.productImage[0]
+          });
+        });
+  
+        product.variantsByColour = Object.values(groupedByColour);
+  
+        if (product.variantsByColour.length > 0) {
+          product.defaultImage = product.variantsByColour[0].image;
+        }
+  
+        if (req.user && product.variantsByColour[0]?.sizes?.length > 0) {
+          const wishlistItem = await Wishlist.findOne({
+            userId: req.user._id,
+            "items.variantId": product.variantsByColour[0].sizes[0].id
+          });
+  
+          product.inWishlist = !!wishlistItem;
+        }
+  
+        // 🔹 2. Apply offer calculation
+        const basePrice = product.basePrice;
+  
+        // default discount (from base vs salePrice in product model)
+        const defaultDiscount = Math.round(
+          ((basePrice - product.salePrice) / basePrice) * 100
+        );
+  
+        const now = new Date();
 
-        variants.forEach(v => {
-            if (!groupedByColour[v.colour]) {
-                groupedByColour[v.colour] = {
-                    colour: v.colour,
-                    image: v.productImage[0], // default image for this colour
-                    sizes: []
-                };
-            }
-        
-            groupedByColour[v.colour].sizes.push({
-                id: v._id,
-                size: v.size,
-                stock: v.stock,
-                image: v.productImage[0]
-            });
+        // 🔹 Product Offer
+        const productOffer = await Offer.findOne({
+          type: "Product",
+          productId: product._id,
+          isActive: true,
+          startDate: { $lte: now },
+          endDate: { $gte: now }
         });
         
-        product.variantsByColour = Object.values(groupedByColour);
+        // 🔹 Category Offer
+        const categoryOffer = await Offer.findOne({
+          type: "Category",
+          categoryId: product.category?._id || product.category, // works if populated or just ID
+          isActive: true,
+          startDate: { $lte: now },
+          endDate: { $gte: now }
+        });
         
-        // pick default image from first colour
-        if (product.variantsByColour.length > 0) {
-            product.defaultImage = product.variantsByColour[0].image;
-        }
+        // Pick higher discount
+        const productDiscount = productOffer ? productOffer.discountPercentage : 0;
+        const categoryDiscount = categoryOffer ? categoryOffer.discountPercentage : 0;
         
-        // ✅ check if *any variant of first colour* is in wishlist
-        if (req.user && product.variantsByColour[0].sizes.length > 0) {
-            const wishlistItem = await Wishlist.findOne({
-                userId: req.user._id,
-                "items.variantId": product.variantsByColour[0].sizes[0].id
-            });
+        const bestDiscount = Math.max(productDiscount, categoryDiscount);
+        const finalDiscount = Math.round((((product.basePrice - product.salePrice) / product.basePrice) * 100) + bestDiscount); 
         
-            product.inWishlist = !!wishlistItem;
-        }
-        
-    }
+        // Calculate sale price
+        const finalSalePrice = product.basePrice - (product.basePrice * finalDiscount) / 100;
 
-    ////////////////////////////////////
+        product.finalSalePrice = finalSalePrice;
+        product.finalDiscount = finalDiscount;
+
+      }
+      ////////////////////////////////////
   
       let cartCount = 0;
       try {
         cartCount = await getCartCount(userId);
       } catch {}
+
+    
   
       res.render("wishlist", {
         wishlistProducts: products,
         user,
         cartCount,
-        wishlistCount: products.length
+        wishlistCount: products.length,
+
       });
     } catch (err) {
       console.error("Wishlist page error:", err);
       res.redirect("/");
     }
   };
+  
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 const removeFromWishlist = async (req, res) => {
@@ -263,7 +414,6 @@ const toggleWishlist = async (req, res) => {
 };
 
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 const getVariantsByProduct = async (req, res) => {
@@ -292,6 +442,7 @@ const getVariantsByProduct = async (req, res) => {
       res.json({ success: false });
     }
   };
+
 
 
 module.exports = {

@@ -3,50 +3,50 @@
 
   <div class="container" style="margin-top:180px">
     <div class="row">
-    <!-- Left Sidebar -->
-    <div class="col-md-3">
-      <div class="list-group shadow-sm rounded-4 overflow-hidden" style="border: 1px solid #e0e0e0;">
+      <!-- Left Sidebar -->
+      <div class="col-md-3">
+        <div class="list-group shadow-sm rounded-4 overflow-hidden" style="border: 1px solid #e0e0e0;">
 
           <!-- Header -->
           <div class="list-group-item fw-bold text-center py-3" style="background: linear-gradient(135deg, #f5f5f5, #e0e0e0); 
          color: #444; 
          font-size: 1.1rem; 
          letter-spacing: 0.5px;">
-              <i class="fas fa-user-circle me-2"></i> My Account
+            <i class="fas fa-user-circle me-2"></i> My Account
           </div>
 
           <!-- Links -->
           <a href="/userProfile" class="list-group-item list-group-item-action py-3"
-              style="border: none; font-size: 0.95rem;">
-              <i class="fas fa-user me-2 text-primary"></i> My Profile
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-user me-2 text-primary"></i> My Profile
           </a>
 
           <a href="/address" class="list-group-item list-group-item-action py-3"
-              style="border: none; font-size: 0.95rem;">
-              <i class="fas fa-map-marker-alt me-2 text-primary"></i> Address
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-map-marker-alt me-2 text-primary"></i> Address
           </a>
 
           <a href="/orders" class="list-group-item list-group-item-action py-3"
-              style="border: none; font-size: 0.95rem;">
-              <i class="fas fa-box me-2 text-primary"></i> My Orders
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-box me-2 text-primary"></i> My Orders
           </a>
 
           <a href="/wallet" class="list-group-item list-group-item-action py-3"
-              style="border: none; font-size: 0.95rem;">
-              <i class="fas fa-wallet me-2 text-primary"></i> Wallet
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-wallet me-2 text-primary"></i> Wallet
           </a>
 
           <a href="/profile-change-password" class="list-group-item list-group-item-action py-3"
-              style="border: none; font-size: 0.95rem;">
-              <i class="fas fa-key me-2 text-primary"></i> Change Password
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-key me-2 text-primary"></i> Change Password
           </a>
 
           <a href="/logout" class="list-group-item list-group-item-action text-danger py-3 fw-bold"
-              style="border: none; font-size: 0.95rem;">
-              <i class="fas fa-sign-out-alt me-2"></i> Logout
+            style="border: none; font-size: 0.95rem;">
+            <i class="fas fa-sign-out-alt me-2"></i> Logout
           </a>
+        </div>
       </div>
-  </div>
 
       <!-- Right Content -->
       <div class="col-md-9">
@@ -98,14 +98,43 @@
                           style="display:none;">
                       </form>
               </div>
+
+              <br><br>
+              <div class="mb-3">
+                <strong>Referral Code:</strong>
+                <span class="badge bg-primary text-white px-3 py-2" id="referralCode">
+                  <%= user.referalcode %>
+                </span>
+                <button class="btn btn-sm btn-outline-secondary ms-2" id="copyReferralBtn" title="Copy to clipboard">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <small class="text-muted d-block mt-1">Share this code with friends and earn rewards!</small>
+              </div>
+
             </div>
 
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             <script>
               // Auto submit when an image is selected
               document.getElementById('profileImageInput').addEventListener('change', function () {
                 if (this.files.length > 0) {
                   document.getElementById('profileImageForm').submit();
                 }
+              });
+
+              document.getElementById('copyReferralBtn').addEventListener('click', () => {
+                const code = document.getElementById('referralCode').textContent.trim();
+                navigator.clipboard.writeText(code).then(() => {
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Copied!',
+                    text: `Referral code ${code} copied to clipboard`,
+                    timer: 1500,
+                    showConfirmButton: false
+                  });
+                }).catch(err => {
+                  console.error('Copy failed', err);
+                });
               });
             </script>
 

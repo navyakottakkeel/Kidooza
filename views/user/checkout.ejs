@@ -177,20 +177,21 @@
                                     <button id="applyCouponBtn" class="btn btn-success">Apply</button>
                                     <button id="removeCouponBtn" class="btn btn-danger d-none">Remove</button>
                                 </div>
-                                <small id="couponMessage" class="text-muted"></small>
+                                <small id="couponMessage" class="text-muted"></small><br>
+                                <a href="javascript:void(0)" id="viewCouponsLink">View Available Coupons</a>
                             </div>
 
                             <hr>
                             <h5 class="fw-bold mb-3">Price Details</h5>
                             <div class="d-flex justify-content-between">
                                 <span>Total MRP</span>
-                                <span id="subtotal">
+                                <span id="subtotal" class="checkout-total">
                                     <%= totalItemPrice.toLocaleString() %>
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between text-success">
                                 <span>Product Discount</span>
-                                <span>-₹<span id="discount">
+                                <span>-₹<span id="discount" class="checkout-discount">
                                         <%= itemDiscount.toLocaleString() %>
                                     </span></span>
                             </div>
@@ -215,7 +216,7 @@
                             <hr>
                             <div class="d-flex justify-content-between fw-bold">
                                 <span>Total Amount</span>
-                                <span id="grandTotal" style="color: black;font-size: large;">₹<%= total.toLocaleString()
+                                <span id="grandTotal" class="checkout-final" style="color: black;font-size: large;">₹<%= total.toLocaleString()
                                         %></span>
                             </div>
 
@@ -257,6 +258,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
     <!-- <input id="addressLine" class="swal2-input" placeholder="Address (House No, Street, Area)"> -->
 
@@ -478,6 +481,9 @@
         const rawSubtotal = document.getElementById("subtotal").innerText;
         const subtotal = Number(rawSubtotal.replace(/[^0-9.-]/g, "")); // removes ₹ , and commas
 
+        const rawgtotal = document.getElementById("grandTotal").innerText;
+        const grandtotal = Number(rawgtotal.replace(/[^0-9.-]/g, ""));
+
         const itemDiscount0 = document.getElementById("discount").innerText;
         const itemDiscount = Number(itemDiscount0.replace(/[^0-9.-]/g, ""));
 
@@ -503,7 +509,7 @@
             const res = await fetch("/coupon/apply", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ code, total: subtotal, itemDiscount, platformFee, shippingFee })
+                body: JSON.stringify({ code, total: subtotal, itemDiscount, platformFee, shippingFee, grandtotal })
             });
             const data = await res.json();
 
@@ -560,12 +566,6 @@
                 document.getElementById("removeCouponBtn").classList.add("d-none");
             }
         });
-
-
-
-
-
-
 
 
         (function () {
@@ -630,6 +630,12 @@
                 const couponCode = document.getElementById("couponCode").value.trim();
                 const couponDiscount = Number(document.getElementById("couponDiscount").innerText) || 0;
 
+                // ✅ Extract amounts shown in checkout page
+                const totalPrice = parseFloat(document.querySelector(".checkout-total").textContent.replace(/[₹,]/g, "")) || 0;
+                const discount = parseFloat(document.querySelector(".checkout-discount").textContent.replace(/[₹,]/g, "")) || 0;
+                const finalAmount = parseFloat(document.querySelector(".checkout-final").textContent.replace(/[₹,]/g, "")) || 0;
+
+
                 // 1) Call /order/place — backend will either finalize for COD/Wallet or instruct to use Razorpay
                 try {
                     const placeRes = await fetch("/order/place", {
@@ -639,7 +645,10 @@
                             addressId,
                             paymentMethod,
                             couponCode: appliedCouponCode,   // ✅ send the applied coupon
-                            couponDiscount: appliedCouponDiscount
+                            couponDiscount: appliedCouponDiscount,
+                            totalPrice,
+                            discount,
+                            finalAmount
                         })
                     });
                     const placeData = await placeRes.json();
@@ -655,7 +664,14 @@
                         const initRes = await fetch("/payment/razorpay/create", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ addressId,couponCode: appliedCouponCode,couponDiscount: appliedCouponDiscount })
+                            body: JSON.stringify({
+                                addressId,
+                                couponCode: appliedCouponCode,
+                                couponDiscount: appliedCouponDiscount,
+                                totalPrice,
+                                discount,
+                                finalAmount
+                            })
                         });
                         const init = await initRes.json();
                         if (!init.success) {
@@ -736,6 +752,132 @@
                 }
             });
         })();
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+  document.getElementById("viewCouponsLink").addEventListener("click", async () => {
+    try {
+      const res = await fetch("/coupon/list");
+      const data = await res.json();
+
+      if (!data.success || !Array.isArray(data.coupons) || data.coupons.length === 0) {
+        Swal.fire({
+          title: "No Coupons",
+          text: "Currently no coupons are available.",
+          icon: "info",
+          confirmButtonText: "OK"
+        });
+        return;
+      }
+
+      // Build styled coupon cards
+      let html = `<div style="display: flex; flex-direction: column; gap: 15px;">`;
+
+      data.coupons.forEach(coupon => {
+        const code = coupon.code || "UNKNOWN";
+        const type = coupon.discountType || "";
+        const value = coupon.discountValue || 0;
+        const expiry = coupon.expiryDate ? new Date(coupon.expiryDate).toLocaleDateString() : "No expiry";
+        const minPurchase = coupon.minPurchase || 0;
+
+        let discountText = "";
+        if (type === "percentage") {
+          discountText = `${value.toFixed(0)}% OFF`;
+        } else if (type === "fixed") {
+          discountText = `₹${value.toFixed(2)} OFF`;
+        }
+
+        html += `
+          <div style="
+            border: 1px solid #e1e5eb;
+            border-radius: 10px;
+            background: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 18px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            font-family: 'Segoe UI', sans-serif;
+          ">
+            <div style="flex:1;">
+              <!-- Coupon Code -->
+              <div style="font-size: 20px; font-weight: 700; color:#2c3e50; margin-bottom:6px;">
+                <span id="code-${code}" style="background:#f4f6f9; padding:4px 10px; border-radius:6px; letter-spacing:1px;">
+                  ${code}
+                </span>
+              </div>
+              
+              <!-- Discount -->
+              <div style="font-size: 16px; font-weight:600; color:#e74c3c; margin-bottom:4px;">
+                ${discountText}
+              </div>
+
+              <!-- Other Details -->
+              <div style="font-size: 13px; color:#555;">
+                Min Purchase: ₹${minPurchase.toFixed(2)} <br>
+                Expires: ${expiry}
+              </div>
+            </div>
+
+            <!-- Professional Copy Button -->
+            <button onclick="copyCoupon('${code}')" style="
+              background: #f4f6f9;
+              border: 1px solid #d1d5db;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              color: #374151;
+              font-size: 16px;
+            " onmouseover="this.style.background='#3498db';this.style.color='#fff';this.style.border='1px solid #3498db'" 
+              onmouseout="this.style.background='#f4f6f9';this.style.color='#374151';this.style.border='1px solid #d1d5db'">
+              <i class="fa fa-copy"></i>
+            </button>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+
+      Swal.fire({
+        title: "Available Coupons 🎁",
+        html: html,
+        width: 600,
+        showConfirmButton: false,
+        showCloseButton: true
+      });
+
+    } catch (err) {
+      console.error("Error loading coupons:", err);
+      Swal.fire({
+        title: "Error",
+        text: "Could not load coupons. Try again later.",
+        icon: "error"
+      });
+    }
+  });
+
+  // Copy coupon to clipboard with toast
+  function copyCoupon(code) {
+    navigator.clipboard.writeText(code).then(() => {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: `Coupon ${code} copied!`,
+        showConfirmButton: false,
+        timer: 1500
+      });
+    });
+  }
+
 
 
     </script>

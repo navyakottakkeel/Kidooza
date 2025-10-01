@@ -44,10 +44,6 @@ const userSchema = new Schema({
         type : Schema.Types.ObjectId,
         ref : "Cart"
     }],
-    wallet : {
-        type : Number,
-        default : 0
-    },
     orderHistory : [{
         type : Schema.Types.ObjectId,
         ref : "Order"
@@ -60,11 +56,12 @@ const userSchema = new Schema({
         type : String
     },
     redeemed : {
-        type : Boolean
+        type : Boolean,
+        default: false
     },
     redeemedUsers : [{
-        type : Schema.Types.Object,
-        ref : "Users"
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "User"
     }],
     searchHistory : {
         category : {

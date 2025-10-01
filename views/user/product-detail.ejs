@@ -362,6 +362,8 @@
       color: white;
     }
 
+
+
   </style>
   
 
@@ -407,15 +409,6 @@
                                     data-product-id="<%= product._id %>" data-colour=" ">
                                     <i class="fa fa-heart"></i>
                                   </button>
-                                  
-
-                    <!-- <button id="wishlistMainBtn"
-                        class="wishlist-btn position-absolute top-0 end-0 m-2 <%= isWishlisted ? 'active' : '' %>"
-                        data-product-id="<%= product._id %>"
-                        data-variant-id=""  
-                        <i class="fa fa-heart"></i>
-                    </button> -->
-
 
                       </div>
                       
@@ -440,6 +433,7 @@
               <span class="original-price"><del>₹<%= product.basePrice %></del></span>
               <span class="discount-tag"><%= discountPercent %>% OFF</span>
             <% } %>
+
           </div>
 
 
@@ -489,6 +483,11 @@
             <form id="addToCartForm">
                 <input type="hidden" name="productId" value="<%= product._id %>">
                 <input type="hidden" name="variantId" id="variantIdInput" value="">
+
+                <input type="hidden" name="saleValue" id="saleValue" value="<%= product.salePrice %>">
+                <input type="hidden" name="baseValue" id="baseValue" value="<%= product.basePrice %>">
+                <input type="hidden" name="discount" id="discount" value="<%= discountPercent %>">
+
                 <div class="quantity-selector">
                   <button type="button" id="qty-decrease">-</button>
                   <span id="quantityDisplay">1</span>
@@ -497,7 +496,7 @@
               </div><label for="" style="color: #5d8255;">#Maximum quantity is 5</label>
               
               
-                <button type="submit" class="btn btn-primary btn-add-to-cart">Add to Cart</button>
+                <button type="submit" id="addToCartBtn" class="btn btn-primary btn-add-to-cart">Add to Cart</button>
             </form>
         </div>
         
@@ -649,49 +648,60 @@
 const variants = <%- JSON.stringify(variants) %>;
 
 
-document.getElementById('addToCartForm').addEventListener('submit', (e) => {
-    e.preventDefault(); // ⛔ Prevent page reload
+document.getElementById('addToCartForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); // ⛔ Prevent page reload
 
-    const productId = "<%= product._id %>";
-    const variantId = findVariant(
-        document.getElementById('selectedSize').value,
-        document.getElementById('selectedColour').value
-    )?._id || null;
-    const quantity = parseInt(document.getElementById('quantityInput').value, 10);
+  const productId = "<%= product._id %>";
+  const variantId = findVariant(
+    document.getElementById('selectedSize').value,
+    document.getElementById('selectedColour').value
+  )?._id || null;
+  const quantity = parseInt(document.getElementById('quantityInput').value, 10);
 
-    fetch('/cart/add', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ productId, variantId, quantity })
-    })
-    .then(async res => {
+  // ✅ Extract visible values from DOM (cleaned of currency/commas)
+  const baseValue = parseFloat(
+    document.querySelector(".original-price").textContent.replace(/[₹,]/g, "")
+  ) || 0;
+
+  const saleValue = parseFloat(
+    document.querySelector(".selling-price").textContent.replace(/[₹,]/g, "")
+  ) || 0;
+
+  const discountMatch = document.querySelector(".discount-tag")?.textContent.match(/(\d+)/);
+  const discount = discountMatch ? parseInt(discountMatch[1], 10) : 0;
+
+  console.log("Submitting Add to Cart", { productId, variantId, quantity, baseValue, price: saleValue, discount });
+
+  try {
+    const res = await fetch('/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, variantId, quantity, saleValue, baseValue, discount })
+    });
+
     const data = await res.json();
-    if (!res.ok) throw data; // pass server error object to catch
-    return data;
-})
-.then(data => {
-    Swal.fire('Added!', 'Product added to cart', 'success');
-})
-.catch(err => {
+    if (!res.ok) throw data; // forward backend error to catch
+
+    Swal.fire('Added!', 'Product added to cart', 'success')
+      .then(() => window.location.reload()); // optional reload if you want cart count to update
+  } catch (err) {
     if (err.error === 'Not logged in') {
-        Swal.fire({
-            title: 'Please log in to continue',
-            text: 'You need to log in before adding items to your cart.',
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonText: 'Login',
-            cancelButtonText: 'Cancel'
-        }).then(result => {
-            if (result.isConfirmed) {
-                window.location.href = '/login';
-            }
-        });
+      Swal.fire({
+        title: 'Please log in to continue',
+        text: 'You need to log in before adding items to your cart.',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Login',
+        cancelButtonText: 'Cancel'
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.location.href = '/login';
+        }
+      });
     } else {
-        Swal.fire('Error', err.error || 'Something went wrong', 'error');
+      Swal.fire('Error', err.error || 'Something went wrong', 'error');
     }
-});
+  }
 });
 
 //////////////////////////////////////////////////////////////////////////////////////////

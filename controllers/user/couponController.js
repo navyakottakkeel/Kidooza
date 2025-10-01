@@ -4,8 +4,9 @@ const Order = require("../../models/orderSchema");
 
 const applyCoupon = async (req, res) => {
   try {
-    const { code, total, itemDiscount, platformFee, shippingFee } = req.body;
+    const { code, total, itemDiscount, platformFee, shippingFee, grandtotal } = req.body;
     const userId = req.user ? req.user._id : req.session.user;
+
 
     const coupon = await Coupon.findOne({
       code: code.trim().toUpperCase(),
@@ -33,7 +34,13 @@ const applyCoupon = async (req, res) => {
     }
 
     // ✅ Net price after product discount
-    const priceAfterItemDiscount = total - itemDiscount;
+    const priceAfterItemDiscount = round2(total - itemDiscount);
+
+    // console.log("TOTAL : ",total);
+    // console.log("itemDiscount : ",itemDiscount);
+    // console.log("priceAfterItemDiscount : ",priceAfterItemDiscount);
+    // console.log("grandtotal : ",grandtotal);
+
 
     if (coupon.minPurchase && priceAfterItemDiscount < coupon.minPurchase) {
       return res.json({
@@ -45,17 +52,16 @@ const applyCoupon = async (req, res) => {
     // ✅ calculate coupon discount
     let couponDiscount = 0;
     if (coupon.discountType === "percentage") {
-      couponDiscount = (priceAfterItemDiscount * coupon.discountValue) / 100;
+      couponDiscount = round2((grandtotal * coupon.discountValue) / 100);
     } else {
-      couponDiscount = coupon.discountValue;
+      couponDiscount = round2(coupon.discountValue);
     }
 
     // ✅ final grand total
-    const grandTotal = Math.max(
-      priceAfterItemDiscount - couponDiscount + platformFee + shippingFee,
-      0
-    );
+    const grandTotal = round2(Math.max(
+      priceAfterItemDiscount - couponDiscount + platformFee + shippingFee,0));
 
+     
     // save coupon in session
     req.session.appliedCoupon = {
       id: coupon._id,
@@ -76,7 +82,6 @@ const applyCoupon = async (req, res) => {
     return res.json({ success: false, message: "Something went wrong" });
   }
 };
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -107,6 +112,13 @@ const removeCoupon = async (req, res) => {
     }
   };
   
+  //////////////////////////////////////
+
+  // ✅ Helper to round to 2 digits
+function round2(num) {
+  return parseFloat(Number(num || 0).toFixed(2));
+}
+
 
 
 module.exports = {

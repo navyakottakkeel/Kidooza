@@ -107,28 +107,25 @@ const loadProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 5;
 
-    const matchStage = {
-      $and: [
-        { isBlock: false },
-        ...(search ? [{
-          $or: [
-            { productName: { $regex: search, $options: "i" } },
-            { brand: { $regex: search, $options: "i" } },
-            { "categoryData.name": { $regex: search, $options: "i" } }
-          ]
-        }] : [])
-      ]
-    };
+    let matchStage = {};
 
-
+    if (search) {
+      matchStage = {
+        $or: [
+          { productName: { $regex: search, $options: "i" } },
+          { brand: { $regex: search, $options: "i" } },
+          { "categoryData.name": { $regex: search, $options: "i" } }
+        ]
+      };
+    }
 
     const products = await Product.aggregate([
       {
         $lookup: {
-          from: 'categories',
-          localField: 'category',
-          foreignField: '_id',
-          as: 'categoryData'
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryData"
         }
       },
       { $unwind: "$categoryData" },
@@ -141,10 +138,10 @@ const loadProducts = async (req, res) => {
     const countAggregate = await Product.aggregate([
       {
         $lookup: {
-          from: 'categories',
-          localField: 'category',
-          foreignField: '_id',
-          as: 'categoryData'
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryData"
         }
       },
       { $unwind: "$categoryData" },
@@ -155,16 +152,13 @@ const loadProducts = async (req, res) => {
     const total = countAggregate[0] ? countAggregate[0].total : 0;
     const categories = await Category.find({ isDeleted: false });
 
-    const msg = req.query.msg;
-
-
     res.render("list-products", {
       data: products,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       search,
       categories,
-      msg
+      msg: req.query.msg
     });
 
   } catch (error) {
@@ -177,20 +171,28 @@ const loadProducts = async (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-const softDeleteProduct = async (req, res) => {
+const toggleBlockProduct = async (req, res) => {
   try {
     const { id } = req.params;
+    const { isBlock } = req.body; // true = delete, false = restore
 
-    await Product.findByIdAndUpdate(id, { isBlock: true });
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { isBlock },
+      { new: true }
+    );
 
-    res.json({ success: true });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    res.json({ success: true, message: `Product ${isBlock ? 'deleted' : 'restored'} successfully.` });
 
   } catch (error) {
-    console.error("Soft delete error:", error);
+    console.error("Toggle block error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -400,11 +402,11 @@ module.exports = {
   addProduct,
   loadAddProduct,
   loadProducts,
-  softDeleteProduct,
   loadEditProduct,
   editProduct,
   deleteProductImage,
   updateProductImage,
-  addProductImage
+  addProductImage,
+  toggleBlockProduct
 
 }

@@ -23,15 +23,23 @@ const cartSchema = new Schema({
                 required: true,
                 min: 1
             },
-            price: {
+            basePrice: {          // ✅ original MRP
                 type: Number,
                 required: true
             },
-            total: {
+            salePrice: {          // ✅ price after discount/offers
                 type: Number,
                 required: true
             },
-            createdAt: {            // ✅ track order of adding
+            discount: {           // ✅ discount percentage
+                type: Number,
+                default: 0
+            },
+            total: {              // ✅ salePrice * quantity
+                type: Number,
+                required: true
+            },
+            createdAt: {
                 type: Date,
                 default: Date.now
             }

@@ -3,10 +3,10 @@ const Category = require('../../models/categorySchema');
 const User = require('../../models/userSchema');
 const Variant = require('../../models/variantSchema');
 const Wishlist = require('../../models/wishlistSchema');
+const Offer = require("../../models/offerSchema");
+
 
 const url = require("url");
-
-
 
 
 const loadAllProducts = async (req, res) => {
@@ -61,15 +61,61 @@ const loadAllProducts = async (req, res) => {
 ///////////////////////////////////////////////////////////////////////////////////
 
 
+async function applyOfferToProducts(products) {
+    const now = new Date();
+  
+    return Promise.all(products.map(async product => {
+      // Calculate original discount based on basePrice & current salePrice
+      let originalDiscountPercent = 0;
+      if (product.basePrice > product.salePrice) {
+        originalDiscountPercent = Math.round(
+          ((product.basePrice - product.salePrice) / product.basePrice) * 100
+        );
+      }
+  
+      // Find active offers for this product or its category
+      const offers = await Offer.find({
+        isActive: true,
+        startDate: { $lte: now },
+        endDate: { $gte: now },
+        $or: [
+          { type: "Product", productId: product._id },
+          { type: "Category", categoryId: product.category?._id }
+        ]
+      });
+  
+      if (offers.length > 0) {
+        // Pick the offer with the highest discount
+        const bestOffer = offers.reduce((prev, curr) => 
+          curr.discountPercentage > prev.discountPercentage ? curr : prev
+        );
+  
+        // Apply best offer on the base price to calculate new salePrice
+        const originalDiscountAmount = (product.basePrice * originalDiscountPercent) / 100;
+        const offerDiscountAmount = (product.basePrice * bestOffer.discountPercentage) / 100;
+        const totalDiscount = originalDiscountAmount + offerDiscountAmount
+        product.salePrice = product.basePrice - totalDiscount;
+  
+        // Total discount percent (original + applied offer)
+        product.totalDiscountPercent = originalDiscountPercent + bestOffer.discountPercentage;
+        product.appliedOffer = bestOffer;
+  
+      } else {
+        product.totalDiscountPercent = originalDiscountPercent;
+        product.appliedOffer = null;
+      }
+  
+      return product;
+    }));
+  }
+  
+
 
 
 const loadBoysPage = async (req, res) => {
     try {
 
         const userId = req.user ? req.user._id : req.session.user;
-
-        //const {colour } = req.query;
-        //console.log("Selected colour:", colour);
 
         let user = null;
         if (req.user) {
@@ -88,12 +134,10 @@ const loadBoysPage = async (req, res) => {
             if (wishlist) {
                 wishlistItems = wishlist.items.map(item => ({
                     productId: item.productId ? item.productId.toString() : null,
-                    colour: item.colour || null  // ✅ Now we store colour instead of variantId
+                    colour: item.colour || null  
                 }));
             }
         }
-
-
 
         const perPage = 6;
         const page = parseInt(req.query.page) || 1;
@@ -115,13 +159,9 @@ const loadBoysPage = async (req, res) => {
             search = search.filter(s => s.trim() !== '')[0] || '';
         }
 
-
-
         const brands = await Product.distinct("brand");
         const colours = await Variant.distinct("colour");
         const size = await Variant.distinct("size");
-
-
         const filter = { isBlock: false };
 
         if (search) {
@@ -131,14 +171,11 @@ const loadBoysPage = async (req, res) => {
                 { description: regex }
             ];
         }
-
         if (category) {
             const categoryDocs = await Category.find({ name: { $in: Array.isArray(category) ? category : [category] } });
             const categoryIds = categoryDocs.map(cat => cat._id);
             filter.category = { $in: categoryIds };
         }
-
-
         // Brand filter
         if (req.query.brand) {
             const brands = Array.isArray(req.query.brand) ? req.query.brand : [req.query.brand];
@@ -217,21 +254,20 @@ const loadBoysPage = async (req, res) => {
                 sortOption.createdAt = -1;
         }
 
-
-
         // Pagination + product query
         const totalProducts = await Product.countDocuments(filter);
 
-        const allProducts = await Product.find(filter)
+        let allProducts = await Product.find(filter)
             .populate("category")
             .sort(sortOption)
             .skip((page - 1) * perPage)
             .limit(perPage);
 
+         allProducts = await applyOfferToProducts(allProducts);
 
         for (let product of allProducts) {
-            const variants = await Variant.find({ productId: product._id }).lean();
 
+            const variants = await Variant.find({ productId: product._id }).lean();
             const groupedByColour = {};
 
             variants.forEach(v => {
@@ -270,11 +306,7 @@ const loadBoysPage = async (req, res) => {
             
         }
 
-
-
-
         const categories = await Category.find({ isDeleted: false });
-
         // Group products by category
         const categorizedProducts = {};
         categories.forEach(cat => {
@@ -379,6 +411,51 @@ const loadNewArrivals = async (req, res) => {
 
 ///////////////////////////////////////////////////////////////////////
 
+
+async function applyOfferToVariants(variants, product) {
+
+    const now = new Date();
+
+    return Promise.all(variants.map(async variant => {
+        let originalDiscountPercent = 0;
+        if (variant.basePrice > variant.salePrice) {
+            originalDiscountPercent = Math.round(((variant.basePrice - variant.salePrice) / variant.basePrice) * 100);
+        }
+
+        // Find active offers for this variant's product or category
+        const offers = await Offer.find({
+            isActive: true,
+            startDate: { $lte: now },
+            endDate: { $gte: now },
+            $or: [
+                { type: "Product", productId: product._id },
+                { type: "Category", categoryId: product.category?._id }
+            ]
+        });
+
+        if (offers.length > 0) {
+            const bestOffer = offers.reduce((prev, curr) =>
+                curr.discountPercentage > prev.discountPercentage ? curr : prev
+            );
+
+            const originalDiscountAmount = (variant.basePrice * originalDiscountPercent) / 100;
+            const offerDiscountAmount = (variant.basePrice * bestOffer.discountPercentage) / 100;
+            const totalDiscount = originalDiscountAmount + offerDiscountAmount;
+
+            variant.salePrice = variant.basePrice - totalDiscount;
+            variant.totalDiscountPercent = originalDiscountPercent + bestOffer.discountPercentage;
+            variant.appliedOffer = bestOffer;
+
+        } else {
+            variant.totalDiscountPercent = originalDiscountPercent;
+            variant.appliedOffer = null;
+        }
+
+        return variant;
+    }));
+}
+
+
 const loadProductDetail = async (req, res) => {
     try {
 
@@ -393,7 +470,6 @@ const loadProductDetail = async (req, res) => {
 
         res.locals.user = user;
 
-
         let wishlistItems = [];
         if (user) {
             const wishlist = await Wishlist.findOne({ userId });
@@ -405,7 +481,6 @@ const loadProductDetail = async (req, res) => {
             }
         }
 
-
         const productId = req.params.id;
 
         const product = await Product.findById(productId).populate("category");
@@ -414,14 +489,13 @@ const loadProductDetail = async (req, res) => {
             Variant.distinct('size', { productId }),
         ]);
 
-        const variants = await Variant.find({ productId: productId }).select('size colour stock basePrice salePrice productImage');
+        let variants = await Variant.find({ productId: productId }).select('size colour stock basePrice salePrice productImage');
 
-
+        variants = await applyOfferToVariants(variants, product);
 
         if (!product) {
             return res.status(404).send("Product not found");
         }
-
 
 
         const originalPrice = product.basePrice;
@@ -437,6 +511,7 @@ const loadProductDetail = async (req, res) => {
             _id: { $ne: productId },
         }).limit(5);
 
+        const defaultVariant = variants[0];
 
         res.render('product-detail', {
             product,
@@ -445,7 +520,8 @@ const loadProductDetail = async (req, res) => {
             discountPercent,
             relatedProducts,
             variants,
-            wishlistItems
+            wishlistItems,
+            defaultVariant
         });
 
     } catch (error) {

@@ -19,9 +19,6 @@ const razorpay = new Razorpay({
 });
 
 
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -131,13 +128,20 @@ const getOrderDetail = async (req, res) => {
       console.log("No order detail:");
 
     }
-
-    // const deliveryDate = order.orderedItems.deliveredOn; // Example delivery date
-    // const after14Days = new Date(deliveryDate);
-    // after14Days.setDate(after14Days.getDate() + 14);
-    // console.log("Return Valid Until:", after14Days.toDateString());
-    // console.log("Delivery Date:", deliveryDate.toDateString());
-
+        // ✅ Ensure all price-related fields are fixed to 2 decimals
+        order.totalPrice = round2(order.totalPrice);
+        order.discount = round2(order.discount);
+        order.finalAmount = round2(order.finalAmount);
+        order.shippingFee = round2(order.shippingFee);
+    
+        if (order.orderedItems && order.orderedItems.length > 0) {
+          order.orderedItems = order.orderedItems.map(item => ({
+            ...item,
+            basePrice: round2(item.basePrice),
+            salePrice: round2(item.salePrice),
+            total: round2(item.total),
+          }));
+        }
 
     res.render("order-detail", { order });
   } catch (err) {
@@ -146,8 +150,7 @@ const getOrderDetail = async (req, res) => {
   }
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////////////////////////////////
 
 const cancelOrder = async (req, res) => {
   try {
@@ -165,7 +168,19 @@ const cancelOrder = async (req, res) => {
 
         if (item.status !== "Cancelled") {
           // Only refund for items that are being cancelled now
-          refundAmount += item.salePrice * item.quantity;
+          let itemRefund = item.salePrice * item.quantity;
+
+          if (order.couponApplied && order.couponDiscount > 0) {
+            const totalSaleSum = order.orderedItems.reduce(
+              (sum, i) => sum + (i.salePrice * i.quantity),
+              0
+            );
+            const itemShare = (item.salePrice * item.quantity) / totalSaleSum;
+            const couponShare = order.couponDiscount * itemShare;
+            itemRefund = round2(itemRefund - couponShare);
+          }
+    
+          refundAmount += itemRefund;
 
           await Variant.findByIdAndUpdate(
             item.variant,
@@ -175,8 +190,6 @@ const cancelOrder = async (req, res) => {
 
         item.status = "Cancelled";
         item.cancelReason = reason || "Order cancelled";
-
-
       }
     }
 
@@ -251,8 +264,24 @@ const cancelItem = async (req, res) => {
 
     // ✅ Refund if payment done
     if (order.paymentStatus === "Paid") {
-      const refundAmount = item.salePrice * item.quantity;
 
+      let refundAmount = item.salePrice * item.quantity;
+
+      if (order.couponApplied && order.couponDiscount > 0) {
+        // Calculate proportion of coupon discount applicable to this item
+        const totalSaleSum = order.orderedItems.reduce(
+          (sum, i) => sum + (i.salePrice * i.quantity),
+          0
+        );
+      
+        const itemShare = (item.salePrice * item.quantity) / totalSaleSum;
+        const couponShare = order.couponDiscount * itemShare;
+      
+        refundAmount = refundAmount - couponShare;
+        refundAmount = round2(refundAmount); // keep 2 decimals
+      }
+
+     
       await Wallet.findOneAndUpdate(
         { userId: order.user },
         {
@@ -321,8 +350,8 @@ const downloadInvoice = async (req, res) => {
     doc.moveDown();
 
     // Summary
-    doc.text(`Subtotal: ₹${order.totalPrice}`);
-    doc.text(`Discount: -₹${order.discount}`);
+    doc.text(`Subtotal: ₹${round2(order.totalPrice)}`);
+    doc.text(`Discount: -₹${round2(order.discount)}`);
     // ✅ Add Coupon Row if applied
     if (order.couponApplied && order.couponDiscount > 0) {
       doc.fillColor("green").text(`Coupon (${order.couponCode}): -₹${order.couponDiscount}`);
@@ -330,7 +359,7 @@ const downloadInvoice = async (req, res) => {
     }
     doc.text(`Platform Fee: -₹${order.platformFee}`);
     doc.text(`Shipping Fee: -₹${order.shippingFee}`);
-    doc.text(`Final Amount: ₹${order.finalAmount}`);
+    doc.text(`Final Amount: ₹${round2(order.finalAmount)}`);
     doc.text(`Payment Method: ${order.paymentMethod}`);
     doc.text(`Payment Status: ${order.paymentStatus}`);
     doc.moveDown();
@@ -376,83 +405,74 @@ const returnItem = async (req, res) => {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
+// ✅ Helper to round to 2 digits
+function round2(num) {
+  return parseFloat(Number(num || 0).toFixed(2));
+}
 
 // ------------------ Helper: compute order snapshot (shared) ------------------
 async function buildOrderSnapshot(userId, addressId, couponCode) {
-  // fetch cart & address; compute totals; return { orderedItems, totalPrice, discount, finalAmount, shippingFee, platformFee, address }
-  const cart = await Cart.findOne({ userId }).populate("items.productId").populate("items.variantId");
+  const cart = await Cart.findOne({ userId })
+    .populate("items.productId")
+    .populate("items.variantId");
+
   if (!cart || cart.items.length === 0) throw new Error("Cart is empty");
 
   const addressDoc = await Address.findOne({ userId });
   const address = addressDoc?.addresses?.id(addressId);
   if (!address) throw new Error("Address not found");
 
-  let totalPrice = 0, discount = 0; sellPrice = 0;
-  const orderedItems = cart.items.map(item => {
-    const basePrice = item.variantId?.basePrice || item.productId?.basePrice || 0;
-    const salePrice = item.variantId?.salePrice || item.productId?.salePrice || basePrice;
-    const quantity = item.quantity;
 
-    const productName = item.productId.productName;
-    const image = Array.isArray(item.variantId?.productImage)
+  // ✅ Use cart values directly (already has salePrice, discount, total)
+  const orderedItems = cart.items.map(item => ({
+    product: item.productId._id,
+    variant: item.variantId?._id || null,
+    quantity: item.quantity,
+    basePrice: round2(item.basePrice),
+    salePrice: round2(item.salePrice),
+    discount: round2(item.discount),
+    productName: item.productId.productName,
+    image: Array.isArray(item.variantId?.productImage)
       ? item.variantId.productImage[0]
-      : (item.variantId?.productImage || item.productId.productImage?.[0] || "");
-    const size = item.variantId?.size;
-    const color = item.variantId?.colour;
+      : (item.variantId?.productImage || item.productId.productImage?.[0] || ""),
+    size: item.variantId?.size,
+    color: item.variantId?.colour,
+    total: round2(item.total),
+    status: "Ordered"
+  }));
 
-    const itemTotal = salePrice * quantity;
-    totalPrice += basePrice * quantity;
-    if (basePrice > salePrice) discount += (basePrice - salePrice) * quantity;
-    sellPrice = totalPrice - discount;
+  // ✅ Totals from cart
+  const totalPrice = round2(cart.items.reduce((sum, i) => sum + i.basePrice * i.quantity, 0));
+  let subTotal = round2(cart.items.reduce((sum, i) => sum + i.salePrice * i.quantity, 0));
+  const discount = round2(totalPrice - subTotal);   // already includes offer discounts
 
-    return {
-      product: item.productId._id,
-      variant: item.variantId?._id || null,
-      quantity,
-      basePrice,
-      salePrice,
-      productName,
-      image,
-      size,
-      color,
-      total: itemTotal,
-      status: "Ordered"
-    };
-  });
-
+  // ✅ Shipping rule
+  const shippingFee = subTotal > 599 ? 0 : 30;
   const platformFee = 10;
-  const shippingFee = totalPrice > 599 ? 0 : 30;
+  subTotal = subTotal + platformFee + shippingFee;
 
+  // ✅ Coupon calculation
   let couponDiscount = 0;
-
-
-  // ✅ If coupon passed, validate & apply
   if (couponCode) {
     const coupon = await Coupon.findOne({ code: couponCode, isActive: true });
     if (coupon) {
       if (coupon.discountType === "fixed") {
-        couponDiscount = coupon.discountValue;
+        couponDiscount = round2(coupon.discountValue);
       } else if (coupon.discountType === "percentage") {
-        console.log("cpds: ",coupon.discountValue )
-        console.log("Sell : ",sellPrice);
-        couponDiscount = Math.floor((sellPrice * coupon.discountValue) / 100);
+        couponDiscount = round2((subTotal * coupon.discountValue) / 100);
       }
     }
   }
 
-  const finalAmount = totalPrice - discount - couponDiscount + platformFee + shippingFee;
+  // ✅ Final amount
+  const finalAmount = round2(subTotal - couponDiscount );
 
-  console.log("FINAL : ",finalAmount);
-  console.log("discount : ",discount);
-  console.log("couponDiscount : ",couponDiscount);
-  console.log("platformFee : ",platformFee);
-  console.log("shippingFee : ",shippingFee);
 
   return {
     orderedItems,
-    totalPrice,
-    discount,
-    couponDiscount,
+    totalPrice,          // original MRP sum
+    discount,            // total offer discount
+    couponDiscount,      
     couponApplied: !!couponDiscount,
     couponCode: couponCode || "",
     platformFee,
@@ -463,18 +483,28 @@ async function buildOrderSnapshot(userId, addressId, couponCode) {
   };
 }
 
+
 // ------------------ 1) COD & Wallet handler ------------------
-// NOTE: this route will be POST /order/place
 const placeOrder = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : req.session.user;
-    const { addressId, paymentMethod, couponCode, couponDiscount } = req.body;
+    const { addressId, paymentMethod, couponCode } = req.body;
 
     // build order details from server (never trust client)
-    const { orderedItems, totalPrice, discount, platformFee, shippingFee, finalAmount,
-      address, cart, couponApplied } =
-      await buildOrderSnapshot(userId, addressId, couponCode);
+    const { 
+      orderedItems,
+      totalPrice,
+      discount,
+      platformFee,
+      shippingFee,
+      finalAmount,
+      address,
+      cart,
+      couponApplied,
+      couponDiscount
+     } = await buildOrderSnapshot(userId, addressId, couponCode);
 
+     console.log("Checkout Final Amount:", finalAmount);
 
     // ----- COD rule: COD only allowed when finalAmount > 1000 (your requirement) -----
     if (paymentMethod === "COD") {
@@ -507,7 +537,7 @@ const placeOrder = async (req, res) => {
         // ✅ Coupon details
         couponApplied: !!req.session.appliedCoupon,
         couponCode: req.session.appliedCoupon?.code || "",
-        couponDiscount: req.session.appliedCoupon?.couponDiscount || 0,
+        couponDiscount
       });
 
 
@@ -529,7 +559,7 @@ const placeOrder = async (req, res) => {
     }
 
     // ---------------- Wallet payment -----------------------------
-    
+
     if (paymentMethod === "Wallet") {
       let wallet = await Wallet.findOne({ userId });
 
@@ -566,11 +596,11 @@ const placeOrder = async (req, res) => {
         // ✅ Save coupon details
         couponApplied: !!req.session.appliedCoupon,
         couponCode: req.session.appliedCoupon?.code || "",
-        couponDiscount: req.session.appliedCoupon?.couponDiscount || 0,
+        couponDiscount
       });
 
-      
-      
+
+
 
       await newOrder.save();
 
@@ -597,7 +627,7 @@ const placeOrder = async (req, res) => {
       // return res.json({ success: true, orderId: newOrder._id, message: "Order placed using wallet" });
     }
 
-    // If paymentMethod is Razorpay or anything else return instruction to use Razorpay flow
+    // -------------------------- Razorpay flow --------------------------------------------------
     return res.json({
       success: true,
       useRazorpay: true,
@@ -611,17 +641,17 @@ const placeOrder = async (req, res) => {
   }
 };
 
+
 // ------------------ 2) Create Razorpay order + create Pending DB order ------------------
 
-// POST /payment/razorpay/create
 const createRazorpayOrder = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : req.session.user;
-    const { addressId,  couponCode } = req.body;
+    const { addressId, couponCode } = req.body;
 
     // build snapshot
     const { orderedItems, totalPrice, discount, couponDiscount, couponApplied, platformFee, shippingFee, finalAmount, address, cart } =
-    await buildOrderSnapshot(userId, addressId, couponCode);
+      await buildOrderSnapshot(userId, addressId, couponCode);
 
 
     // Create Razorpay order (amount in paise)
@@ -655,8 +685,8 @@ const createRazorpayOrder = async (req, res) => {
       paymentStatus: "Pending",
       paymentGatewayOrderId: rzpOrder.id,
       couponApplied: !!req.session.appliedCoupon,
-        couponCode: req.session.appliedCoupon?.code || "",
-        couponDiscount: req.session.appliedCoupon?.couponDiscount || 0,
+      couponCode: req.session.appliedCoupon?.code || "",
+      couponDiscount,
     });
     await newOrder.save();
 
@@ -677,7 +707,6 @@ const createRazorpayOrder = async (req, res) => {
 
 // ------------------ 3) Verify Razorpay signature and finalize order ------------------
 
-// POST /payment/razorpay/verify
 const verifyRazorpayPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;

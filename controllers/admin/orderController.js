@@ -203,7 +203,23 @@ const getOrderDetail = async (req, res) => {
         await adjustStockForItem(item, +1);
   
         //Refund the item TOTAL to wallet
-        const refundAmount = item.total; // or pro-rated logic if needed
+        let refundAmount = item.salePrice * item.quantity;
+
+        if (order.couponApplied && order.couponDiscount > 0) {
+          const totalSaleSum = order.orderedItems.reduce(
+            (sum, i) => sum + (i.salePrice * i.quantity),
+            0
+          );
+  
+          if (totalSaleSum > 0) {
+            const itemShare = (item.salePrice * item.quantity) / totalSaleSum;
+            const couponShare = order.couponDiscount * itemShare;
+            refundAmount = refundAmount - couponShare;
+          }
+        }
+  
+        refundAmount = Math.round(refundAmount * 100) / 100; // keep 2 decimals
+        
         let wallet = await Wallet.findOne({ userId: order.user });
         if (!wallet) wallet = await Wallet.create({ userId: order.user, balance: 0, transactions: [] });
         wallet.balance += refundAmount;

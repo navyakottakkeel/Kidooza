@@ -8,7 +8,8 @@ const productController = require('../controllers/admin/productController');
 const variantController = require('../controllers/admin/variantController');
 const orderController = require('../controllers/admin/orderController');
 const couponController = require('../controllers/admin/couponController');
-
+const offerController = require('../controllers/admin/offerController');
+const salesReportController = require("../controllers/admin/salesReportController");
 
 
 
@@ -41,7 +42,7 @@ router.get('/unblockCustomer', customerController.customerUnblocked);
 router.get('/products',productController.loadProducts);
 router.get('/products/add', productController.loadAddProduct);
 router.post('/products/add', upload.array('productImage', 5), productController.addProduct);
-router.patch('/products/delete/:id', productController.softDeleteProduct);
+router.patch('/products/:id/block', productController.toggleBlockProduct);
 
 router.get('/products/edit',productController.loadEditProduct);
 router.post('/products/edit',productController.editProduct)
@@ -69,7 +70,16 @@ router.post("/coupons/create", couponController.createCoupon);
 router.delete("/coupons/:id", couponController.deleteCoupon);
 
 
+// Offer Management
+router.get("/offers", offerController.getOffersPage);
+router.post("/offers/create", offerController.createOffer);
+router.put("/offers/:id", offerController.updateOffer);
+router.delete("/offers/:id", offerController.deleteOffer);
+router.patch("/offers/:id/status", offerController.toggleOfferStatus);
 
 
+router.get("/sales-report", salesReportController.getSalesReportPage);
+router.get("/sales-report/filter", salesReportController.filterSalesReport);
+router.get("/sales-report/download/:type", salesReportController.downloadSalesReport);
 
 module.exports = router;
