@@ -52,73 +52,74 @@
             background: #fff0ee;
             /* Light red on hover */
         }
+
         .order-failure-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
-  background: #fff4f4;
-  border: 1px solid #f5c2c7;
-  border-left: 5px solid #dc3545; /* Red border */
-  padding: 16px 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            background: #fff4f4;
+            border: 1px solid #f5c2c7;
+            border-left: 5px solid #dc3545;
+            /* Red border */
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
 
-.failure-icon {
-  font-size: 22px;
-  color: #dc3545;
-  margin-top: 3px;
-}
+        .failure-icon {
+            font-size: 22px;
+            color: #dc3545;
+            margin-top: 3px;
+        }
 
-.failure-content h4 {
-  margin: 0;
-  font-size: 16px;
-  color: #b02a37;
-  font-weight: 600;
-}
+        .failure-content h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #b02a37;
+            font-weight: 600;
+        }
 
-.failure-content p {
-  margin: 6px 0 12px;
-  font-size: 14px;
-  color: #555;
-}
+        .failure-content p {
+            margin: 6px 0 12px;
+            font-size: 14px;
+            color: #555;
+        }
 
-.retry-btn {
-    display: inline-block;
-    padding: 8px 16px;
-    color: #2874f0;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background 0.2s ease;
-    width: 100%;
-    border-color: #2874f0;
-    border: 1px solid;
-    text-align: center;
-}
+        .retry-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            color: #2874f0;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s ease;
+            width: 100%;
+            border-color: #2874f0;
+            border: 1px solid;
+            text-align: center;
+        }
 
 
-.retry-btn:hover {
-  background-color: #96b9ee;
-}
-
+        .retry-btn:hover {
+            background-color: #96b9ee;
+        }
     </style>
 
 
     <div class="container " style="margin-top:10rem;">
 
-         <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb p-2 rounded">
-          <li class="breadcrumb-item">
-            <a href="/userProfile" class="text-decoration-none">Profile</a>
-          </li>
-          <li class="breadcrumb-item">
-            <a href="/orders" class="text-decoration-none">My Orders</a>
-          </li>
-          <li class="breadcrumb-item active" aria-current="page">Order detail</li>
-        </ol>
-      </nav>
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb p-2 rounded">
+                <li class="breadcrumb-item">
+                    <a href="/userProfile" class="text-decoration-none">Profile</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="/orders" class="text-decoration-none">My Orders</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Order detail</li>
+            </ol>
+        </nav>
 
         <div class="row">
 
@@ -165,17 +166,17 @@
                             <div class="order-failure-box">
                                 <div class="failure-icon">✘</div>
                                 <div class="failure-content">
-                                  <h4>Order not placed. Try ordering again</h4>
-                                  <p>
-                                    Due to an error with the payment, this order could not be placed.
-                                    Please place a new order.<br />
-                                    Payment was not successful. If money was deducted, please contact your bank.
-                                  </p>
-                                  <button id="retryBtn" class="retry-btn">Retry Payment</button>
-                                  <!-- <a href="/products" id="retryBtn" class="retry-btn">Buy Again</a> -->
+                                    <h4>Order not placed. Try ordering again</h4>
+                                    <p>
+                                        Due to an error with the payment, this order could not be placed.
+                                        Please place a new order.<br />
+                                        Payment was not successful. If money was deducted, please contact your bank.
+                                    </p>
+                                    <button id="retryBtn" class="retry-btn">Retry Payment</button>
+                                    <!-- <a href="/products" id="retryBtn" class="retry-btn">Buy Again</a> -->
                                 </div>
-                              </div>
-                              
+                            </div>
+
                             <% } %>
 
                     </div>
@@ -244,42 +245,44 @@
                                                 </span>
                                             </small>
 
-                                            <% } else if (item.status === "Delivered") { %>
-                                                <% 
-                                                  let deliveredOn = new Date(item.deliveredOn); 
-                                                  let returnValidUntil = new Date(deliveredOn); 
-                                                  returnValidUntil.setDate(deliveredOn.getDate() + 14); 
-                                                  let today = new Date();
-                                                %>
-                                            
-                                                <% if (today <= returnValidUntil) { %>
-                                                    <!-- Show return button if still within 14 days -->
-                                                    <form action="/order/<%= order._id %>/return-item/<%= item._id %>" method="POST" class="return-item-form">
-                                                        <div class="d-flex justify-content-center gap-3 mt-3">
-                                                            <button type="button"
-                                                                class="btn-cancel-item w-100 return-item-btn"
-                                                                data-orderid="<%= order._id %>"
-                                                                data-itemid="<%= item._id %>">
-                                                                RETURN ITEM
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                    <small>
-                                                        <span class="fw-bold text-danger">
-                                                            Return valid until: <%= returnValidUntil.toDateString() %>
-                                                        </span>
-                                                    </small>
-                                                <% } else { %>
-                                                    <!-- If return window expired -->
-                                                    <small><br><br>
-                                                        <span class="fw-bold text-muted">
-                                                            <i class="bi bi-info-circle-fill text-secondary"></i>
-                                                           Return window expired on <%= returnValidUntil.toDateString() %>
-                                                        </span>
-                                                    </small>
-                                                <% } %>
-                                            <% } %>
-                                            
+                                            <% } else if (item.status==="Delivered" ) { %>
+                                                <% let deliveredOn=new Date(item.deliveredOn); let returnValidUntil=new
+                                                    Date(deliveredOn); returnValidUntil.setDate(deliveredOn.getDate() +
+                                                    14); let today=new Date(); %>
+
+                                                    <% if (today <=returnValidUntil) { %>
+                                                        <!-- Show return button if still within 14 days -->
+                                                        <form
+                                                            action="/order/<%= order._id %>/return-item/<%= item._id %>"
+                                                            method="POST" class="return-item-form">
+                                                            <div class="d-flex justify-content-center gap-3 mt-3">
+                                                                <button type="button"
+                                                                    class="btn-cancel-item w-100 return-item-btn"
+                                                                    data-orderid="<%= order._id %>"
+                                                                    data-itemid="<%= item._id %>">
+                                                                    RETURN ITEM
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                        <small>
+                                                            <span class="fw-bold text-danger">
+                                                                Return valid until: <%= returnValidUntil.toDateString()
+                                                                    %>
+                                                            </span>
+                                                        </small>
+                                                        <% } else { %>
+                                                            <!-- If return window expired -->
+                                                            <small><br><br>
+                                                                <span class="fw-bold text-muted">
+                                                                    <i
+                                                                        class="bi bi-info-circle-fill text-secondary"></i>
+                                                                    Return window expired on <%=
+                                                                        returnValidUntil.toDateString() %>
+                                                                </span>
+                                                            </small>
+                                                            <% } %>
+                                                                <% } %>
+
                             </div>
 
                         </div>
@@ -312,69 +315,75 @@
                 <!-- Price Details -->
                 <div class="card shadow-sm border-0 rounded-3">
                     <div class="card-header bg-light fw-bold text-primary">
-                      Price Details
+                        Price Details
                     </div>
                     <div class="card-body">
-                      
-                      <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Listing Price</span>
-                        <span>₹<%= order.totalPrice %></span>
-                      </div>
-                  
-                      <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Discount</span>
-                        <span class="text-success">-₹<%= order.discount %></span>
-                      </div>
 
-                      <% if(order.couponApplied && order.couponDiscount > 0) { %>
                         <div class="d-flex justify-content-between mb-2">
-                          <span class="text-muted">Coupon (<%= order.couponCode %>)</span>
-                          <span class="text-success">-₹<%= order.couponDiscount %></span>
+                            <span class="text-muted">Listing Price</span>
+                            <span>₹<%= order.totalPrice %></span>
                         </div>
-                      <% } %>                      
-                  
-                      <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Platform Fee</span>
-                        <span>₹<%= order.platformFee %></span>
-                      </div>
-                  
-                      <div class="d-flex justify-content-between mb-3">
-                        <span class="text-muted">Shipping Fee</span>
-                        <span>
-                          <% if(order.shippingFee === 0) { %>
-                            <span class="badge bg-success">Free</span>
-                          <% } else { %>
-                            ₹<%= order.shippingFee %>
-                          <% } %>
-                        </span>
-                      </div>
-                  
-                      <hr>
-                  
-                      <div class="d-flex justify-content-between mb-3">
-                        <h6 class="fw-bold">Total Amount</h6>
-                        <h6 class="fw-bold text-danger">₹<%= order.finalAmount %></h6>
-                      </div>
-                  
-                      <div class="mb-2">
-                        <span class="fw-semibold">Payment Method:</span>
-                        <span class="text-muted"><%= order.paymentMethod %></span>
-                      </div>
-                  
-                      <div class="mb-3">
-                        <span class="fw-semibold">Payment Status:</span>
-                        <span class="text-muted"><%= order.paymentStatus %></span>
-                      </div>
-                  
-                      <!-- Download Invoice Button -->
-                      <div class="text-end">
-                        <a href="/order/<%= order._id %>/invoice" class="btn btn-sm btn-outline-primary rounded-pill">
-                          📄 Download Invoice
-                        </a>
-                      </div>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Discount</span>
+                            <span class="text-success">-₹<%= order.discount %></span>
+                        </div>
+
+                        <% if(order.couponApplied && order.couponDiscount> 0) { %>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Coupon (<%= order.couponCode %>)</span>
+                                <span class="text-success">-₹<%= order.couponDiscount %></span>
+                            </div>
+                            <% } %>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Platform Fee</span>
+                                    <span>₹<%= order.platformFee %></span>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="text-muted">Shipping Fee</span>
+                                    <span>
+                                        <% if(order.shippingFee===0) { %>
+                                            <span class="badge bg-success">Free</span>
+                                            <% } else { %>
+                                                ₹<%= order.shippingFee %>
+                                                    <% } %>
+                                    </span>
+                                </div>
+
+                                <hr>
+
+                                <div class="d-flex justify-content-between mb-3">
+                                    <h6 class="fw-bold">Total Amount</h6>
+                                    <h6 class="fw-bold text-danger">₹<%= order.finalAmount %>
+                                    </h6>
+                                </div>
+
+                                <div class="mb-2">
+                                    <span class="fw-semibold">Payment Method:</span>
+                                    <span class="text-muted">
+                                        <%= order.paymentMethod %>
+                                    </span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <span class="fw-semibold">Payment Status:</span>
+                                    <span class="text-muted">
+                                        <%= order.paymentStatus %>
+                                    </span>
+                                </div>
+
+                                <!-- Download Invoice Button -->
+                                <div class="text-end">
+                                    <a href="/order/<%= order._id %>/invoice"
+                                        class="btn btn-sm btn-outline-primary rounded-pill">
+                                        📄 Download Invoice
+                                    </a>
+                                </div>
                     </div>
-                  </div>
-                  
+                </div>
+
 
 
             </div>
@@ -433,7 +442,7 @@
             });
         }
 
- //////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
         document.querySelectorAll(".cancel-item-btn").forEach(button => {
@@ -485,137 +494,134 @@
             });
         });
 
-//////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////
 
-document.querySelectorAll(".return-item-btn").forEach(button => {
-    button.addEventListener("click", async function () {
-        const orderId = this.dataset.orderid;
-        const itemId = this.dataset.itemid;
+        document.querySelectorAll(".return-item-btn").forEach(button => {
+            button.addEventListener("click", async function () {
+                const orderId = this.dataset.orderid;
+                const itemId = this.dataset.itemid;
 
-        const { value: reason } = await Swal.fire({
-            title: "Return Item",
-            input: "select",
-            inputOptions: {
-                'Defective/Damaged': 'Defective / Damaged',
-                'Wrong item received': 'Wrong item received',
-                'Size/fit issue': 'Size / Fit issue',
-                'Quality not as expected': 'Quality not as expected',
-                'Other': 'Other'
-            },
-            inputPlaceholder: "Select a reason for return",
-            showCancelButton: true,
-            confirmButtonText: "Return Item",
-            cancelButtonText: "Cancel",
-            preConfirm: (value) => {
-                if (!value) {
-                    Swal.showValidationMessage("Please select a reason");
-                }
-                return value;
-            }
-        });
-
-        if (reason) {
-            // Send request to backend
-            const res = await fetch(`/order/${orderId}/return-item/${itemId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ reason })
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Return Requested",
-                    text: "Your return request has been submitted ✅",
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    location.reload(); // Refresh UI
+                const { value: reason } = await Swal.fire({
+                    title: "Return Item",
+                    input: "select",
+                    inputOptions: {
+                        'Defective/Damaged': 'Defective / Damaged',
+                        'Wrong item received': 'Wrong item received',
+                        'Size/fit issue': 'Size / Fit issue',
+                        'Quality not as expected': 'Quality not as expected',
+                        'Other': 'Other'
+                    },
+                    inputPlaceholder: "Select a reason for return",
+                    showCancelButton: true,
+                    confirmButtonText: "Return Item",
+                    cancelButtonText: "Cancel",
+                    preConfirm: (value) => {
+                        if (!value) {
+                            Swal.showValidationMessage("Please select a reason");
+                        }
+                        return value;
+                    }
                 });
-            } else {
-                Swal.fire("Error", data.message || "Something went wrong", "error");
-            }
-        }
-    });
-});
+
+                if (reason) {
+                    // Send request to backend
+                    const res = await fetch(`/order/${orderId}/return-item/${itemId}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Return Requested",
+                            text: "Your return request has been submitted ✅",
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload(); // Refresh UI
+                        });
+                    } else {
+                        Swal.fire("Error", data.message || "Something went wrong", "error");
+                    }
+                }
+            });
+        });
 
 
     </script>
 
-      <!-- Razorpay Script -->
-      <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- Razorpay Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-      <script>
-          document.getElementById("retryBtn").addEventListener("click", async () => {
-              const orderId = "<%= order._id %>"; // pass from EJS
-  
-              const res = await fetch("/payment/razorpay/retry", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ orderId })
-              });
-  
-              const data = await res.json();
-  
-              if (data.success) {
-                  const options = {
-                      key: "<%= process.env.RAZORPAY_KEY_ID %>",
-                      amount: data.rzpOrder.amount,
-                      currency: "INR",
-                      name: "Kidooza",
-                      description: "Retry Payment",
-                      order_id: data.rzpOrder.id,
-                      handler: async function (response) {
-                          try {
-                              // Verify payment with backend
-                              const verifyRes = await fetch("/payment/razorpay/verify", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                      orderId,
-                                      razorpay_payment_id: response.razorpay_payment_id,
-                                      razorpay_order_id: response.razorpay_order_id,
-                                      razorpay_signature: response.razorpay_signature
-                                  })
-                              });
-  
-                              const verifyData = await verifyRes.json();
-  
-                              // Redirect based on verification
-                              if (verifyData.success) {
-                                  window.location.href = "/orderplaced"; // ✅ success redirect
-                              } else {
-                                  window.location.href = `/order/failure/${orderId}`; // ❌ failure redirect
-                              }
-                          } catch (err) {
-                              console.error("Verify error:", err);
-                              window.location.href = `/order/failure/${orderId}`;
-                          }
-                      },
-                      theme: { color: "#3399cc" }
-                  };
-  
-                  const rzp = new Razorpay(options);
-                  rzp.on("payment.failed", function (response) {
-                      fetch("/payment/razorpay/failure", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                              orderId: orderId,
-                              error: response.error
-                          })
-                      }).finally(() => {
-                          // redirect user to failure page
-                          window.location.href = `/order/failure/${orderId}`;
-                      });
-                  });
-  
-                  rzp.open();
-              }
-          });
-      </script>
-  
+    <script>
+        document.getElementById("retryBtn").addEventListener("click", async () => {
+            const orderId = "<%= order._id %>"; // pass from EJS
+
+            const res = await fetch("/payment/razorpay/retry", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                const options = {
+                    key: data.key,   // ✅ take from backend
+                    amount: data.amount,
+                    currency: data.currency,
+                    name: "Kidooza",
+                    description: "Retry Payment",
+                    order_id: data.razorpayOrderId,   // ✅ fix here
+                    handler: async function (response) {
+                        try {
+                            const verifyRes = await fetch("/payment/razorpay/verify", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    orderId: data.orderId,  // ✅ keep consistent
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.success) {
+                                window.location.href = "/orderplaced";
+                            } else {
+                                window.location.href = `/order/failure/${data.orderId}`;
+                            }
+                        } catch (err) {
+                            console.error("Verify error:", err);
+                            window.location.href = `/order/failure/${data.orderId}`;
+                        }
+                    },
+                    theme: { color: "#3399cc" }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on("payment.failed", function (response) {
+                    fetch("/payment/razorpay/failure", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            orderId: data.orderId,
+                            error: response.error
+                        })
+                    }).finally(() => {
+                        window.location.href = `/order/failure/${data.orderId}`;
+                    });
+                });
+
+                rzp.open();
+            }
+
+        });
+    </script>
+
 
 
 

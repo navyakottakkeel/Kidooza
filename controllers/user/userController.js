@@ -252,9 +252,6 @@ const verifyOtp = async (req, res) => {
   
 
 
-
-
-
 function generateReferralCode(length = 6) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -495,6 +492,16 @@ const changepassword = async (req, res) => {
 const pageNotFound = async (req, res) => {
     try {
 
+        const userId = req.user ? req.user._id : req.session.user;
+
+        let user = null;
+        if (req.user) {
+          user = req.user;
+        } else if (req.session.user) {
+          user = await User.findById(req.session.user);
+        }
+    
+        res.locals.user = user;
         return res.render("page-404")
 
     } catch (error) {

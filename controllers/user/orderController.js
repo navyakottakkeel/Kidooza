@@ -765,9 +765,7 @@ const verifyRazorpayPayment = async (req, res) => {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-// POST /payment/razorpay/retry
-const retryPayment = async (req, res) => {
+const retryPayment = async (req, res, next) => {
   try {
     const { orderId } = req.body;
 
@@ -779,31 +777,32 @@ const retryPayment = async (req, res) => {
     }
 
     // Create a new Razorpay order
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_SECRET
-    });
-
     const options = {
-      amount: order.finalAmount * 100, // in paise
+      amount: Math.round(order.finalAmount * 100), // use DB stored finalAmount
       currency: "INR",
       receipt: "rcpt_" + Date.now(),
     };
 
     const rzpOrder = await razorpay.orders.create(options);
 
-    // store latest rzp order id in DB for tracking
-    order.razorpayOrderId = rzpOrder.id;
+    // ✅ update the correct field for consistency
+    order.paymentGatewayOrderId = rzpOrder.id;
     order.paymentStatus = "Pending";
     await order.save();
 
-    return res.json({ success: true, rzpOrder });
+    return res.json({
+      success: true,
+      key: process.env.RAZORPAY_KEY_ID,
+      amount: rzpOrder.amount,
+      currency: rzpOrder.currency,
+      razorpayOrderId: rzpOrder.id,
+      orderId: order._id.toString(),
+    });
   } catch (err) {
     console.error("Retry payment error:", err);
-    return res.status(500).json({ success: false });
+    return res.status(500).json({ success: false, message: "Retry failed" });
   }
 };
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 

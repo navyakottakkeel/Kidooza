@@ -38,12 +38,12 @@
 
             if (data.success) {
                 const options = {
-                    key: "<%= process.env.RAZORPAY_KEY_ID %>",
-                    amount: data.rzpOrder.amount,
-                    currency: "INR",
+                    key: data.key,  // use value from backend
+                    amount: data.amount,
+                    currency: data.currency,
                     name: "Kidooza",
                     description: "Retry Payment",
-                    order_id: data.rzpOrder.id,
+                    order_id: data.razorpayOrderId, // ✅ use correct field
                     handler: async function (response) {
                         try {
                             // Verify payment with backend
@@ -51,7 +51,7 @@
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
-                                    orderId,
+                                    orderId: data.orderId,   // ✅ ensure consistent orderId
                                     razorpay_payment_id: response.razorpay_payment_id,
                                     razorpay_order_id: response.razorpay_order_id,
                                     razorpay_signature: response.razorpay_signature
@@ -60,15 +60,14 @@
 
                             const verifyData = await verifyRes.json();
 
-                            // Redirect based on verification
                             if (verifyData.success) {
-                                window.location.href = "/orderplaced"; // ✅ success redirect
+                                window.location.href = "/orderplaced"; // success
                             } else {
-                                window.location.href = `/order/failure/${orderId}`; // ❌ failure redirect
+                                window.location.href = `/order/failure/${data.orderId}`;
                             }
                         } catch (err) {
                             console.error("Verify error:", err);
-                            window.location.href = `/order/failure/${orderId}`;
+                            window.location.href = `/order/failure/${data.orderId}`;
                         }
                     },
                     theme: { color: "#3399cc" }
@@ -80,17 +79,16 @@
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            orderId: orderId,
+                            orderId: data.orderId,
                             error: response.error
                         })
-                    }).finally(() => {
-                        // redirect user to failure page
-                        window.location.href = `/order/failure/${orderId}`;
                     });
+                    window.location.href = `/order/failure/${data.orderId}`;
                 });
 
                 rzp.open();
             }
+
         });
     </script>
 

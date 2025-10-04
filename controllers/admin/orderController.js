@@ -167,7 +167,12 @@ const getOrderDetail = async (req, res) => {
   
       // If delivered, stamp deliveredOn
       if (normalize(status) === "delivered") {
-        item.deliveredOn = new Date();
+        if(order.paymentMethod ==='COD'){
+          order.paymentStatus = 'Paid';
+          item.deliveredOn = new Date();
+        }else{
+          item.deliveredOn = new Date();
+        }
       }
   
       // Recompute overall order status
@@ -247,7 +252,6 @@ const getOrderDetail = async (req, res) => {
   };
 
   ///////////////////////////////////////////////////////////////////////////////////////////
-
 
   module.exports = {
     listOrders,
