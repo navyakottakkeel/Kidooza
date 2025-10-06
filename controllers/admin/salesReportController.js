@@ -2,173 +2,14 @@ const Order = require("../../models/orderSchema");
 const moment = require("moment");
 const excelJS = require("exceljs");
 const PDFDocument = require("pdfkit");
+const HTTP_STATUS = require("../../constants/httpStatus");
 
 
 const ORDERS_PER_PAGE = 10;
 
-
-// ---------------------- Sales Report (Delivered Products Only) ----------------------
-const getSalesReportPage = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const skip = (page - 1) * ORDERS_PER_PAGE;
-
-    const today = moment().startOf("day");
-    const tomorrow = moment(today).endOf("day");
-
-    // ✅ Only delivered items
-    const matchQuery = {
-      paymentStatus: "Paid",
-      "orderedItems.status": "Delivered",
-      createdAt: { $gte: today, $lte: tomorrow }
-    };
-
-    // fetch all matching orders
-    const ordersData = await Order.find(matchQuery)
-      .populate("user", "name email")
-      .populate("orderedItems.product", "name")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // flatten product-based rows
-    const rows = [];
-    ordersData.forEach(order => {
-      order.orderedItems.forEach(item => {
-        if (item.status === "Delivered") {
-          // proportional coupon discount (optional)
-          let couponShare = 0;
-          if (order.couponDiscount && order.finalAmount) {
-            const itemTotal = item.salePrice * item.quantity;
-            couponShare = (itemTotal / order.totalPrice) * order.couponDiscount;
-          }
-
-          rows.push({
-            orderId: order.orderId,
-            date: order.createdAt,
-            customer: order.user?.name || "Guest",
-            product: item.product?.name || item.productName || "Unknown Product",
-            quantity: item.quantity,
-            price: item.salePrice,
-            totalPrice: item.salePrice * item.quantity,
-            discount: (item.basePrice - item.salePrice) * item.quantity + couponShare,
-            payment: order.paymentMethod
-          });
-        }
-      });
-    });
-
-    // pagination
-    const totalOrders = rows.length;
-    const paginatedRows = rows.slice(skip, skip + ORDERS_PER_PAGE);
-    const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
-
-    const reportData = calculateProductReport(rows);
-
-    res.render("sales-report", {
-      orders: paginatedRows,
-      moment,
-      reportData, // you can still compute summary if needed
-      filters: { range: "Today" },
-      page,
-      totalPages,
-      skip
-    });
-  } catch (err) {
-    console.error("Error loading sales report:", err);
-    res.status(500).send("Server Error");
-  }
-};
-
-// ---------------------- Filter Sales Report ----------------------
-const filterSalesReport = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const skip = (page - 1) * ORDERS_PER_PAGE;
-    const { type, startDate, endDate } = req.query;
-
-    let matchQuery = { paymentStatus: "Paid", "orderedItems.status": "Delivered" };
-
-    if (type === "daily") {
-      matchQuery.createdAt = {
-        $gte: moment().startOf("day").toDate(),
-        $lte: moment().endOf("day").toDate()
-      };
-    } else if (type === "weekly") {
-      matchQuery.createdAt = {
-        $gte: moment().startOf("week").toDate(),
-        $lte: moment().endOf("week").toDate()
-      };
-    } else if (type === "monthly") {
-      matchQuery.createdAt = {
-        $gte: moment().startOf("month").toDate(),
-        $lte: moment().endOf("month").toDate()
-      };
-    } else if (type === "custom" && startDate && endDate) {
-      matchQuery.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
-
-    // fetch matching orders
-    const ordersData = await Order.find(matchQuery)
-      .populate("user", "name email")
-      .populate("orderedItems.product", "name")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // flatten product-based rows
-    const rows = [];
-    ordersData.forEach(order => {
-      order.orderedItems.forEach(item => {
-        if (item.status === "Delivered") {
-          let couponShare = 0;
-          if (order.couponDiscount && order.finalAmount) {
-            const itemTotal = item.salePrice * item.quantity;
-            couponShare = (itemTotal / order.totalPrice) * order.couponDiscount;
-          }
-
-          rows.push({
-            orderId: order.orderId,
-            date: order.createdAt,
-            customer: order.user?.name || "Guest",
-            product: item.product?.name || item.productName || "Unknown Product",
-            quantity: item.quantity,
-            price: item.salePrice,
-            totalPrice: item.salePrice * item.quantity,
-            discount: (item.basePrice - item.salePrice) * item.quantity + couponShare,
-            payment: order.paymentMethod
-          });
-        }
-      });
-    });
-
-    // pagination
-    const totalOrders = rows.length;
-    const paginatedRows = rows.slice(skip, skip + ORDERS_PER_PAGE);
-    const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
-
-    const reportData = calculateProductReport(rows);
-
-    res.render("sales-report", {
-      orders: paginatedRows,
-      moment,
-      reportData,
-      filters: { type, startDate, endDate },
-      page,
-      totalPages,
-      skip
-    });
-  } catch (err) {
-    console.error("Error filtering sales report:", err);
-    res.status(500).send("Server Error");
-  }
-};
-
-
-
+// Utility: calculate summary data
 function calculateProductReport(rows) {
-  let totalSales = rows.length; // number of delivered product rows
+  let totalSales = rows.length;
   let totalAmount = 0;
   let totalDiscount = 0;
 
@@ -180,61 +21,167 @@ function calculateProductReport(rows) {
   return { totalSales, totalAmount, totalDiscount };
 }
 
+// ---------------------- Sales Report (Delivered Products Only) ----------------------
 
-// ✅ Helper: Calculate Report Totals
-function calculateReport(orders) {
-  let totalSales = orders.length;
-  let totalAmount = 0;
-  let totalDiscount = 0;
-
-  orders.forEach(order => {
-    totalAmount += order.finalAmount || 0;
-    totalDiscount += order.discount || 0;
-  });
-
-  return { totalSales, totalAmount, totalDiscount };
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// ✅ Download Report
-const downloadSalesReport = async (req, res) => {
+const getSalesReportPage = async (req, res, next) => {
   try {
-    const { type } = req.params; // pdf or excel
-    const { type: filterType, startDate, endDate } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * ORDERS_PER_PAGE;
 
-    let matchQuery = { paymentStatus: "Paid", "orderedItems.status": "Delivered" };
+    const today = moment().startOf("day");
+    const tomorrow = moment(today).endOf("day");
 
-    if (filterType === "daily") {
-      matchQuery.createdAt = {
-        $gte: moment().startOf("day").toDate(),
-        $lte: moment().endOf("day").toDate()
-      };
-    } else if (filterType === "weekly") {
-      matchQuery.createdAt = {
-        $gte: moment().startOf("week").toDate(),
-        $lte: moment().endOf("week").toDate()
-      };
-    } else if (filterType === "monthly") {
-      matchQuery.createdAt = {
-        $gte: moment().startOf("month").toDate(),
-        $lte: moment().endOf("month").toDate()
-      };
-    } else if (filterType === "custom" && startDate && endDate) {
-      matchQuery.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
+    const matchQuery = {
+      paymentStatus: "Paid",
+      "orderedItems.status": "Delivered",
+      createdAt: { $gte: today, $lte: tomorrow }
+    };
 
-    // Fetch all filtered orders
     const ordersData = await Order.find(matchQuery)
       .populate("user", "name email")
       .populate("orderedItems.product", "name")
       .sort({ createdAt: -1 })
       .lean();
 
-    // Flatten orders into product-level rows
+    const rows = [];
+    ordersData.forEach(order => {
+      order.orderedItems.forEach(item => {
+        if (item.status === "Delivered") {
+          let couponShare = 0;
+          if (order.couponDiscount && order.finalAmount) {
+            const itemTotal = item.salePrice * item.quantity;
+            couponShare = (itemTotal / order.totalPrice) * order.couponDiscount;
+          }
+
+          rows.push({
+            orderId: order.orderId,
+            date: order.createdAt,
+            customer: order.user?.name || "Guest",
+            product: item.product?.name || item.productName || "Unknown Product",
+            quantity: item.quantity,
+            price: item.salePrice,
+            totalPrice: item.salePrice * item.quantity,
+            discount: (item.basePrice - item.salePrice) * item.quantity + couponShare,
+            payment: order.paymentMethod
+          });
+        }
+      });
+    });
+
+    const totalOrders = rows.length;
+    const paginatedRows = rows.slice(skip, skip + ORDERS_PER_PAGE);
+    const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
+    const reportData = calculateProductReport(rows);
+
+    res.status(HTTP_STATUS.OK).render("sales-report", {
+      orders: paginatedRows,
+      moment,
+      reportData,
+      filters: { range: "Today" },
+      page,
+      totalPages,
+      skip
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ---------------------- Filter Sales Report ----------------------
+
+const filterSalesReport = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * ORDERS_PER_PAGE;
+    const { type, startDate, endDate } = req.query;
+
+    let matchQuery = { paymentStatus: "Paid", "orderedItems.status": "Delivered" };
+
+    if (type === "daily") {
+      matchQuery.createdAt = { $gte: moment().startOf("day").toDate(), $lte: moment().endOf("day").toDate() };
+    } else if (type === "weekly") {
+      matchQuery.createdAt = { $gte: moment().startOf("week").toDate(), $lte: moment().endOf("week").toDate() };
+    } else if (type === "monthly") {
+      matchQuery.createdAt = { $gte: moment().startOf("month").toDate(), $lte: moment().endOf("month").toDate() };
+    } else if (type === "custom" && startDate && endDate) {
+      matchQuery.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    }
+
+    const ordersData = await Order.find(matchQuery)
+      .populate("user", "name email")
+      .populate("orderedItems.product", "name")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const rows = [];
+    ordersData.forEach(order => {
+      order.orderedItems.forEach(item => {
+        if (item.status === "Delivered") {
+          let couponShare = 0;
+          if (order.couponDiscount && order.finalAmount) {
+            const itemTotal = item.salePrice * item.quantity;
+            couponShare = (itemTotal / order.totalPrice) * order.couponDiscount;
+          }
+
+          rows.push({
+            orderId: order.orderId,
+            date: order.createdAt,
+            customer: order.user?.name || "Guest",
+            product: item.product?.name || item.productName || "Unknown Product",
+            quantity: item.quantity,
+            price: item.salePrice,
+            totalPrice: item.salePrice * item.quantity,
+            discount: (item.basePrice - item.salePrice) * item.quantity + couponShare,
+            payment: order.paymentMethod
+          });
+        }
+      });
+    });
+
+    const totalOrders = rows.length;
+    const paginatedRows = rows.slice(skip, skip + ORDERS_PER_PAGE);
+    const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
+    const reportData = calculateProductReport(rows);
+
+    res.status(HTTP_STATUS.OK).render("sales-report", {
+      orders: paginatedRows,
+      moment,
+      reportData,
+      filters: { type, startDate, endDate },
+      page,
+      totalPages,
+      skip
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ---------------------- Download Sales Report (Excel / PDF) ----------------------
+
+const downloadSalesReport = async (req, res, next) => {
+  try {
+    const { type } = req.params;
+    const { type: filterType, startDate, endDate } = req.query;
+
+    let matchQuery = { paymentStatus: "Paid", "orderedItems.status": "Delivered" };
+
+    if (filterType === "daily") {
+      matchQuery.createdAt = { $gte: moment().startOf("day").toDate(), $lte: moment().endOf("day").toDate() };
+    } else if (filterType === "weekly") {
+      matchQuery.createdAt = { $gte: moment().startOf("week").toDate(), $lte: moment().endOf("week").toDate() };
+    } else if (filterType === "monthly") {
+      matchQuery.createdAt = { $gte: moment().startOf("month").toDate(), $lte: moment().endOf("month").toDate() };
+    } else if (filterType === "custom" && startDate && endDate) {
+      matchQuery.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    }
+
+    const ordersData = await Order.find(matchQuery)
+      .populate("user", "name email")
+      .populate("orderedItems.product", "name")
+      .sort({ createdAt: -1 })
+      .lean();
+
     const rows = [];
     ordersData.forEach(order => {
       order.orderedItems.forEach(item => {
@@ -278,57 +225,47 @@ const downloadSalesReport = async (req, res) => {
       ];
 
       rows.forEach((row, index) => {
-        worksheet.addRow({
-          sl: index + 1,
-          ...row
-        });
+        worksheet.addRow({ sl: index + 1, ...row });
       });
 
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=sales-report.xlsx"
-      );
+      res
+        .status(HTTP_STATUS.OK)
+        .setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        .setHeader("Content-Disposition", "attachment; filename=sales-report.xlsx");
 
       return workbook.xlsx.write(res).then(() => res.end());
     }
 
     if (type === "pdf") {
-      const doc = new PDFDocument({ size: "A4", layout: "portrait", margin: 30 });
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=sales-report.pdf"
-      );
+      const doc = new PDFDocument({ size: "A4", margin: 30 });
+      res
+        .status(HTTP_STATUS.OK)
+        .setHeader("Content-Type", "application/pdf")
+        .setHeader("Content-Disposition", "attachment; filename=sales-report.pdf");
+
       doc.pipe(res);
-
       doc.registerFont("Roboto", "public/fonts/Roboto-VariableFont_wdth,wght.ttf");
-      doc.font("Roboto"); // set it as default
+      doc.font("Roboto");
 
-      // --- Title ---
+      // Title
       doc.fontSize(22).fillColor("#1F4E79").text("Kidooza Boys Fashion", { align: "center" });
       doc.moveDown(1.2);
 
       doc.fontSize(20).fillColor("#1F4E79").text("Sales Report", { align: "left" });
       doc.moveDown(1);
 
-      // --- Summary Cards ---
       const totalOrders = rows.length;
       const totalAmount = rows.reduce((sum, r) => sum + r.totalPrice, 0);
       const totalDiscount = rows.reduce((sum, r) => sum + r.discount, 0);
 
       const summaryX = doc.options.margin;
       const summaryY = doc.y;
-
       const cardWidth = 160;
       const cardHeight = 50;
       const cardGap = 20;
 
       const summaries = [
-        { title: "Total Orders", value: totalOrders, color: 'grey' },
+        { title: "Total Orders", value: totalOrders, color: "grey" },
         { title: "Total Amount", value: `₹${totalAmount.toFixed(2)}`, color: "grey" },
         { title: "Total Discount", value: `₹${totalDiscount.toFixed(2)}`, color: "grey" }
       ];
@@ -341,38 +278,29 @@ const downloadSalesReport = async (req, res) => {
       });
 
       doc.moveDown(2);
-
-      // --- Table ---
-      doc.font("Roboto").fontSize(10).fillColor("#fff");
-      const tableTop = doc.y;
-      const rowHeight = 55; // Increased height
-      const colWidths = [40, 80, 80, 80, 50, 50, 50]; // Only the remaining columns
-      const headers = ["Sl.No", "Order ID", "Date", "Customer", "Qty", "Total", "Discount", "Payment"];
-
-      // Adjust headers and columns (excluding product & price)
+      // Table
       const adjustedHeaders = ["Sl.No", "Order ID", "Date", "Customer", "Quantity", "Total Price", "Discount", "Payment"];
       const adjustedColWidths = [40, 80, 80, 100, 50, 60, 60, 60];
+      const rowHeight = 55;
 
-      // Draw header
-      doc.fillColor("#1F4E79").fontSize(10).font("Helvetica-Bold");
+      const tableTop = doc.y;
       let x = doc.options.margin;
+
+      doc.fillColor("#1F4E79").font("Helvetica-Bold").fontSize(10);
       adjustedHeaders.forEach((header, i) => {
         doc.rect(x, tableTop, adjustedColWidths[i], rowHeight).fill("#1F4E79").stroke();
-        doc.fillColor("#fff").text(header, x + 3, tableTop + 10, { width: adjustedColWidths[i] - 6, align: "left" });
-        doc.fillColor("#fff");              
-        doc.font("Roboto");
+        doc.fillColor("#fff").text(header, x + 3, tableTop + 10, {
+          width: adjustedColWidths[i] - 6,
+          align: "left"
+        });
         x += adjustedColWidths[i];
       });
 
-      // Draw rows 
       let y = tableTop + rowHeight;
       rows.forEach((row, index) => {
         x = doc.options.margin;
-
-        // alternating row colors
-        if (index % 2 === 0) {
+        if (index % 2 === 0)
           doc.rect(x, y, adjustedColWidths.reduce((a, b) => a + b, 0), rowHeight).fill("#f2f2f2").stroke();
-        }
 
         doc.fillColor("#000").font("Helvetica").fontSize(10);
         const values = [
@@ -392,8 +320,6 @@ const downloadSalesReport = async (req, res) => {
         });
 
         y += rowHeight;
-
-        // Add new page if needed
         if (y > doc.page.height - 50) {
           doc.addPage();
           y = doc.options.margin;
@@ -402,13 +328,11 @@ const downloadSalesReport = async (req, res) => {
 
       doc.end();
     }
-
-  } catch (err) {
-    console.error("Error downloading sales report:", err);
-    res.status(500).send("Server Error");
+  } catch (error) {
+    next(error);
   }
 };
-
+ 
 
 
 

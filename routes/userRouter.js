@@ -15,6 +15,7 @@ const couponController = require("../controllers/user/couponController");
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
 const upload = require('../middlewares/multer');
+const { userErrorHandler } = require("../middlewares/errorHandler");
 
 
 router.use(cartCount, wishlistCount)
@@ -116,5 +117,8 @@ router.post("/payment/razorpay/failure", orderController.razorpayFailure);
 router.post("/coupon/apply",couponController.applyCoupon);
 router.post("/coupon/remove",couponController.removeCoupon);
 
+
+
+router.use(userErrorHandler);
 
 module.exports = router;

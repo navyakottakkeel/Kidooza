@@ -5,33 +5,34 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const HTTP_STATUS = require("../../constants/httpStatus");
 
 
 
+// ---------------------------- Add Product ---------------------------------
 
-const addProduct = async (req, res) => {
+const addProduct = async (req, res, next) => {
   try {
-    const { productName, basePrice, salePrice, description, brand } = req.body;
+    const { productName, basePrice, salePrice, description, brand, category: categoryId } = req.body;
     const productImage = req.files;
 
-    const category = await Category.findById(req.body.category);
-    if (!category) return res.status(400).send("Category not found");
-
+    const category = await Category.findById(categoryId);
+    if (!category) return res.status(HTTP_STATUS.NOT_FOUND).send("Category not found");
 
     // Validation
-    if (!productName || !basePrice || !description || !category || !brand || !productImage || productImage.length < 3) {
+    if (!productName || !basePrice || !description || !brand || !productImage || productImage.length < 3) {
       const categories = await Category.find({ isDeleted: false });
-      return res.render('add-product', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render("add-product", {
         categories,
-        error: 'All fields are required and at least 3 images must be uploaded.'
+        error: "All fields are required and at least 3 images must be uploaded."
       });
     }
 
     if (parseFloat(salePrice) >= parseFloat(basePrice)) {
       const categories = await Category.find({ isDeleted: false });
-      return res.render('add-product', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render("add-product", {
         categories,
-        error: 'Sale price must be less than base price.'
+        error: "Sale price must be less than base price."
       });
     }
 
@@ -40,15 +41,15 @@ const addProduct = async (req, res) => {
     for (let i = 0; i < productImage.length; i++) {
       const file = productImage[i];
       const filename = `product-${Date.now()}-${i}.jpeg`;
-      const outputPath = path.join(__dirname, '../../public/uploads/products', filename);
+      const outputPath = path.join(__dirname, "../../public/uploads/products", filename);
 
       await sharp(file.buffer)
         .resize(500, 500)
-        .toFormat('jpeg')
+        .toFormat("jpeg")
         .jpeg({ quality: 90 })
         .toFile(outputPath);
 
-      imagePaths.push('/uploads/products/' + filename);
+      imagePaths.push("/uploads/products/" + filename);
     }
 
     // Save product
@@ -59,54 +60,41 @@ const addProduct = async (req, res) => {
       description,
       category: category._id,
       brand,
-      productImage: imagePaths, // Assume this is filled correctly
+      productImage: imagePaths
     });
 
     await product.save();
 
     const categories = await Category.find();
-    res.render('add-product', {
+    return res.status(HTTP_STATUS.CREATED).render("add-product", {
       categories,
-      success: 'Product added successfully!'
+      success: "Product added successfully!"
     });
-
   } catch (error) {
-    console.error('Product add error:', error);
-    const categories = await Category.find();
-    res.render('add-product', {
-      categories,
-      error: 'Something went wrong while adding the product.'
-    });
+    next(error);
   }
 };
 
 
+// ----------------------------- Load Add Product Page ----------------------------
 
-///////////////////////////////////////////////////////////////////////////
-
-const loadAddProduct = async (req, res) => {
+const loadAddProduct = async (req, res, next) => {
   try {
-
     const categories = await Category.find({ isDeleted: false });
-    res.render('add-product', {
-      categories: categories
-    });
-
+    res.status(HTTP_STATUS.OK).render("add-product", { categories });
   } catch (error) {
-    res.redirect('/pageerror');
+    next(error);
   }
-
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
+};
 
 
-const loadProducts = async (req, res) => {
+// ------------------------- Load Products List ----------------------------
+
+const loadProducts = async (req, res, next) => {
   try {
     const search = req.query.search || "";
     const page = parseInt(req.query.page) || 1;
     const limit = 5;
-
     let matchStage = {};
 
     if (search) {
@@ -152,7 +140,7 @@ const loadProducts = async (req, res) => {
     const total = countAggregate[0] ? countAggregate[0].total : 0;
     const categories = await Category.find({ isDeleted: false });
 
-    res.render("list-products", {
+    res.status(HTTP_STATUS.OK).render("list-products", {
       data: products,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
@@ -160,229 +148,183 @@ const loadProducts = async (req, res) => {
       categories,
       msg: req.query.msg
     });
-
   } catch (error) {
-    console.log("error", error);
-    res.status(500).send("Internal Server Error");
+    next(error);
   }
 };
 
+// ----------------------- Toggle Block/Unblock Product ---------------------------
 
-////////////////////////////////////////////////////////////////////////////////////////////
-
-
-const toggleBlockProduct = async (req, res) => {
+const toggleBlockProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { isBlock } = req.body; // true = delete, false = restore
+    const { isBlock } = req.body;
 
-    const product = await Product.findByIdAndUpdate(
-      id,
-      { isBlock },
-      { new: true }
-    );
-
+    const product = await Product.findByIdAndUpdate(id, { isBlock }, { new: true });
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: "Product not found" });
     }
 
-    res.json({ success: true, message: `Product ${isBlock ? 'deleted' : 'restored'} successfully.` });
-
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: `Product ${isBlock ? "deleted" : "restored"} successfully.`
+    });
   } catch (error) {
-    console.error("Toggle block error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(error);
   }
 };
 
-///////////////////////////////////////////////////////////////////////////////////////
+// --------------------------- Update Product Image --------------------------
 
-const updateProductImage = async (req, res) => {
+const updateProductImage = async (req, res, next) => {
   try {
     const { productId, index } = req.body;
 
-    if (!productId || typeof index === 'undefined' || !req.file) {
-      return res.json({ success: false, message: 'Invalid data.' });
+    if (!productId || typeof index === "undefined" || !req.file) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid data." });
     }
 
-    // Find product
     const product = await Product.findById(productId);
     if (!product) {
-      return res.json({ success: false, message: 'Product not found.' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: "Product not found." });
     }
 
-    // Store old image path for deletion
     const oldImagePath = product.productImage[index]
-      ? path.join(__dirname, '../public', product.productImage[index])
+      ? path.join(__dirname, "../public", product.productImage[index])
       : null;
 
-    // Save new image from buffer
     const fileName = `${uuidv4()}.png`;
-    const filePath = path.join(process.cwd(), 'public', 'uploads', 'products', fileName);
+    const filePath = path.join(process.cwd(), "public", "uploads", "products", fileName);
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-
     fs.writeFileSync(filePath, req.file.buffer);
 
-    // Update the product image path in DB
     product.productImage[index] = `/uploads/products/${fileName}`;
     await product.save();
 
-    // Delete old file if it exists
-    if (oldImagePath && fs.existsSync(oldImagePath)) {
-      fs.unlinkSync(oldImagePath);
-    }
+    if (oldImagePath && fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
 
-    res.json({ success: true, message: 'Image updated successfully', imageUrl: `/uploads/products/${fileName}` });
-
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: "Image updated successfully",
+      imageUrl: `/uploads/products/${fileName}`
+    });
   } catch (error) {
-    console.error('Error updating image:', error.message);
-    res.status(500).json({ success: false, message: 'Server error' });
+    next(error);
   }
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
-const loadEditProduct = async (req, res) => {
+// ------------------------- Load Edit Product -------------------------
+
+const loadEditProduct = async (req, res, next) => {
   try {
-
-    const productId = req.query.id; // Pass ID in query like ?id=xyz
-
-    const product = await Product.findById(productId).lean().populate('category');
+    const productId = req.query.id;
+    const product = await Product.findById(productId).lean().populate("category");
     const categories = await Category.find().lean();
 
-
     if (!product) {
-      return res.redirect('/admin/products'); // or handle gracefully
+      return res.redirect("/admin/products");
     }
 
-    res.render('edit-product', {
-      product,
-      categories,
-
-    });
-
+    res.status(HTTP_STATUS.OK).render("edit-product", { product, categories });
   } catch (error) {
-    res.redirect('/pageerror');
+    next(error);
   }
+};
 
-}
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------- Edit Product ----------------------------
 
-const editProduct = async (req, res) => {
+const editProduct = async (req, res, next) => {
   try {
     const { _id, productName, description, basePrice, salePrice, brand, category } = req.body;
 
     if (!_id) {
       const categories = await Category.find();
-      return res.render('edit-product', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render("edit-product", {
         product: null,
         categories,
-        error: 'Product ID is missing.'
+        error: "Product ID is missing."
       });
     }
 
     const product = await Product.findById(_id);
-
     if (!product) {
-      return res.render('edit-product', {
+      return res.status(HTTP_STATUS.NOT_FOUND).render("edit-product", {
         product: null,
-        categories,
-        error: 'Product not found.'
+        categories: await Category.find(),
+        error: "Product not found."
       });
     }
- 
-    
-    // Update fields only (no image handling)
-    product.productName = productName;
-    product.description = description;
-    product.basePrice = basePrice;
-    product.salePrice = salePrice;
-    product.brand = brand;
-    product.category = category;
 
     if (parseFloat(salePrice) >= parseFloat(basePrice)) {
       const categories = await Category.find({ isDeleted: false });
-      return res.render('edit-product', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render("edit-product", {
         categories,
         product,
-        error: 'Sale price must be less than base price.'
+        error: "Sale price must be less than base price."
       });
     }
 
+    Object.assign(product, { productName, description, basePrice, salePrice, brand, category });
     await product.save();
 
-    const updatedProduct = await Product.findById(_id).populate('category').lean();
+    const updatedProduct = await Product.findById(_id).populate("category").lean();
     const categories = await Category.find().lean();
 
-    return res.render('edit-product', {
+    res.status(HTTP_STATUS.OK).render("edit-product", {
       product: updatedProduct,
       categories,
-      success: 'Product updated successfully!'
+      success: "Product updated successfully!"
     });
-
   } catch (error) {
-    console.error("Error updating product:", error.message);
-    res.status(500).send("Internal Server Error");
+    next(error);
   }
 };
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------ Delete Product Image --------------------------
 
-
-
-const deleteProductImage = async (req, res) => {
+const deleteProductImage = async (req, res, next) => {
   try {
     const { productId, imageIndex } = req.body;
-
     const product = await Product.findById(productId);
-    if (!product) return res.json({ success: false, message: 'Product not found' });
+    if (!product) return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: "Product not found" });
 
     const index = parseInt(imageIndex);
     if (isNaN(index) || index < 0 || index >= product.productImage.length) {
-      return res.json({ success: false, message: 'Invalid image index' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid image index" });
     }
 
-    const removedImage = product.productImage.splice(index, 1)[0];
-
-    // Optionally delete from filesystem / cloud:
-    // Example for local filesystem:
-    // const fs = require('fs');
-    // const path = require('path');
-    // fs.unlink(path.join(__dirname, '../public/' + removedImage), (err) => {});
-
+    product.productImage.splice(index, 1);
     await product.save();
 
-    res.json({ success: true, message: 'Image deleted successfully' });
-
+    res.status(HTTP_STATUS.OK).json({ success: true, message: "Image deleted successfully" });
   } catch (error) {
-    console.error('Error deleting image:', error.message);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    next(error);
   }
 };
 
+// ------------------------ Add Product Image --------------------------
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-const addProductImage = async (req, res) => {
+const addProductImage = async (req, res, next) => {
   try {
     const { productId } = req.body;
     if (!productId || !req.file) {
-      return res.json({ success: false, message: 'Invalid data.' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid data." });
     }
 
     const product = await Product.findById(productId);
     if (!product) {
-      return res.json({ success: false, message: 'Product not found.' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: "Product not found." });
     }
 
     const fileName = `${uuidv4()}.jpeg`;
-    const filePath = path.join(process.cwd(), 'public', 'uploads', 'products', fileName);
+    const filePath = path.join(process.cwd(), "public", "uploads", "products", fileName);
 
-    // Resize and save
     await sharp(req.file.buffer)
       .resize(500, 500)
-      .toFormat('jpeg')
+      .toFormat("jpeg")
       .jpeg({ quality: 90 })
       .toFile(filePath);
 
@@ -390,14 +332,18 @@ const addProductImage = async (req, res) => {
     product.productImage.push(imageUrl);
     await product.save();
 
-    res.json({ success: true, message: 'Image added successfully', imageUrl });
+    res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message: "Image added successfully",
+      imageUrl
+    });
   } catch (error) {
-    console.error('Error adding image:', error.message);
-    res.status(500).json({ success: false, message: 'Server error' });
+    next(error);
   }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
+
 module.exports = {
   addProduct,
   loadAddProduct,

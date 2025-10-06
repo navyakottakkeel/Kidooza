@@ -581,12 +581,12 @@
                 const codInput = document.getElementById("cod");
                 const codLabel = codInput?.closest("label") || null;
                 if (codInput) {
-                    if (!(totalAmount > 1000)) {
+                    if (!(totalAmount < 1000)) {
                         codInput.disabled = true;
                         // optionally show tooltip/text
                         const note = document.createElement("div");
                         note.className = "text-muted small";
-                        note.innerText = "COD available only for orders above ₹1000";
+                        note.innerText = "COD available only for orders below ₹1000";
                         codInput.parentElement.appendChild(note);
                     }
                 }

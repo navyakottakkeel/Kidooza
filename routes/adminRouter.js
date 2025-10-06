@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/admin/adminController");
-const {adminAuth } = require('../middlewares/auth');
 const customerController = require('../controllers/admin/customerController');
 const categoryController = require('../controllers/admin/categoryController');
 const productController = require('../controllers/admin/productController');
@@ -12,8 +11,9 @@ const offerController = require('../controllers/admin/offerController');
 const salesReportController = require("../controllers/admin/salesReportController");
 
 
-
+const {adminAuth } = require('../middlewares/auth');
 const upload = require('../middlewares/multer');
+const { adminErrorHandler } = require("../middlewares/errorHandler");
 const Category = require('../models/categorySchema');
 
 
@@ -81,5 +81,8 @@ router.patch("/offers/:id/status", offerController.toggleOfferStatus);
 router.get("/sales-report", salesReportController.getSalesReportPage);
 router.get("/sales-report/filter", salesReportController.filterSalesReport);
 router.get("/sales-report/download/:type", salesReportController.downloadSalesReport);
+
+
+router.use(adminErrorHandler);
 
 module.exports = router;

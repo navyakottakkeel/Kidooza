@@ -60,17 +60,12 @@
                 </div>
             </div>
 
-
-
-
             <div class="col-md-9">
                 <div class="card shadow-sm rounded-3">
                     <div class="card-header d-flex justify-content-between align-items-center"
                         style="    background-color: #e4e1d7;">
                         <h5 class="mb-0 fw-bold">Address</h5>
                     </div>
-
-
 
                     <div class="card-body row address-card p-3 border rounded mb-3">
                         <% if (addresses.length===0) { %>
@@ -122,8 +117,6 @@
                                                     id="badge_<%= addr._id.toString() %>">Default Shipping
                                                     Address</span>
                                                 <% } %>
-
-
 
                                     </div>
                                     <% }) %>
@@ -183,16 +176,12 @@
         </div>
 
 
-
-
         <form id="addressForm">
             <!-- your form fields -->
         </form>
 
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
-
-
 
             function saveAddress() {
 
@@ -288,8 +277,6 @@
                         });
                     });
             }
-
-
 
         </script>
 
@@ -402,15 +389,42 @@
                             confirmButtonText: 'Update',
                             focusConfirm: false,
                             preConfirm: () => {
+                                const name = document.getElementById('swal-name').value.trim();
+                                const city = document.getElementById('swal-city').value.trim();
+                                const state = document.getElementById('swal-state').value.trim();
+                                const pincode = document.getElementById('swal-pincode').value.trim();
+                                const phone = document.getElementById('swal-phone').value.trim();
+                                const altPhone = document.getElementById('swal-alt').value.trim();
+
+                                if (!name || !city || !state || !pincode || !phone) {
+                                    Swal.showValidationMessage("All required fields must be filled.");
+                                    return false;
+                                }
+
+                                if (!/^\d{6}$/.test(pincode)) {
+                                    Swal.showValidationMessage("Pincode must be 6 digits.");
+                                    return false;
+                                }
+
+                                if (!/^\d{10}$/.test(phone)) {
+                                    Swal.showValidationMessage("Phone number must be 10 digits.");
+                                    return false;
+                                }
+
+                                if (altPhone && !/^\d{10}$/.test(altPhone)) {
+                                    Swal.showValidationMessage("Alt phone must be 10 digits.");
+                                    return false;
+                                }
+
                                 return {
                                     addressType: document.getElementById('swal-type').value,
-                                    name: document.getElementById('swal-name').value,
-                                    city: document.getElementById('swal-city').value,
+                                    name,
+                                    city,
                                     landmark: document.getElementById('swal-landmark').value,
-                                    state: document.getElementById('swal-state').value,
-                                    pincode: document.getElementById('swal-pincode').value,
-                                    phone: document.getElementById('swal-phone').value,
-                                    altPhone: document.getElementById('swal-alt').value
+                                    state,
+                                    pincode,
+                                    phone,
+                                    altPhone
                                 };
                             }
                         }).then(result => {
