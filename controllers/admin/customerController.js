@@ -1,74 +1,98 @@
 const User = require('../../models/userSchema');
+const HTTP_STATUS = require("../../constants/httpStatus");
 
 
 ////////////////////////////////////////////////////////
 
-const customerInfo = async (req, res) => {
+
+const customerInfo = async (req, res, next) => {
     try {
-        const search = req.query.search || "";
-        const page = parseInt(req.query.page) || 1;
-        const limit = 6;
-
-        const query = {
-            isAdmin: { $in: [null, false] },
-            $or: [
-                { name: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } }
-            ]
-        };
-
-        const userData = await User.find(query)
-            .sort({ _id: -1 }) // descending order, latest first
-            .skip((page - 1) * limit)
-            .limit(limit);
-
-        const count = await User.countDocuments(query);
-
-        res.render('customers', {
-            data: userData,
-            currentPage: page,
-            totalPages: Math.ceil(count / limit),
-            search
-        });
+      const search = req.query.search || "";
+      const page = parseInt(req.query.page) || 1;
+      const limit = 6;
+  
+      const query = {
+        isAdmin: { $in: [null, false] },
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      };
+  
+      const userData = await User.find(query)
+        .sort({ _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+  
+      const count = await User.countDocuments(query);
+  
+      return res.status(HTTP_STATUS.OK).render("customers", {
+        data: userData,
+        currentPage: page,
+        totalPages: Math.ceil(count / limit),
+        search,
+      });
     } catch (error) {
-        console.log("error", error);
-        res.status(500).send("Internal Server Error");
+      next(error)
     }
+  };
+
+//////////////////////////////////////////////////////////////////////////
+
+
+const customerBlocked = async (req, res, next) => {
+  try {
+    const { id } = req.query;
+
+    if (!id) {
+      return res
+        .status(HTTP_STATUS.BAD_REQUEST)
+        .json({ success: false, message: "User ID is required" });
+    }
+
+    const user = await User.findByIdAndUpdate(id, { isBlocked: true });
+
+    if (!user) {
+      return res
+        .status(HTTP_STATUS.NOT_FOUND)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .redirect("/admin/users?msg=User blocked successfully");
+  } catch (error) {
+    next(error)
+  }
 };
 
 //////////////////////////////////////////////////////////////////////////
 
-const customerBlocked = async (req,res) => {
-    console.log("blocking");
+const customerUnblocked = async (req, res, next) => {
     try {
-        
-        let id = req.query.id;
-        console.log(id);
-        await User.updateOne({_id:id},{$set:{isBlocked:true}});
-        res.redirect('/admin/users');
-
+      const { id } = req.query;
+  
+      if (!id) {
+        return res
+          .status(HTTP_STATUS.BAD_REQUEST)
+          .json({ success: false, message: "User ID is required" });
+      }
+  
+      const user = await User.findByIdAndUpdate(id, { isBlocked: false });
+  
+      if (!user) {
+        return res
+          .status(HTTP_STATUS.NOT_FOUND)
+          .json({ success: false, message: "User not found" });
+      }
+  
+      return res
+        .status(HTTP_STATUS.OK)
+        .redirect("/admin/users?msg=User unblocked successfully");
     } catch (error) {
-        console.log(error)
-        res.redirect('/admin/pageerror');
+      next(error)
     }
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-
-
-const customerUnblocked = async (req,res) => {
-    try {
-        
-        let id = req.query.id;
-        await User.updateOne({_id:id},{$set:{isBlocked:false}});
-        res.redirect('/admin/users');
-
-    } catch (error) {
-        res.redirect('/admin/pageerror');
-    }
-}
-
+  };
 
 ///////////////////////////////////////////////////////////////////////////////
 

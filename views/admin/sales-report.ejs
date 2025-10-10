@@ -1,0 +1,202 @@
+<%- include("../../views/partials/admin/main") %>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <div class="container-fluid mt-5">
+    <h3 class="fw-bold mb-4">Sales Report</h3>
+
+    <!-- Filters -->
+    <form id="filterForm" action="/admin/sales-report/filter" method="GET" class="mb-4 d-flex gap-3 flex-wrap">
+      <select name="type" id="filterType" class="form-select" style="max-width:200px">
+        <option value="daily" <%=filters.type==='daily' ? 'selected' : '' %>>Today</option>
+        <option value="weekly" <%=filters.type==='weekly' ? 'selected' : '' %>>This Week</option>
+        <option value="monthly" <%=filters.type==='monthly' ? 'selected' : '' %>>This Month</option>
+        <option value="custom" <%=filters.type==='custom' ? 'selected' : '' %>>Custom Range</option>
+      </select>
+      <input type="date" name="startDate" id="startDate" class="form-control" style="max-width:200px"
+        value="<%= filters.startDate || '' %>">
+      <input type="date" name="endDate" id="endDate" class="form-control" style="max-width:200px"
+        value="<%= filters.endDate || '' %>">
+      <button type="submit" class="btn btn-primary">Filter</button>
+
+      
+        <!-- Refresh Button -->
+  <a href="/admin/sales-report" class="btn btn-secondary">
+    <i class="bi bi-arrow-clockwise"></i>
+  </a>
+
+  <!-- Download Excel -->
+  <a id="downloadExcel" class="btn btn-success d-flex align-items-center gap-1">
+    <i class="bi bi-file-earmark-excel"></i> Excel
+  </a>
+
+  <!-- Download PDF -->
+  <a id="downloadPDF" class="btn btn-danger d-flex align-items-center gap-1">
+    <i class="bi bi-file-earmark-pdf"></i> PDF
+  </a>
+
+
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4 g-3">
+      <div class="col-md-4">
+        <div class="card text-center border-success shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title text-success">Total Orders</h5>
+            <p class="card-text fs-4 fw-bold">
+              <%= reportData.totalSales %>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center border-primary shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title text-primary">Total Amount</h5>
+            <p class="card-text fs-4 fw-bold">₹<%= reportData.totalAmount %>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center border-warning shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title text-warning">Total Discount</h5>
+            <p class="card-text fs-4 fw-bold">₹<%= reportData.totalDiscount.toFixed(2) %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive shadow-sm rounded">
+      <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>Sl.No</th>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Total Price</th>
+            <th>Discount</th>
+            <th>Payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% orders.forEach((row, index) => { %>
+            <tr>
+              <td><%= skip + index + 1 %></td>
+              <td><%= row.orderId %></td>
+              <td><%= moment(row.date).format("YYYY-MM-DD") %></td>
+              <td><%= row.customer %></td>
+              <td><%= row.product %></td>
+              <td><%= row.quantity %></td>
+              <td>₹<%= row.price %></td>
+              <td>₹<%= row.totalPrice %></td>
+              <td><span class="badge bg-warning text-dark">₹<%= row.discount.toFixed(2) %></span></td>
+              <td><%= row.payment %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+        
+      </table>
+
+      <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center mt-4">
+          <% if (page> 1) { %>
+            <li class="page-item">
+              <a class="page-link"
+                href="?page=<%= page - 1 %>&type=<%= filters.type %>&startDate=<%= filters.startDate || '' %>&endDate=<%= filters.endDate || '' %>">Previous</a>
+            </li>
+            <% } else { %>
+              <li class="page-item disabled"><span class="page-link">Previous</span></li>
+              <% } %>
+
+                <% for(let i=1; i <=totalPages; i++) { %>
+                  <li class="page-item <%= page === i ? 'active' : '' %>">
+                    <a class="page-link"
+                      href="?page=<%= i %>&type=<%= filters.type %>&startDate=<%= filters.startDate || '' %>&endDate=<%= filters.endDate || '' %>">
+                      <%= i %>
+                    </a>
+                  </li>
+                  <% } %>
+
+                    <% if (page < totalPages) { %>
+                      <li class="page-item">
+                        <a class="page-link"
+                          href="?page=<%= page + 1 %>&type=<%= filters.type %>&startDate=<%= filters.startDate || '' %>&endDate=<%= filters.endDate || '' %>">Next</a>
+                      </li>
+                      <% } else { %>
+                        <li class="page-item disabled"><span class="page-link">Next</span></li>
+                        <% } %>
+        </ul>
+      </nav>
+
+
+
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    const filterForm = document.getElementById('filterForm');
+    const downloadPDF = document.getElementById('downloadPDF');
+    const downloadExcel = document.getElementById('downloadExcel');
+
+    function updateDownloadLinks() {
+      const type = document.getElementById('filterType').value;
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      const params = new URLSearchParams({ type, startDate, endDate }).toString();
+
+      downloadPDF.href = `/admin/sales-report/download/pdf?${params}`;
+      downloadExcel.href = `/admin/sales-report/download/excel?${params}`;
+    }
+
+    // ✅ Prevent form submission if "To Date" < "From Date" using Swal
+  filterForm.addEventListener('submit', function (e) {
+    const type = document.getElementById('filterType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    if (type === 'custom') {
+      if (!startDate || !endDate) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Missing Dates',
+          text: 'Please select both From and To dates.',
+          confirmButtonColor: '#3085d6'
+        });
+        return;
+      }
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      if (start > end) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Date Range',
+          text: 'To Date must be greater than or equal to From Date.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    }
+  });
+
+
+    updateDownloadLinks();
+    filterForm.addEventListener('change', updateDownloadLinks);
+
+
+  </script>

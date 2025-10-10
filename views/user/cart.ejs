@@ -194,7 +194,7 @@
 
                                     <% if (cartItems.some(item=> item.stock > 0)) { %>
                                         <form action="/checkout" method="GET">
-                                            <button class="btn btn-pink w-100 fw-bold py-2">PROCEED TO CHECKOUT</button>
+                                            <button id="checkoutBtn" class="btn btn-pink w-100 fw-bold py-2">PROCEED TO CHECKOUT</button>
                                         </form>
                                         <% } else { %>
                                             <button class="btn btn-secondary w-100 fw-bold py-2" disabled>ALL ITEMS SOLD
@@ -291,6 +291,35 @@
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+
+document.getElementById("checkoutBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
+
+  try {
+    const res = await fetch("/cart/validate");
+    const data = await res.json();
+
+    if (!data.success) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: data.message
+      });
+    } else {
+      // ✅ Proceed if valid
+      window.location.href = "/checkout";
+    }
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Something went wrong. Please try again."
+    });
+  }
+});
+
+
 
 
     </script>

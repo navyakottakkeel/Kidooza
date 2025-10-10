@@ -1,106 +1,117 @@
 const Wallet = require("../../models/walletSchema");
 const User = require('../../models/userSchema');
+const HTTP_STATUS = require("../../constants/httpStatus");
 
 
-// ✅ Get Wallet Page
-const getWalletPage = async (req, res) => {
+
+// -------------------------- Get Wallet Page --------------------------------------------
+
+const getWalletPage = async (req, res, next) => {
   try {
     const userId = req.user ? req.user._id : req.session.user;
 
-    let user = null;
-    if (req.user) {
-      user = req.user;
-    } else if (req.session.user) {
-      user = await User.findById(req.session.user);
-    }
-
+    let user = req.user || (await User.findById(req.session.user));
     res.locals.user = user;
 
     let wallet = await Wallet.findOne({ userId });
-
     if (!wallet) {
-      wallet = new Wallet({ userId, balance: 0 });
-      await wallet.save();
+      wallet = await Wallet.create({ userId, balance: 0 });
     }
 
-    res.render("wallet", { wallet });
-  } catch (err) {
-    console.error("Error fetching wallet:", err);
-    res.status(500).send("Internal Server Error");
+    return res.status(HTTP_STATUS.OK).render("wallet", { wallet });
+  } catch (error) {
+    next(error);
   }
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
+// ----------------------Add Money to Wallet (for testing/demo purpose) ------------------------------
 
-// ✅ Add Money to Wallet (for testing/demo purpose)
-const addMoney = async (req, res) => {
+const addMoney = async (req, res, next) => {
   try {
     const userId = req.user ? req.user._id : req.session.user;
     const { amount } = req.body;
 
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res
+        .status(HTTP_STATUS.BAD_REQUEST)
+        .json({ success: false, message: "Invalid amount" });
+    }
+
     let wallet = await Wallet.findOne({ userId });
     if (!wallet) {
-      wallet = new Wallet({ userId, balance: 0 });
+      wallet = await Wallet.create({ userId, balance: 0 });
     }
 
     wallet.balance += Number(amount);
     wallet.transactions.push({
       type: "credit",
-      amount,
+      amount: Number(amount),
       reason: "Manual Top-up",
     });
 
     await wallet.save();
-    res.redirect("/wallet");
-  } catch (err) {
-    console.error("Error adding money:", err);
-    res.status(500).send("Internal Server Error");
+
+    return res.status(HTTP_STATUS.OK).redirect("/wallet");
+  } catch (error) {
+    next(error);
   }
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------- Deduct Money (on order, cancel, etc.) --------------------------------------------
 
-// ✅ Deduct Money (on order, cancel, etc.)
 const deductMoney = async (userId, amount, reason) => {
-  let wallet = await Wallet.findOne({ userId });
-  if (!wallet) {
-    wallet = new Wallet({ userId, balance: 0 });
+  try {
+    let wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      wallet = await Wallet.create({ userId, balance: 0 });
+    }
+
+    if (wallet.balance < amount) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Insufficient wallet balance'
+    });
+
+    }
+
+    wallet.balance -= amount;
+    wallet.transactions.push({
+      type: "debit",
+      amount,
+      reason,
+    });
+
+    await wallet.save();
+    return wallet;
+  } catch (error) {
+    throw error;
   }
-
-  if (wallet.balance < amount) {
-    throw new Error("Insufficient wallet balance");
-  }
-
-  wallet.balance -= amount;
-  wallet.transactions.push({
-    type: "debit",
-    amount,
-    reason,
-  });
-
-  await wallet.save();
-  return wallet;
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------- Credit Money (on refund/return/cancel) --------------------------------------------
 
-// ✅ Credit Money (on refund/return/cancel)
 const creditMoney = async (userId, amount, reason) => {
-  let wallet = await Wallet.findOne({ userId });
-  if (!wallet) {
-    wallet = new Wallet({ userId, balance: 0 });
+  try {
+    let wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      wallet = await Wallet.create({ userId, balance: 0 });
+    }
+
+    wallet.balance += amount;
+    wallet.transactions.push({
+      type: "credit",
+      amount,
+      reason,
+    });
+
+    await wallet.save();
+    return wallet;
+  } catch (error) {
+    throw error;
   }
-
-  wallet.balance += amount;
-  wallet.transactions.push({
-    type: "credit",
-    amount,
-    reason,
-  });
-
-  await wallet.save();
-  return wallet;
 };
+
+// -------------------------- Exports --------------------------------------------
 
 module.exports = {
      getWalletPage, 

@@ -10,10 +10,12 @@ const wishlistController = require("../controllers/user/wishlistController")
 const checkoutController = require("../controllers/user/checkoutController")
 const orderController = require("../controllers/user/orderController");
 const walletController = require("../controllers/user/walletController");
+const couponController = require("../controllers/user/couponController");
 
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
 const upload = require('../middlewares/multer');
+const { userErrorHandler } = require("../middlewares/errorHandler");
 
 
 router.use(cartCount, wishlistCount)
@@ -83,8 +85,10 @@ router.get("/product/:id/variants", wishlistController.getVariantsByProduct);
 router.get('/cart', cartController.getCartPage);
 router.post('/cart/update-quantity', cartController.updateQuantity);
 router.get("/cart/remove/:productId/:variantId", cartController.removeFromCart);
+router.get("/cart/validate", cartController.validateCart);
 
 router.get('/checkout', checkoutController.getCheckoutPage);
+router.get('/coupon/list', checkoutController.couponList);
 
 router.post("/order/place", orderController.placeOrder);
 router.get("/orderplaced", orderController.loadOrderPlaced);
@@ -110,5 +114,11 @@ router.get("/order/failure/:orderId", orderController.loadOrderFailure);
 router.post("/payment/razorpay/failure", orderController.razorpayFailure);
 
 
+router.post("/coupon/apply",couponController.applyCoupon);
+router.post("/coupon/remove",couponController.removeCoupon);
+
+
+
+router.use(userErrorHandler);
 
 module.exports = router;
