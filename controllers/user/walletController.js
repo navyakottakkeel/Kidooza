@@ -67,9 +67,11 @@ const deductMoney = async (userId, amount, reason) => {
     }
 
     if (wallet.balance < amount) {
-      const err = new Error("Insufficient wallet balance");
-      err.statusCode = HTTP_STATUS.BAD_REQUEST;
-      throw err;
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Insufficient wallet balance'
+    });
+
     }
 
     wallet.balance -= amount;

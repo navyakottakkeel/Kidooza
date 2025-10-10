@@ -94,8 +94,8 @@
 
 .offer-badge {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 21px;
+  left: 2px;
   background-color: red;
   color: white;
   font-weight: bold;
@@ -103,7 +103,7 @@
   font-size: 0.75rem;
   border-radius: 3px;
   z-index: 10;
-  transform: rotate(-15deg); /* optional cross-like slant */
+  transform: rotate(-35deg); /* optional cross-like slant */
 }
 
 
@@ -308,7 +308,7 @@
                             <div class="fruite-img">
                               <div class="product-image-wrapper" style="position: relative;">
                                 <% if (product.appliedOffer) { %>
-                                  <div class="offer-badge">OFFER</div>
+                                  <div class="offer-badge">Special Offer</div>
                                 <% } %>
                               <a href="/productDetail/<%= product._id %>?variant=<%= product.variantsByColour[0].id%>">
                                 <img id="product-img-<%= product._id %>" src="<%= product.defaultImage %>"

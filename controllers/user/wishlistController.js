@@ -3,6 +3,7 @@ const User = require('../../models/userSchema');
 const Variant = require('../../models/variantSchema');
 const Wishlist = require('../../models/wishlistSchema');
 const Offer = require('../../models/offerSchema');
+const Cart = require('../../models/cartSchema');
 const HTTP_STATUS = require("../../constants/httpStatus");
 
 
@@ -181,6 +182,15 @@ const getWishlistPage = async (req, res, next) => {
     next(err);
   }
 };
+
+//................helper function get cart count ........................................
+
+async function getCartCount(userId) {
+  if (!userId) return 0;
+  const cart = await Cart.findOne({ userId });
+  return cart ? cart.items.length : 0;
+}
+
   
 // -------------------------- Remove From Wishlist --------------------------------------------
 

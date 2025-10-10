@@ -38,12 +38,12 @@
                         <i class="fas fa-map-marker-alt me-2 text-success"></i> Address
                     </a>
 
-                    <a href="#" class="list-group-item list-group-item-action py-3"
+                    <a href="/orders" class="list-group-item list-group-item-action py-3"
                         style="border: none; font-size: 0.95rem;">
                         <i class="fas fa-box me-2 text-warning"></i> My Orders
                     </a>
 
-                    <a href="#" class="list-group-item list-group-item-action py-3"
+                    <a href="/wallet" class="list-group-item list-group-item-action py-3"
                         style="border: none; font-size: 0.95rem;">
                         <i class="fas fa-wallet me-2 text-info"></i> Wallet
                     </a>
@@ -236,7 +236,6 @@
                     return;
                 }
 
-
                 let url = "/address/save";
                 let method = "POST";
 
@@ -281,8 +280,6 @@
         </script>
 
 
-
-
         <script>
             const form = document.getElementById("addressForm");
             const addNewLink = document.getElementById("addNewLink");
@@ -297,8 +294,6 @@
             cancelForm.addEventListener("click", () => {
                 form.style.display = "none";
             });
-
-
 
 
             function deleteAddress(id) {
@@ -325,8 +320,6 @@
                     }
                 });
             }
-
-
 
             function setDefaultAddress(addressId) {
                 fetch(`/address/${addressId}/default`, {
@@ -358,8 +351,6 @@
                         });
                     });
             }
-
-
 
 
 

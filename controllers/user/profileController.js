@@ -24,9 +24,10 @@ const loadUserProfile = async (req, res, next) => {
 const uploadProfilePhoto = async (req, res, next) => {
     try {
         if (!req.file) {
-            const error = new Error('No file uploaded');
-            error.status = HTTP_STATUS.BAD_REQUEST;
-            throw error;
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'No file uploaded'
+            });
         }
 
         const userId = req.user?._id || req.session.user;
@@ -113,15 +114,17 @@ const verifyOtpAndUpdateProfile = async (req, res, next) => {
         const sessionData = req.session.pendingProfileUpdate;
 
         if (!sessionData) {
-            const error = new Error('No pending update found');
-            error.status = HTTP_STATUS.BAD_REQUEST;
-            throw error;
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'No pending update found'
+            });
         }
 
         if (sessionData.otp !== otp) {
-            const error = new Error('Invalid OTP');
-            error.status = HTTP_STATUS.BAD_REQUEST;
-            throw error;
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'Invalid OTP'
+            });
         }
 
         const userId = req.user?._id || req.session.user;
@@ -158,30 +161,34 @@ const changePassword = async (req, res, next) => {
         const { currentPassword, newPassword, confirmPassword } = req.body;
 
         if (!currentPassword || !newPassword || !confirmPassword) {
-            const error = new Error('All password fields are required');
-            error.status = HTTP_STATUS.BAD_REQUEST;
-            throw error;
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'All password fields are required'
+            });
         }
 
         const user = await User.findById(userId);
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
-            const error = new Error('Current password is incorrect');
-            error.status = HTTP_STATUS.BAD_REQUEST;
-            throw error;
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
         }
 
         const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!]).{8,}$/;
         if (!passwordPattern.test(newPassword)) {
-            const error = new Error('Password must be at least 8 characters, include uppercase, lowercase, number, and special character.');
-            error.status = HTTP_STATUS.BAD_REQUEST;
-            throw error;
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'Password must be at least 8 characters, include uppercase, lowercase, number, and special character.'
+            });
         }
 
         if (newPassword !== confirmPassword) {
-            const error = new Error('New password and confirm password do not match');
-            error.status = HTTP_STATUS.BAD_REQUEST;
-            throw error;
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'New password and confirm password do not match'
+            });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);

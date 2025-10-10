@@ -8,7 +8,6 @@ const HTTP_STATUS = require('../../constants/httpStatus');
 
 const MAX_QTY_PER_PRODUCT = 5;
 
-
 // -------------------------- ADD TO CART --------------------------------------------
 
 const addToCart = async (req, res, next) => {

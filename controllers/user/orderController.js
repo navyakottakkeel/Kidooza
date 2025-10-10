@@ -615,10 +615,17 @@ const verifyRazorpayPayment = async (req, res, next) => {
       order.paymentStatus = "Paid";
       order.status = "Ordered";
       order.orderedItems.forEach(item => item.status = "Ordered");
-      await order.save();
+
+        for (const item of order.orderedItems) {
+          if (item.variant) {
+            await Variant.findByIdAndUpdate(item.variant, { $inc: { stock: -item.quantity } });
+          }
+        }
 
       await Cart.updateOne({ userId: order.user }, { $set: { items: [] } });
 
+      await order.save();
+     
       return res
         .status(HTTP_STATUS.OK)
         .json({ success: true, redirectUrl: "/orderplaced" });

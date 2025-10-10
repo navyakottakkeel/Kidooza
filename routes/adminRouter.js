@@ -9,6 +9,7 @@ const orderController = require('../controllers/admin/orderController');
 const couponController = require('../controllers/admin/couponController');
 const offerController = require('../controllers/admin/offerController');
 const salesReportController = require("../controllers/admin/salesReportController");
+const dashboardController = require('../controllers/admin/dashboardController');
 
 
 const {adminAuth } = require('../middlewares/auth');
@@ -81,6 +82,8 @@ router.patch("/offers/:id/status", offerController.toggleOfferStatus);
 router.get("/sales-report", salesReportController.getSalesReportPage);
 router.get("/sales-report/filter", salesReportController.filterSalesReport);
 router.get("/sales-report/download/:type", salesReportController.downloadSalesReport);
+
+router.get('/dashboard', dashboardController.loadDashboard);
 
 
 router.use(adminErrorHandler);

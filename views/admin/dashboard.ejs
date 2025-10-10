@@ -3,59 +3,79 @@
 
  <%-include("../../views/partials/admin/main") %>
 
-    <main>
-      <header>
-        <h2>Today's Sales</h2>
-        <i class="fas fa-user-circle" style="font-size: 28px;"></i>
-      </header>
 
-      <section class="sales-cards">
-        <div class="sales-card card-pink">
-          <h3>₹90k</h3>
-          <p>Total Sales</p>
-          <small>-8% than yesterday</small>
-        </div>
-        <div class="sales-card card-yellow">
-          <h3>300</h3>
-          <p>Total Orders</p>
-          <small>+5% than yesterday</small>
-        </div>
-        <div class="sales-card card-green">
-          <h3>50</h3>
-          <p>Products Sold</p>
-          <small>+2% than yesterday</small>
-        </div>
-        <div class="sales-card card-purple">
-          <h3>15</h3>
-          <p>New Customer</p>
-          <small>-8% than yesterday</small>
-        </div>
-      </section>
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-      <section class="charts">
-        <div class="chart-box">
-          <h4>Total Order</h4>
-          <p>Pie Chart Placeholder (81%)</p>
-        </div>
-        <div class="chart-box">
-          <h4>Customer Growth</h4>
-          <p>Pie Chart Placeholder (22%)</p>
-        </div>
-        <div class="chart-box">
-          <h4>Total Revenue</h4>
-          <p>Pie Chart Placeholder (62%)</p>
-        </div>
-        <div class="chart-box">
-          <h4>Product Sold</h4>
-          <p>Line Chart Placeholder</p>
-        </div>
-        <div class="chart-box" style="flex: 1 1 100%;">
-          <h4>Total Revenue</h4>
-          <p>Line Chart Placeholder (Monthly)</p>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  
- <!-- <%-include("../../views/partials/admin/footer") %> -->
+   <div class="container py-4">
+     <h2 class="mb-4">📊 Admin Dashboard</h2>
+ 
+     <!-- Filter -->
+     <form action="dashboard" method="GET" class="mb-4 d-flex gap-2">
+       <select name="filter" class="form-select w-auto">
+       </select>
+       <button class="btn btn-primary">Apply</button>
+     </form>
+ 
+     <!-- Chart -->
+     <div class="card shadow-sm mb-4">
+       <div class="card-body">
+         <h5>Sales Chart (<%= filter %>)</h5>
+         <canvas id="salesChart"></canvas>
+       </div>
+     </div>
+ 
+     <!-- Top Products -->
+     <div class="card shadow-sm mb-4">
+       <div class="card-body">
+         <h5>Top 10 Products</h5>
+         <ul>
+           <% topProducts.forEach(p => { %>
+             <li><%= p.name %> - <%= p.totalQuantity %> sold</li>
+           <% }) %>
+         </ul>
+       </div>
+     </div>
+ 
+     <!-- Top Categories -->
+     <div class="card shadow-sm mb-4">
+       <div class="card-body">
+         <h5>Top 10 Categories</h5>
+         <ul>
+           <% topCategories.forEach(c => { %>
+             <li><%= c.name %> - <%= c.totalSold %> sold</li>
+           <% }) %>
+         </ul>
+       </div>
+     </div>
+ 
+     <!-- Top Brands -->
+     <div class="card shadow-sm mb-4">
+       <div class="card-body">
+         <h5>Top 10 Brands</h5>
+         <ul>
+           <% topBrands.forEach(b => { %>
+             <li><%= b.brand %> - <%= b.totalSold %> sold</li>
+           <% }) %>
+         </ul>
+       </div>
+     </div>
+ 
+   </div>
+ 
+   <script>
+     const ctx = document.getElementById('salesChart');
+     new Chart(ctx, {
+       type: 'bar',
+       data: {
+         labels: <%- JSON.stringify(labels) %>,
+         datasets: [{
+           label: 'Total Sales',
+           data: <%- JSON.stringify(totals) %>,
+           borderWidth: 1,
+           backgroundColor: '#007bff'
+         }]
+       },
+       options: { responsive: true }
+     });
+   </script>

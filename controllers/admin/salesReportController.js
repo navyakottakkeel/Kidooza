@@ -98,15 +98,56 @@ const filterSalesReport = async (req, res, next) => {
     let matchQuery = { paymentStatus: "Paid", "orderedItems.status": "Delivered" };
 
     if (type === "daily") {
-      matchQuery.createdAt = { $gte: moment().startOf("day").toDate(), $lte: moment().endOf("day").toDate() };
+      matchQuery.createdAt = { 
+        $gte: moment().startOf("day").toDate(), 
+        $lte: moment().endOf("day").toDate() 
+      };
     } else if (type === "weekly") {
-      matchQuery.createdAt = { $gte: moment().startOf("week").toDate(), $lte: moment().endOf("week").toDate() };
+      matchQuery.createdAt = { 
+        $gte: moment().startOf("week").toDate(), 
+        $lte: moment().endOf("week").toDate() 
+      };
     } else if (type === "monthly") {
-      matchQuery.createdAt = { $gte: moment().startOf("month").toDate(), $lte: moment().endOf("month").toDate() };
+      matchQuery.createdAt = { 
+        $gte: moment().startOf("month").toDate(), 
+        $lte: moment().endOf("month").toDate() 
+      };
     } else if (type === "custom" && startDate && endDate) {
-      matchQuery.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
-    }
+      // ✅ Date validation
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).render("sales-report", {
+          orders: [],
+          moment,
+          reportData: { totalSales: 0, totalAmount: 0, totalDiscount: 0 },
+          filters: { type, startDate, endDate },
+          page,
+          totalPages: 0,
+          skip,
+          errorMessage: "Invalid date format. Please select valid dates.",
+        });
+      }
+
+      if (start > end) {
+        // ⚠️ To Date must be greater than From Date
+        return res.status(HTTP_STATUS.BAD_REQUEST).render("sales-report", {
+          orders: [],
+          moment,
+          reportData: { totalSales: 0, totalAmount: 0, totalDiscount: 0 },
+          filters: { type, startDate, endDate },
+          page,
+          totalPages: 0,
+          skip,
+          errorMessage: "To Date must be greater than From Date.",
+        });
+      }
+
+      matchQuery.createdAt = { $gte: start, $lte: end };
+    }
+ 
+    // Continue normally if valid
     const ordersData = await Order.find(matchQuery)
       .populate("user", "name email")
       .populate("orderedItems.product", "name")
@@ -150,7 +191,8 @@ const filterSalesReport = async (req, res, next) => {
       filters: { type, startDate, endDate },
       page,
       totalPages,
-      skip
+      skip,
+      errorMessage: null, // ✅ for frontend handling
     });
   } catch (error) {
     next(error);
