@@ -45,7 +45,7 @@
             background: #fff0ee;
         }
 
-        .btn-review{
+        .btn-review {
             border: 1px solid #06712a;
             color: #06712a;
             background: #fff;
@@ -195,7 +195,7 @@
                             <img src="<%= item.image[0] %>" alt="product"
                                 style="width:100px; height:100px; object-fit:cover; border-radius:8px;" class="me-3">
 
-                               
+
                             <!-- Product info -->
                             <div class="flex-grow-1">
                                 <h6>
@@ -212,10 +212,10 @@
                                 </p>
                                 <p class="mb-1" style="font-size: smaller;">Size : <%= item.size %>
                                 </p>
-                                
+
                             </div>
 
-                            
+
                             <!-- Cancel button -->
                             <div class="text-end">
 
@@ -226,13 +226,14 @@
                                     </span>
                                 </small>
 
-                               
+
                                 <% if(item.status==="Pending" || item.status==="Ordered" ) { %>
                                     <form action="/order/<%= order._id %>/cancel-item/<%= item._id %>" method="POST"
                                         class="cancel-item-form">
                                         <div class="d-flex justify-content-center gap-3 mt-3">
                                             <button type="button" class="btn-cancel-item w-100 cancel-item-btn"
-                                                data-orderid="<%= order._id %>" data-itemid="<%= item._id %>">CANCEL ITEM</button>
+                                                data-orderid="<%= order._id %>" data-itemid="<%= item._id %>">CANCEL
+                                                ITEM</button>
                                         </div>
                                     </form>
                                     <% } else if(item.status==="Shipped" ) { %>
@@ -275,33 +276,31 @@
                                                             </span>
                                                         </small>
 
-                                                        
-                                <% if(item.status==="Delivered") { %>
+                                                                <% } else { %>
+                                                                    <!-- If return window expired -->
+                                                                    <small><br><br>
+                                                                        <span class="fw-bold text-muted">
+                                                                            <i
+                                                                                class="bi bi-info-circle-fill text-secondary"></i>
+                                                                            Return window expired on <%=
+                                                                                returnValidUntil.toDateString() %>
+                                                                        </span>
+                                                                    </small>
+                                                                    <% } %>
 
-                                    <div class="d-flex justify-content-center gap-3 mt-3">
-                                        <button type="button"
-                                            class="btn-review w-100"
-                                            data-orderid="<%= order._id %>"
-                                            data-itemid="<%= item._id %>">
-                                            Review And Rating
-                                        </button>
-                                    </div>
-                                    <% } %>
+                                                                    
+                                                        <% if(item.status==="Delivered" ) { %>
 
-                        
-
-                                                        <% } else { %>
-                                                            <!-- If return window expired -->
-                                                            <small><br><br>
-                                                                <span class="fw-bold text-muted">
-                                                                    <i
-                                                                        class="bi bi-info-circle-fill text-secondary"></i>
-                                                                    Return window expired on <%=
-                                                                        returnValidUntil.toDateString() %>
-                                                                </span>
-                                                            </small>
+                                                            <div class="d-flex justify-content-center gap-3 mt-3">
+                                                                <button type="button" class="btn-review w-100"
+                                                                    data-orderid="<%= order._id %>"
+                                                                    data-itemid="<%= item._id %>">
+                                                                    Review And Rating
+                                                                </button>
+                                                            </div>
                                                             <% } %>
-                                                                <% } %>
+
+                                                                        <% } %>
 
                             </div>
 
@@ -643,30 +642,30 @@
     </script>
 
 
-<script>
-    document.querySelectorAll(".btn-review").forEach(button => {
-      button.addEventListener("click", async function () {
-        const orderId = this.dataset.orderid;
-        const itemId = this.dataset.itemid;
-    
-        // Fetch existing review
-        let existingReview = { rating: 0, reviewText: "" };
-        try {
-          const res = await fetch(`/review/${orderId}/${itemId}`);
-          const data = await res.json();
-          if (data.success && data.review) {
-            existingReview.rating = data.review.rating;
-            existingReview.reviewText = data.review.reviewText;
-          }
-        } catch (err) {
-          console.error("Error fetching review:", err);
-        }
-    
-        const { value: formValues } = await Swal.fire({
-          title: `<span style="color:#333;">💬 Review & Rating</span>`,
-          html: `
+    <script>
+        document.querySelectorAll(".btn-review").forEach(button => {
+            button.addEventListener("click", async function () {
+                const orderId = this.dataset.orderid;
+                const itemId = this.dataset.itemid;
+
+                // Fetch existing review
+                let existingReview = { rating: 0, reviewText: "" };
+                try {
+                    const res = await fetch(`/review/${orderId}/${itemId}`);
+                    const data = await res.json();
+                    if (data.success && data.review) {
+                        existingReview.rating = data.review.rating;
+                        existingReview.reviewText = data.review.reviewText;
+                    }
+                } catch (err) {
+                    console.error("Error fetching review:", err);
+                }
+
+                const { value: formValues } = await Swal.fire({
+                    title: `<span style="color:#333;">💬 Review & Rating</span>`,
+                    html: `
             <div id="starRating" style="display:flex;justify-content:center;gap:8px;font-size:28px;cursor:pointer;margin-bottom:15px;">
-              ${[1,2,3,4,5].map(i => `<i class="fa-solid fa-star" id="star-${i}" data-value="${i}" style="color:#ddd;"></i>`).join('')}
+              ${[1, 2, 3, 4, 5].map(i => `<i class="fa-solid fa-star" id="star-${i}" data-value="${i}" style="color:#ddd;"></i>`).join('')}
             </div>
             <textarea id="reviewText" class="swal2-textarea" placeholder="Write your review..." style="
               height:115px;
@@ -681,140 +680,144 @@
               box-shadow: inset 0 1px 5px rgba(0,0,0,0.1);
             ">${existingReview.reviewText}</textarea>
           `,
-          focusConfirm: false,
-          showCancelButton: true,
-          cancelButtonText: "Cancel",
-          confirmButtonText: "Submit Review",
-          customClass: {
-            popup: 'swal2-light-card',
-            confirmButton: 'swal2-btn-confirm',
-            cancelButton: 'swal2-btn-cancel'
-          },
-          preConfirm: () => {
-            const rating = document.querySelectorAll('#starRating i.text-warning').length;
-            const reviewText = document.getElementById('reviewText').value.trim();
-            if (!rating) {
-              Swal.showValidationMessage("Please select a star rating");
-              return false;
-            }
-            if (!reviewText) {
-              Swal.showValidationMessage("Please write a review");
-              return false;
-            }
-            return { rating, reviewText };
-          },
-          didOpen: () => {
-            const stars = document.querySelectorAll('#starRating i');
-            stars.forEach(star => {
-              star.addEventListener('mouseenter', () => {
-                const value = parseInt(star.dataset.value);
-                stars.forEach((s, i) => {
-                  s.style.color = i < value ? '#ffb400' : '#ddd';
-                  s.style.textShadow = i < value ? '0 0 5px #ffb400' : 'none';
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    cancelButtonText: "Cancel",
+                    confirmButtonText: "Submit Review",
+                    customClass: {
+                        popup: 'swal2-light-card',
+                        confirmButton: 'swal2-btn-confirm',
+                        cancelButton: 'swal2-btn-cancel'
+                    },
+                    preConfirm: () => {
+                        const rating = document.querySelectorAll('#starRating i.text-warning').length;
+                        const reviewText = document.getElementById('reviewText').value.trim();
+                        if (!rating) {
+                            Swal.showValidationMessage("Please select a star rating");
+                            return false;
+                        }
+                        if (!reviewText) {
+                            Swal.showValidationMessage("Please write a review");
+                            return false;
+                        }
+                        return { rating, reviewText };
+                    },
+                    didOpen: () => {
+                        const stars = document.querySelectorAll('#starRating i');
+                        stars.forEach(star => {
+                            star.addEventListener('mouseenter', () => {
+                                const value = parseInt(star.dataset.value);
+                                stars.forEach((s, i) => {
+                                    s.style.color = i < value ? '#ffb400' : '#ddd';
+                                    s.style.textShadow = i < value ? '0 0 5px #ffb400' : 'none';
+                                });
+                            });
+                            star.addEventListener('mouseleave', () => {
+                                stars.forEach((s, i) => {
+                                    s.style.color = i < existingReview.rating ? '#ffc107' : '#ddd';
+                                    s.style.textShadow = i < existingReview.rating ? '0 0 5px #ffc107' : 'none';
+                                });
+                            });
+                            star.addEventListener('click', () => {
+                                const value = parseInt(star.dataset.value);
+                                existingReview.rating = value;
+                                stars.forEach((s, i) => {
+                                    s.classList.toggle('text-warning', i < value);
+                                    s.style.color = i < value ? '#ffc107' : '#ddd';
+                                    s.style.textShadow = i < value ? '0 0 5px #ffc107' : 'none';
+                                });
+                            });
+                        });
+
+                        // Prefill existing rating
+                        stars.forEach((s, i) => {
+                            if (i < existingReview.rating) {
+                                s.classList.add('text-warning');
+                                s.style.color = '#ffc107';
+                                s.style.textShadow = '0 0 5px #ffc107';
+                            }
+                        });
+                    }
                 });
-              });
-              star.addEventListener('mouseleave', () => {
-                stars.forEach((s, i) => {
-                  s.style.color = i < existingReview.rating ? '#ffc107' : '#ddd';
-                  s.style.textShadow = i < existingReview.rating ? '0 0 5px #ffc107' : 'none';
-                });
-              });
-              star.addEventListener('click', () => {
-                const value = parseInt(star.dataset.value);
-                existingReview.rating = value;
-                stars.forEach((s, i) => {
-                  s.classList.toggle('text-warning', i < value);
-                  s.style.color = i < value ? '#ffc107' : '#ddd';
-                  s.style.textShadow = i < value ? '0 0 5px #ffc107' : 'none';
-                });
-              });
+
+                if (formValues) {
+                    try {
+                        const res = await fetch("/review/add", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                orderId,
+                                itemId,
+                                rating: formValues.rating,
+                                reviewText: formValues.reviewText
+                            })
+                        });
+
+                        const data = await res.json();
+                        if (data.success) {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Thank you!",
+                                text: data.message,
+                                timer: 2000,
+                                showConfirmButton: false,
+                                background: '#fff',
+                                color: '#333'
+                            }).then(() => location.reload());
+                        } else {
+                            Swal.fire("Error", data.message || "Something went wrong", "error");
+                        }
+                    } catch (err) {
+                        Swal.fire("Error", "Unable to submit review", "error");
+                    }
+                }
             });
-    
-            // Prefill existing rating
-            stars.forEach((s, i) => {
-              if (i < existingReview.rating) {
-                s.classList.add('text-warning');
-                s.style.color = '#ffc107';
-                s.style.textShadow = '0 0 5px #ffc107';
-              }
-            });
-          }
         });
-    
-        if (formValues) {
-          try {
-            const res = await fetch("/review/add", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId,
-                itemId,
-                rating: formValues.rating,
-                reviewText: formValues.reviewText
-              })
-            });
-    
-            const data = await res.json();
-            if (data.success) {
-              Swal.fire({
-                icon: "success",
-                title: "Thank you!",
-                text: data.message,
-                timer: 2000,
-                showConfirmButton: false,
-                background: '#fff',
-                color: '#333'
-              }).then(() => location.reload());
-            } else {
-              Swal.fire("Error", data.message || "Something went wrong", "error");
-            }
-          } catch (err) {
-            Swal.fire("Error", "Unable to submit review", "error");
-          }
-        }
-      });
-    });
     </script>
-    
+
     <style>
-    /* Light-themed SweetAlert */
-    .swal2-light-card {
-      background: #fff !important;
-      border-radius: 20px !important;
-      padding: 25px 20px !important;
-      font-family: 'Poppins', sans-serif;
-      color: #333;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
-    .swal2-btn-confirm {
-      background: linear-gradient(90deg, #56ab2f, #a8e063) !important;
-      color: #fff !important;
-      font-weight: 600;
-      padding: 10px 22px;
-      border-radius: 10px !important;
-      font-size: 14px;
-      border: none;
-      box-shadow: 0 4px 8px rgba(86,171,47,0.3);
-    }
-    .swal2-btn-confirm:hover {
-      background: linear-gradient(90deg, #4da02c, #8ed24f) !important;
-    }
-    .swal2-btn-cancel {
-      background: #f0f0f0 !important;
-      color: #555 !important;
-      font-weight: 500;
-      border-radius: 10px !important;
-      padding: 10px 22px;
-      border: none;
-      margin-right: 10px;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .swal2-btn-cancel:hover {
-      background: #e2e2e2 !important;
-    }
+        /* Light-themed SweetAlert */
+        .swal2-light-card {
+            background: #fff !important;
+            border-radius: 20px !important;
+            padding: 25px 20px !important;
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .swal2-btn-confirm {
+            background: linear-gradient(90deg, #56ab2f, #a8e063) !important;
+            color: #fff !important;
+            font-weight: 600;
+            padding: 10px 22px;
+            border-radius: 10px !important;
+            font-size: 14px;
+            border: none;
+            box-shadow: 0 4px 8px rgba(86, 171, 47, 0.3);
+        }
+
+        .swal2-btn-confirm:hover {
+            background: linear-gradient(90deg, #4da02c, #8ed24f) !important;
+        }
+
+        .swal2-btn-cancel {
+            background: #f0f0f0 !important;
+            color: #555 !important;
+            font-weight: 500;
+            border-radius: 10px !important;
+            padding: 10px 22px;
+            border: none;
+            margin-right: 10px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .swal2-btn-cancel:hover {
+            background: #e2e2e2 !important;
+        }
     </style>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
 
     <%- include("../partials/user/footer") %>

@@ -54,6 +54,8 @@ router.get("/productDetail/:id", productController.loadProductDetail);
 
 
 router.post('/cart/add',cartController.addToCart);
+router.get("/product-reviews/:productId", reviewController.getProductReviews);
+
 
 router.use(userAuth)
 
@@ -125,4 +127,4 @@ router.get("/review/:orderId/:itemId", reviewController.getReview);
  
 router.use(userErrorHandler);
 
-module.exports = router;
+module.exports = router; 

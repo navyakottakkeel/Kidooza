@@ -362,6 +362,72 @@
       color: white;
     }
 
+    .review-carousel {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+  overflow: hidden; /* Important: hides offscreen reviews */
+}
+
+    .review-container {
+  display: flex;
+  transition: transform 0.4s ease-in-out;
+  width: 100%;
+}
+
+.review {
+  flex: 0 0 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  text-align: left;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffffcc;
+  border: none;
+  font-size: 24px;
+  padding: 8px 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.carousel-btn:hover {
+  background: #f8f8f8;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.left-btn { left: -40px; }
+.right-btn { right: -40px; }
+
+.dot-container {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background: #bbb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.dot.active {
+  background: #333;
+}
+
+ 
 
 
   </style>
@@ -503,7 +569,7 @@
           
 
 
-          <div class="review-section">
+          <!-- <div class="review-section">
             <h4>Customer Reviews</h4>
             <div class="review">
               <strong>John</strong> - <span>⭐⭐⭐⭐☆</span>
@@ -513,7 +579,20 @@
               <p>Great quality product, really satisfied with the material and fit!</p>
 
             </div>
+          </div> -->
+
+          <div class="review-section text-center mt-4">
+            <h4>Customer Reviews</h4>
+            <div class="review-carousel position-relative mx-auto" style="max-width: 600px;">
+              <div id="reviewContainer" class="review-container"></div>
+          
+              <button id="prevReview" class="carousel-btn left-btn">❮</button>
+              <button id="nextReview" class="carousel-btn right-btn">❯</button>
+          
+              <div id="dotContainer" class="dot-container mt-3"></div>
+            </div>
           </div>
+          
 
           
 
@@ -882,6 +961,8 @@ function selectColour(element, colour) {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 window.addEventListener('DOMContentLoaded', () => {
+
+
   const defaultSize = document.getElementById('selectedSize').value;
   const defaultColour = document.getElementById('selectedColour').value;
 
@@ -931,13 +1012,103 @@ window.addEventListener('DOMContentLoaded', () => {
   
 });
 
+// ==================== Dynamic Review Section ====================
+document.addEventListener("DOMContentLoaded", async () => {
+  const productId = "<%= product._id %>";
+  const reviewContainer = document.getElementById("reviewContainer");
+  const dotContainer = document.getElementById("dotContainer");
+  const prevBtn = document.getElementById("prevReview");
+  const nextBtn = document.getElementById("nextReview");
+
+  try {
+    const response = await fetch(`/product-reviews/${productId}`);
+    const data = await response.json();
+
+    if (!data.success || data.reviews.length === 0) {
+      reviewContainer.innerHTML = `<p>No reviews yet. Be the first to write one!</p>`;
+      return;
+    }
+
+    const reviews = data.reviews;
+    let currentIndex = 0;
+
+    // Build reviews
+    reviewContainer.innerHTML = reviews
+      .map(
+        (r) => `
+        <div class="review">
+          <strong>${r.user?.name || "Anonymous"}</strong>
+          <div>${"⭐".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</div>
+          <p class="mt-2">${r.reviewText}</p>
+        </div>`
+      )
+      .join("");
+
+    // Function to render dots (always 3 max)
+    function renderDots() {
+      const totalDots = Math.min(3, reviews.length);
+      let start = 0;
+      if (reviews.length > 3) {
+        // Center currentIndex in dots if possible
+        if (currentIndex === 0) start = 0;
+        else if (currentIndex === reviews.length - 1) start = reviews.length - 3;
+        else start = currentIndex - 1;
+      }
+
+      dotContainer.innerHTML = "";
+      for (let i = start; i < Math.min(start + 3, reviews.length); i++) {
+        const dot = document.createElement("span");
+        dot.className = "dot" + (i === currentIndex ? " active" : "");
+        dot.dataset.index = i;
+        dot.addEventListener("click", () => {
+          currentIndex = i;
+          updateCarousel();
+        });
+        dotContainer.appendChild(dot);
+      }
+    }
+
+    function updateCarousel() {
+  const containerWidth = document.querySelector('.review-carousel').offsetWidth;
+  reviewContainer.style.transform = `translateX(-${currentIndex * containerWidth}px)`;
+  renderDots();
+}
+console.log(reviews.length, reviews);
+
+
+
+    function showNext() {
+      if (currentIndex < reviews.length - 1) {
+        currentIndex++;
+        updateCarousel();
+      }
+    }
+
+    function showPrev() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateCarousel();
+      }
+    }
+
+    nextBtn.addEventListener("click", showNext);
+    prevBtn.addEventListener("click", showPrev);
+
+    updateCarousel();
+  } catch (err) {
+    console.error(err);
+    reviewContainer.innerHTML = `<p class="text-danger">Failed to load reviews.</p>`;
+  }
+});
+
+
 if (variant) {
     updateWishlistButton(variant._id);
   }
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-
+  
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 

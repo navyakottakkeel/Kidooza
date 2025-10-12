@@ -1,30 +1,28 @@
 const Review = require("../../models/reviewSchema");
 const Order = require("../../models/orderSchema");
+const Product = require("../../models/productSchema");
 const HTTP_STATUS = require("../../constants/httpStatus");
 
-/**
- * Add or update a review
- */
+
+//------------------Add or update a review -----------------------
+
 const addOrEditReview = async (req, res, next) => {
   try {
     const { orderId, itemId, rating, reviewText } = req.body;
     const userId = req.user ? req.user._id : req.session.user;
 
-    // Check if user is logged in
     if (!userId) {
       return res
         .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ success: false, message: "User not logged in" });
     }
 
-    // Validate input
     if (!orderId || !itemId || !rating) {
       return res
         .status(HTTP_STATUS.BAD_REQUEST)
         .json({ success: false, message: "Missing required fields" });
     }
 
-    // Find the order
     const order = await Order.findById(orderId);
     if (!order) {
       return res
@@ -76,9 +74,9 @@ const addOrEditReview = async (req, res, next) => {
   }
 };
 
-/**
- * Get existing review for a specific order item
- */
+
+//----------- Get existing review for a specific order item -----------------
+
 const getReview = async (req, res, next) => {
   try {
     const { orderId, itemId } = req.params;
@@ -116,4 +114,37 @@ const getReview = async (req, res, next) => {
   }
 };
 
-module.exports = { addOrEditReview, getReview };
+
+// -------------------- Get Reviews for a Product -------------------------
+
+const getProductReviews = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res
+        .status(HTTP_STATUS.NOT_FOUND)
+        .json({ success: false, message: "Product not found" });
+    }
+
+    const reviews = await Review.find({ product: productId })
+      .populate("user", "name") // assuming user has a `name` field
+      .sort({ createdAt: -1 });
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json({ success: true, reviews });
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+
+    next(error);
+  }
+};
+ 
+
+module.exports = { 
+    addOrEditReview, 
+    getReview,
+    getProductReviews 
+};
