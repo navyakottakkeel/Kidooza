@@ -1,81 +1,151 @@
 
-
-
  <%-include("../../views/partials/admin/main") %>
 
+ <style>
+  #categoryChart, #brandChart {
+    max-width: 250px;
+    margin: 0 auto;
+  }
+</style>
 
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+   <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+   <h2>📊 Admin Dashboard</h2>
+ 
+   <form action="/admin/dashboard" method="GET" class="d-flex gap-2 mb-4">
+     <select name="filter" class="form-select w-auto">
+       <option value="yearly" <%= filter==='yearly'?'selected':'' %>>Yearly</option>
+       <option value="monthly" <%= filter==='monthly'?'selected':'' %>>Monthly</option>
+       <option value="weekly" <%= filter==='weekly'?'selected':'' %>>Weekly</option>
+       <option value="daily" <%= filter==='daily'?'selected':'' %>>Daily</option>
+     </select>
+     <button class="btn btn-primary">Filter</button>
+   </form>
+ 
+   <canvas id="salesChart" height="100"></canvas>
+ 
+   <hr />
+ 
+   <div class="row">
+     <div class="col-md-4">
+       <h5>Top 10 Products</h5>
+       <ul class="list-group">
+         <% productSales.forEach(p => { %>
+           <li class="list-group-item d-flex justify-content-between">
+             <%= p.name %>
+             <span><%= p.totalQty %></span>
+           </li>
+         <% }) %>
+       </ul>
+     </div>
+ 
+     
+      <div class="col-md-4">
+        <h6 class="text-center">Sales by Category</h6>
+        <canvas id="categoryChart" width="250" height="250"></canvas>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-center">Sales by Brand</h6>
+        <canvas id="brandChart" width="250" height="250"></canvas>
+      </div>
+  
+
+   </div>
+
+   
+
    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-   <div class="container py-4">
-     <h2 class="mb-4">📊 Admin Dashboard</h2>
- 
-     <!-- Filter -->
-     <form action="dashboard" method="GET" class="mb-4 d-flex gap-2">
-       <select name="filter" class="form-select w-auto">
-       </select>
-       <button class="btn btn-primary">Apply</button>
-     </form>
- 
-     <!-- Chart -->
-     <div class="card shadow-sm mb-4">
-       <div class="card-body">
-         <h5>Sales Chart (<%= filter %>)</h5>
-         <canvas id="salesChart"></canvas>
-       </div>
-     </div>
- 
-     <!-- Top Products -->
-     <div class="card shadow-sm mb-4">
-       <div class="card-body">
-         <h5>Top 10 Products</h5>
-         <ul>
-           <% topProducts.forEach(p => { %>
-             <li><%= p.name %> - <%= p.totalQuantity %> sold</li>
-           <% }) %>
-         </ul>
-       </div>
-     </div>
- 
-     <!-- Top Categories -->
-     <div class="card shadow-sm mb-4">
-       <div class="card-body">
-         <h5>Top 10 Categories</h5>
-         <ul>
-           <% topCategories.forEach(c => { %>
-             <li><%= c.name %> - <%= c.totalSold %> sold</li>
-           <% }) %>
-         </ul>
-       </div>
-     </div>
- 
-     <!-- Top Brands -->
-     <div class="card shadow-sm mb-4">
-       <div class="card-body">
-         <h5>Top 10 Brands</h5>
-         <ul>
-           <% topBrands.forEach(b => { %>
-             <li><%= b.brand %> - <%= b.totalSold %> sold</li>
-           <% }) %>
-         </ul>
-       </div>
-     </div>
- 
-   </div>
- 
    <script>
-     const ctx = document.getElementById('salesChart');
-     new Chart(ctx, {
-       type: 'bar',
-       data: {
-         labels: <%- JSON.stringify(labels) %>,
-         datasets: [{
-           label: 'Total Sales',
-           data: <%- JSON.stringify(totals) %>,
-           borderWidth: 1,
-           backgroundColor: '#007bff'
-         }]
-       },
-       options: { responsive: true }
-     });
-   </script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      const salesData = <%- JSON.stringify(salesData) %>;
+  
+      if (!salesData || !salesData.length) {
+        console.log("No sales data available");
+        return;
+      }
+  
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: salesData.map(s => s.date),
+          datasets: [{
+            label: 'Total Sales (₹)',
+            data: salesData.map(s => s.total),
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.4, // smooth curve
+            fill: true, // make it area chart
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            title: { display: true, text: 'Sales Trend Over Time' }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    });
+  </script>
+  
+<script>
+  const categoryLabels = <%- JSON.stringify(categorySales.map(c => c._id)) %>;
+  const categoryData = <%- JSON.stringify(categorySales.map(c => c.totalQty)) %>;
+
+  const brandLabels = <%- JSON.stringify(brandSales.map(b => b._id)) %>;
+  const brandData = <%- JSON.stringify(brandSales.map(b => b.totalQty)) %>;
+
+  const categoryCtx = document.getElementById("categoryChart").getContext("2d");
+  new Chart(categoryCtx, {
+    type: "doughnut",
+    data: {
+      labels: categoryLabels,
+      datasets: [{
+        data: categoryData,
+        backgroundColor: ["#36A2EB", "#FF6384", "#FFCE56", "#4BC0C0"],
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { boxWidth: 15 }
+        }
+      }
+    }
+  });
+
+  const brandCtx = document.getElementById("brandChart").getContext("2d");
+  new Chart(brandCtx, {
+    type: "doughnut",
+    data: {
+      labels: brandLabels,
+      datasets: [{
+        data: brandData,
+        backgroundColor: ["#FF9F40", "#9966FF", "#FF6384", "#36A2EB", "#4BC0C0"],
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { boxWidth: 15 }
+        }
+      }
+    }
+  });
+</script>
+  
+
+ 

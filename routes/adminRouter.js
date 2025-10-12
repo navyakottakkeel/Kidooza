@@ -25,7 +25,7 @@ router.get('/logout', adminController.logout);
 
 router.use(adminAuth)
 router.get('/users', customerController.customerInfo);
-router.get('/dashboard', adminController.loadDashboard);
+// router.get('/dashboard', adminController.loadDashboard);
 router.get('/blockCustomer', customerController.customerBlocked);
 router.get('/unblockCustomer', customerController.customerUnblocked);
 
