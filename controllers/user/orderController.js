@@ -18,7 +18,6 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET,
 });
 
-
 // -------------------------- Load Order Placed --------------------------------------------
 
 const loadOrderPlaced = async (req, res, next) => {
@@ -30,7 +29,7 @@ const loadOrderPlaced = async (req, res, next) => {
     next(error);
   }
 };
-
+ 
 // -------------------------- Get Orders --------------------------------------------
 
 const getOrders = async (req, res, next) => {

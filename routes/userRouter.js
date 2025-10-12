@@ -11,6 +11,7 @@ const checkoutController = require("../controllers/user/checkoutController")
 const orderController = require("../controllers/user/orderController");
 const walletController = require("../controllers/user/walletController");
 const couponController = require("../controllers/user/couponController");
+const reviewController = require("../controllers/user/reviewController");
 
 
 const { userAuth, cartCount, wishlistCount } = require("../middlewares/auth");
@@ -53,6 +54,8 @@ router.get("/productDetail/:id", productController.loadProductDetail);
 
 
 router.post('/cart/add',cartController.addToCart);
+router.get("/product-reviews/:productId", reviewController.getProductReviews);
+
 
 router.use(userAuth)
 
@@ -118,7 +121,10 @@ router.post("/coupon/apply",couponController.applyCoupon);
 router.post("/coupon/remove",couponController.removeCoupon);
 
 
+router.post("/review/add", reviewController.addOrEditReview);
+router.get("/review/:orderId/:itemId", reviewController.getReview);
 
+ 
 router.use(userErrorHandler);
 
-module.exports = router;
+module.exports = router; 
