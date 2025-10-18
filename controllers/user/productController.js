@@ -57,7 +57,7 @@ const loadBoysPage = async (req, res, next) => {
     res.locals.user = user;
 
     let filter = { isBlock: false };
-    const perPage = 9;
+    const perPage = 6;
     const page = parseInt(req.query.page) || 1;
 
     let { search = '', sort = '', category, minPrice, maxPrice } = req.query;
@@ -243,7 +243,7 @@ const loadBoysPage = async (req, res, next) => {
 
     const queryObj = { ...req.query };
     delete queryObj.page;
-    const baseQuery = new URLSearchParams(queryObj).toString();
+    const baseQuery = buildQueryString(req.query);
 
     const wishlistDoc = user ? await Wishlist.findOne({ userId }) : null;
     const wishlistItems = wishlistDoc
@@ -280,6 +280,21 @@ const loadBoysPage = async (req, res, next) => {
   }
 };
 
+//------------------
+
+function buildQueryString(query) {
+  const params = [];
+  for (const key in query) {
+    if (key === 'page') continue;
+    const value = query[key];
+    if (Array.isArray(value)) {
+      value.forEach(v => params.push(`${key}=${encodeURIComponent(v)}`));
+    } else if (value) {
+      params.push(`${key}=${encodeURIComponent(value)}`);
+    }
+  }
+  return params.join('&');
+}
 // -------------------------- Helper Apply Offer To Variants --------------------------------
 
 async function applyOfferToVariants(variants, product) {

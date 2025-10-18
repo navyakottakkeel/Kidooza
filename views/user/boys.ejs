@@ -268,12 +268,6 @@
         <input type="hidden" name="search" value="<%= search %>">
         <input type="hidden" name="sort" value="<%= sort %>">
 
-
-
-
-
-
-
       </div>
     </div>
     <!-- Sidebar End -->
@@ -281,8 +275,6 @@
     <!-- Main Content (Already Included) -->
     <div class="col-lg-9">
       <!-- your right side product card code already exists here -->
-
-
 
       <div>
         <!-- Boys fashion Start-->
@@ -373,9 +365,6 @@
 
                                 </p>
 
-                               
-                                
-
                               </div>
                             </div>
                           </div>
@@ -415,9 +404,7 @@
 
             <% for (let i=1; i <=totalPages; i++) { %>
               <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-                <a class="page-link" href="?page=<%= i %>&<%= baseQuery %>">
-                  <%= i %>
-                </a>
+                <a class="page-link" href="?page=<%= i %><%= baseQuery ? '&' + baseQuery : '' %>"><%= i %></a>
               </li>
               <% } %>
 
