@@ -298,13 +298,17 @@ document.getElementById("checkoutBtn").addEventListener("click", async (e) => {
 
   try {
     const res = await fetch("/cart/validate");
-    const data = await res.json();
-
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error("Invalid JSON response");
+    }
     if (!data.success) {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: data.message
+        text: data.message || "Something went wrong."
       });
     } else {
       // ✅ Proceed if valid

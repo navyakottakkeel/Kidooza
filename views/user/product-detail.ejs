@@ -426,10 +426,6 @@
 .dot.active {
   background: #333;
 }
-
- 
-
-
   </style>
   
 
@@ -454,13 +450,9 @@
                          class="thumbnail-img <%= index === 0 ? 'active' : '' %>"
                          data-index="<%= index %>"
                          onclick="changeMainImage(this, '<%= image %>')" /><br>
-                  <% }); %>
-
-                   
+                  <% }); %>          
                 </div>
                 
-                  
-              
                 <!-- Main Image -->
                 <div>
                     <div class="zoom-container position-relative">
@@ -475,9 +467,7 @@
                                     data-product-id="<%= product._id %>" data-colour=" ">
                                     <i class="fa fa-heart"></i>
                                   </button>
-
-                      </div>
-                      
+                      </div> 
                 </div>
               </div>
                       </div>
@@ -565,21 +555,6 @@
                 <button type="submit" id="addToCartBtn" class="btn btn-primary btn-add-to-cart">Add to Cart</button>
             </form>
         </div>
-        
-          
-
-
-          <!-- <div class="review-section">
-            <h4>Customer Reviews</h4>
-            <div class="review">
-              <strong>John</strong> - <span>⭐⭐⭐⭐☆</span>
-              <p>Great quality product, really satisfied with the material and fit!</p>
-
-              <strong>Alen Thoms</strong> - <span>⭐⭐⭐⭐☆</span>
-              <p>Great quality product, really satisfied with the material and fit!</p>
-
-            </div>
-          </div> -->
 
           <div class="review-section text-center mt-4">
             <h4>Customer Reviews</h4>
@@ -592,10 +567,6 @@
               <div id="dotContainer" class="dot-container mt-3"></div>
             </div>
           </div>
-          
-
-          
-
         </div>
       </div>
 
@@ -627,13 +598,10 @@
       <% }) %>
     </div>
   </div>
-
-  
-
     </div>    
-
-
 </div>
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -764,6 +732,8 @@ document.getElementById('addToCartForm').addEventListener('submit', async (e) =>
     Swal.fire('Added!', 'Product added to cart', 'success')
       .then(() => window.location.reload()); // optional reload if you want cart count to update
   } catch (err) {
+    console.log(err.error);
+
     if (err.error === 'Not logged in') {
       Swal.fire({
         title: 'Please log in to continue',
@@ -778,7 +748,7 @@ document.getElementById('addToCartForm').addEventListener('submit', async (e) =>
         }
       });
     } else {
-      Swal.fire('Error', err.error || 'Something went wrong', 'error');
+      Swal.fire('Error', err.error ||  'Something went wrong', 'error');
     }
   }
 });

@@ -1,7 +1,6 @@
 const Category = require('../../models/categorySchema');
 const HTTP_STATUS = require('../../constants/httpStatus');
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 const categoryInfo = async (req, res, next) => {

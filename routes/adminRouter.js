@@ -15,7 +15,6 @@ const dashboardController = require('../controllers/admin/dashboardController');
 const {adminAuth } = require('../middlewares/auth');
 const upload = require('../middlewares/multer');
 const { adminErrorHandler } = require("../middlewares/errorHandler");
-const Category = require('../models/categorySchema');
 
 
 router.get('/pageerror', adminController.pageerror);
@@ -24,10 +23,12 @@ router.post('/login', adminController.login);
 router.get('/logout', adminController.logout);
 
 router.use(adminAuth)
+
 router.get('/users', customerController.customerInfo);
-// router.get('/dashboard', adminController.loadDashboard);
 router.get('/blockCustomer', customerController.customerBlocked);
 router.get('/unblockCustomer', customerController.customerUnblocked);
+
+router.get('/dashboard', dashboardController.loadDashboard);
 
  router.route('/category')
 .get(categoryController.categoryInfo)
@@ -83,7 +84,6 @@ router.get("/sales-report", salesReportController.getSalesReportPage);
 router.get("/sales-report/filter", salesReportController.filterSalesReport);
 router.get("/sales-report/download/:type", salesReportController.downloadSalesReport);
 
-router.get('/dashboard', dashboardController.loadDashboard);
 
 
 router.use(adminErrorHandler);

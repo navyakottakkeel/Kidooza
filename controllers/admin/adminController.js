@@ -1,6 +1,5 @@
 const User = require("../../models/userSchema");
 const HTTP_STATUS = require("../../constants/httpStatus");
-const mongoose = require('mongoose');
 const bcrypt = require("bcrypt");
 
 ////////////////////////////////////////////////////////////////

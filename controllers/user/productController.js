@@ -389,88 +389,9 @@ const loadProductDetail = async (req, res, next) => {
   }
 };
 
-// -------------------------- Load All Products --------------------------------------------
-
-const loadAllProducts = async (req, res, next) => {
-  try {
-    const perPage = 8;
-    const page = parseInt(req.query.page) || 1;
-
-    let user = req.user || (req.session.user && await User.findById(req.session.user));
-    const categories = await Category.find({ isDeleted: false });
-
-    const totalProducts = await Product.countDocuments({ isBlock: false });
-    const allProducts = await Product.find({ isBlock: false })
-      .populate("category")
-      .skip((page - 1) * perPage)
-      .limit(perPage);
-
-    const categorizedProducts = {};
-    categories.forEach(category => {
-      categorizedProducts[category._id] = allProducts.filter(
-        product => product.category?._id?.toString() === category._id.toString()
-      );
-    });
-
-    res.locals.user = user;
-
-    return res.status(HTTP_STATUS.OK).render("all-products", {
-      categories,
-      allProducts,
-      categorizedProducts,
-      currentPage: page,
-      totalPages: Math.ceil(totalProducts / perPage)
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-// -------------------------- Load New Arrivals --------------------------------------------
-
-const loadNewArrivals = async (req, res) => {
-  try {
-    const perPage = 8;
-    const page = parseInt(req.query.page) || 1;
-
-    let user = req.user || (req.session.user && await User.findById(req.session.user));
-    const categories = await Category.find({ isDeleted: false });
-
-    const totalProducts = await Product.countDocuments({ isBlock: false });
-    const allProducts = await Product.find({ isBlock: false })
-      .populate("category")
-      .skip((page - 1) * perPage)
-      .limit(perPage);
-
-    const categorizedProducts = {};
-    categories.forEach(category => {
-      categorizedProducts[category._id] = allProducts.filter(
-        product => product.category?._id?.toString() === category._id.toString()
-      );
-    });
-
-    res.locals.user = user;
-
-    return res.status(HTTP_STATUS.OK).render("new-arrivals", {
-      categories,
-      allProducts,
-      categorizedProducts,
-      currentPage: page,
-      totalPages: Math.ceil(totalProducts / perPage)
-    });
-
-  } catch (error) {
-    next(error);
-  }
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-  loadAllProducts,
-  loadNewArrivals,
   loadBoysPage,
   loadProductDetail,
 }
