@@ -1,0 +1,10 @@
+.btn-sm i {
+    font-size: 14px;
+}
+
+.btn-outline-primary,
+.btn-outline-danger {
+    padding: 4px 6px;
+    border: none;
+    background: none;
+}

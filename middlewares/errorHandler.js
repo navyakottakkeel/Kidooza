@@ -14,7 +14,7 @@ const userErrorHandler = (err, req, res, next) => {
       status,
       user: req.user || req.session?.user || null
     });
-
+console.log(status)
 }
 
 const adminErrorHandler = (err, req, res, next) => {

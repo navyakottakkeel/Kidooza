@@ -1,0 +1,17 @@
+.form-select-sm {
+    border-radius: 8px;
+    padding: 4px 8px;
+    width: 60px;
+    display: inline-block;
+}
+
+.btn-pink {
+    background-color: #a8db9e;
+    color: #fff;
+    border: none;
+}
+
+.btn-pink:hover {
+    background-color: #e0cf9c;
+    color: #fff;
+}

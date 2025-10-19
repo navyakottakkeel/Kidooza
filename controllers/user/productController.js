@@ -381,10 +381,13 @@ const loadProductDetail = async (req, res, next) => {
     const sellingPrice = product.salePrice;
     const discountPercent = originalPrice > sellingPrice ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0;
 
-    const relatedProducts = await Product.find({
+    let relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: productId }
     }).limit(5);
+
+    relatedProducts = await applyOfferToProducts(relatedProducts);
+
 
     const defaultVariant = variants[0];
 
