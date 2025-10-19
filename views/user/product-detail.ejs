@@ -156,15 +156,10 @@
                     <img id="product-img-<%= prod._id %>" src="<%= prod.productImage[0] %>"
                       class="img-fluid w-100 rounded-top" alt="">
                   </a>
-
-                  <!-- <img src="<%= prod.productImage[0] %>" alt="<%= prod.productName %>"> -->
                 <% } else { %>
                   <img src="/images/default-product.jpg" alt="No Image">
-                <% } %>
-              
-                <!-- <% if (discountPercent) { %> -->
+                <% } %>           
                   <span class="discount-badge">OFF <%= prod.totalDiscountPercent %>%</span>
-                <!-- <% } %> -->
               </div>
               
           <p class="product-name"><%= prod.productName %></p>

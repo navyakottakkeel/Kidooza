@@ -100,29 +100,60 @@
 
                 </div>
 
-
                 <div class="container">
                     <nav class="mt-3 d-flex justify-content-center">
-                        <ul class="pagination">
-                            <% for (let i=1; i <=totalPages; i++) { %>
-                                <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-                                    <a class="page-link"
-                                        href="/admin/category?page=<%= i %><%= search ? '&search=' + search : '' %>">
-                                        <%= i %>
-                                    </a>
-                                </li>
-                                <% } %>
-                        </ul>
+                      <ul class="pagination">
+                  
+                        <!-- Prev Button -->
+                        <% if (currentPage > 1) { %>
+                          <li class="page-item">
+                            <a class="page-link" href="/admin/category?page=<%= currentPage - 1 %><%= search ? '&search=' + search : '' %>">
+                              Prev
+                            </a>
+                          </li>
+                        <% } else { %>
+                          <li class="page-item disabled">
+                            <span class="page-link">Prev</span>
+                          </li>
+                        <% } %>
+                  
+                        <!-- Show Only 3 Page Numbers -->
+                        <% 
+                          let startPage = Math.max(1, currentPage - 1);
+                          let endPage = Math.min(totalPages, startPage + 2);
+                  
+                          if (endPage - startPage < 2) {
+                            startPage = Math.max(1, endPage - 2);
+                          }
+                  
+                          for (let i = startPage; i <= endPage; i++) { 
+                        %>
+                          <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                            <a class="page-link" href="/admin/category?page=<%= i %><%= search ? '&search=' + search : '' %>">
+                              <%= i %>
+                            </a>
+                          </li>
+                        <% } %>
+                  
+                        <!-- Next Button -->
+                        <% if (currentPage < totalPages) { %>
+                          <li class="page-item">
+                            <a class="page-link" href="/admin/category?page=<%= currentPage + 1 %><%= search ? '&search=' + search : '' %>">
+                              Next
+                            </a>
+                          </li>
+                        <% } else { %>
+                          <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                          </li>
+                        <% } %>
+                  
+                      </ul>
                     </nav>
-                </div>
+                  </div>                  
 
 
             </div>
-
-
-
-
-
 
         </div>
 

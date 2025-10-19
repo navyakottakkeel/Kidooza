@@ -383,6 +383,7 @@ const loadProductDetail = async (req, res, next) => {
 
     let relatedProducts = await Product.find({
       category: product.category._id,
+      isBlock: false,
       _id: { $ne: productId }
     }).limit(5);
 

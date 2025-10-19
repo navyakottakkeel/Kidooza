@@ -81,16 +81,42 @@
       <small>Total: <%= total %></small>
       <nav>
         <ul class="pagination mb-0">
-          <% for (let p=1; p<=pages; p++){ %>
-            <li class="page-item <%= p===page?'active':'' %>">
+          <% 
+            const maxVisible = 3; 
+            const start = Math.max(1, page - Math.floor(maxVisible / 2));
+            const end = Math.min(pages, start + maxVisible - 1);
+            const adjustedStart = Math.max(1, end - maxVisible + 1);
+          %>
+      
+          <!-- Prev Button -->
+          <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+            <a class="page-link"
+               href="/admin/orders?<%= `search=${encodeURIComponent(query.search||'')}&status=${encodeURIComponent(query.status||'')}&sort=${query.sort||'date_desc'}&limit=${query.limit||10}&page=${page-1}` %>">
+               Prev
+            </a>
+          </li>
+      
+          <!-- Page Numbers -->
+          <% for (let p = adjustedStart; p <= end; p++) { %>
+            <li class="page-item <%= p === page ? 'active' : '' %>">
               <a class="page-link"
                  href="/admin/orders?<%= `search=${encodeURIComponent(query.search||'')}&status=${encodeURIComponent(query.status||'')}&sort=${query.sort||'date_desc'}&limit=${query.limit||10}&page=${p}` %>">
                  <%= p %>
               </a>
             </li>
           <% } %>
+      
+          <!-- Next Button -->
+          <li class="page-item <%= page >= pages ? 'disabled' : '' %>">
+            <a class="page-link"
+               href="/admin/orders?<%= `search=${encodeURIComponent(query.search||'')}&status=${encodeURIComponent(query.status||'')}&sort=${query.sort||'date_desc'}&limit=${query.limit||10}&page=${page+1}` %>">
+               Next
+            </a>
+          </li>
         </ul>
       </nav>
+      
+      
     </div>
   </div>
 </div>

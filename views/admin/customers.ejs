@@ -85,16 +85,43 @@
 
             <nav class="mt-3 d-flex justify-content-center">
                 <ul class="pagination">
-                    <% for (let i=1; i <=totalPages; i++) { %>
-                        <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-                            <a class="page-link"
-                                href="/admin/users?page=<%= i %><%= search ? '&search=' + search : '' %>">
-                                <%= i %>
-                            </a>
-                        </li>
-                        <% } %>
+              
+                  <% 
+                    const maxVisible = 3;
+                    const start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                    const end = Math.min(totalPages, start + maxVisible - 1);
+                    const adjustedStart = Math.max(1, end - maxVisible + 1);
+                  %>
+              
+                  <!-- Prev Button -->
+                  <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+                    <a class="page-link"
+                       href="/admin/users?page=<%= currentPage - 1 %><%= search ? '&search=' + search : '' %>">
+                       Prev
+                    </a>
+                  </li>
+              
+                  <!-- Page Numbers -->
+                  <% for (let i = adjustedStart; i <= end; i++) { %>
+                    <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                      <a class="page-link"
+                         href="/admin/users?page=<%= i %><%= search ? '&search=' + search : '' %>">
+                         <%= i %>
+                      </a>
+                    </li>
+                  <% } %>
+              
+                  <!-- Next Button -->
+                  <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+                    <a class="page-link"
+                       href="/admin/users?page=<%= currentPage + 1 %><%= search ? '&search=' + search : '' %>">
+                       Next
+                    </a>
+                  </li>
+              
                 </ul>
-            </nav>
+              </nav>
+              
         </div>
 
 
