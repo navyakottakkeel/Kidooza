@@ -219,38 +219,64 @@
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              if (data.action === "added") {
-                this.classList.add('active');
-                Swal.fire({
-                  toast: true,
-                  position: "bottom-end",
-                  background: "#000",
-                  color: "#fff",
-                  icon: "success",
-                  title: "Added to your Wishlist",
-                  showConfirmButton: false,
-                  timer: 4000,
-                  timerProgressBar: true,
-                  customClass: {
-                    popup: 'swal-toast-dark'  // optional for more custom CSS
-                  }
-                });
-              } else if (data.action === "removed") {
-                this.classList.remove('active');
-                Swal.fire({
-                  toast: true,
-                  position: "bottom-end",
-                  background: "#000",
-                  color: "#fff",
-                  icon: "info",
-                  title: "Removed from your Wishlist",
-                  showConfirmButton: false,
-                  timer: 4000,
-                  timerProgressBar: true,
-                  
-                });
-              }
-            } else {
+  const wishlistCountEl = document.getElementById("wishlist-count");
+
+  if (data.action === "added") {
+    this.classList.add('active');
+    Swal.fire({
+      toast: true,
+      position: "bottom-end",
+      background: "#000",
+      color: "#fff",
+      icon: "success",
+      title: "Added to your Wishlist",
+      showConfirmButton: false,
+      timer: 4000,
+      timerProgressBar: true,
+    });
+
+    // ✅ Increment wishlist count
+    if (wishlistCountEl) {
+      let count = parseInt(wishlistCountEl.textContent) || 0;
+      count++;
+      wishlistCountEl.textContent = count;
+    } else {
+      // If the badge doesn’t exist (0 → 1), create it
+      const newBadge = document.createElement("span");
+      newBadge.id = "wishlist-count";
+      newBadge.className = "position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1";
+      newBadge.style.cssText = "top: -5px; left: 15px; height: 20px; min-width: 20px; font-size: 0.8rem;";
+      newBadge.textContent = "1";
+      document.querySelector('a[href="/wishlist"]').appendChild(newBadge);
+    }
+
+  } else if (data.action === "removed") {
+    this.classList.remove('active');
+    Swal.fire({
+      toast: true,
+      position: "bottom-end",
+      background: "#000",
+      color: "#fff",
+      icon: "info",
+      title: "Removed from your Wishlist",
+      showConfirmButton: false,
+      timer: 4000,
+      timerProgressBar: true,
+    });
+
+    // ✅ Decrement wishlist count
+    if (wishlistCountEl) {
+      let count = parseInt(wishlistCountEl.textContent) || 0;
+      count = Math.max(0, count - 1);
+      if (count === 0) {
+        wishlistCountEl.remove(); // hide badge if 0
+      } else {
+        wishlistCountEl.textContent = count;
+      }
+    }
+  }
+}
+ else {
               Swal.fire("Error", data.message || "Wishlist update failed", "error");
             }
           })
