@@ -381,15 +381,26 @@
             timer: 4000,
             timerProgressBar: true
           });
-
+          const cartCountEl = document.getElementById("cart-count");
+          if (cartCountEl) {
+            let count = parseInt(cartCountEl.textContent) || 0;
+            count++;
+            cartCountEl.textContent = count;
+          } else {
+            const newBadge = document.createElement("span");
+            newBadge.id = "cart-count";
+            newBadge.className =
+              "position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1";
+            newBadge.style.cssText =
+              "top: -5px; left: 15px; height: 20px; min-width: 20px; font-size: 0.8rem;";
+            newBadge.textContent = "1";
+            document.querySelector('a[href="/cart"]').appendChild(newBadge);
+          }
         } catch (err) {
           console.error(err);
           Swal.fire("Error", "Something went wrong", "error");
         }
       });
-
-
-
     });
 
   </script>
