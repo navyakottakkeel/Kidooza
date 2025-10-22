@@ -3,7 +3,6 @@ const User = require('../../models/userSchema');
 const HTTP_STATUS = require("../../constants/httpStatus");
 
 
-
 // -------------------------- Get Wallet Page --------------------------------------------
 
 const getWalletPage = async (req, res, next) => {

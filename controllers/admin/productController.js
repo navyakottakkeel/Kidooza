@@ -8,7 +8,6 @@ const { v4: uuidv4 } = require('uuid');
 const HTTP_STATUS = require("../../constants/httpStatus");
 
 
-
 // ---------------------------- Add Product ---------------------------------
 
 const addProduct = async (req, res, next) => {
@@ -75,7 +74,6 @@ const addProduct = async (req, res, next) => {
   }
 };
 
-
 // ----------------------------- Load Add Product Page ----------------------------
 
 const loadAddProduct = async (req, res, next) => {
@@ -86,7 +84,6 @@ const loadAddProduct = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // ------------------------- Load Products List ----------------------------
 
@@ -213,7 +210,6 @@ const updateProductImage = async (req, res, next) => {
   }
 };
 
-
 // ------------------------- Load Edit Product -------------------------
 
 const loadEditProduct = async (req, res, next) => {
@@ -231,7 +227,6 @@ const loadEditProduct = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // -------------------------- Edit Product ----------------------------
 
@@ -281,7 +276,6 @@ const editProduct = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // ------------------------ Delete Product Image --------------------------
 

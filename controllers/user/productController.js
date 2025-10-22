@@ -49,7 +49,6 @@ async function applyOfferToProducts(products) {
 
 // -------------------------- Load Boys Page --------------------------------------------
 
-
 const loadBoysPage = async (req, res, next) => {
   try {
     const userId = req.user?._id || req.session.user;

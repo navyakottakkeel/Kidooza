@@ -340,7 +340,6 @@
         const quantity = 1;
 
         try {
-          // 1️⃣ Add to cart
           const cartResp = await fetch("/cart/add", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -353,7 +352,6 @@
             return;
           }
 
-          // 2️⃣ Remove from wishlist DB (use URL param, no body)
           const wishlistResp = await fetch(`/wishlist/${productId}`, { method: "DELETE" });
           const wishlistResult = await wishlistResp.json();
 
@@ -362,14 +360,11 @@
             return;
           }
 
-          // 3️⃣ Hide modal
           bootstrap.Modal.getInstance(document.getElementById("variantModal")).hide();
 
-          // 4️⃣ Remove from DOM
           const card = productCard.closest(".col-md-6, .col-lg-4, .col-xl-2");
           if (card) card.remove();
 
-          // 5️⃣ Show success toast
           Swal.fire({
             toast: true,
             position: "bottom-end",

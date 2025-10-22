@@ -45,16 +45,6 @@ const login = async (req, res, next) => {
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-// const loadDashboard = async (req, res, next) => {
-//     try {
-//       return res.status(HTTP_STATUS.OK).render("dashboard");
-//     } catch (error) {
-//       next(error);
-//     }
-//   };
-
-///////////////////////////////////////////////////////////////////////////////////////
-
 const pageerror = async (req, res, next) => {
     try {
       return res
@@ -84,13 +74,11 @@ const logout = async (req, res, next) => {
     }
   };
   
-
 ////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
     loadLogin,
     login,
-    // loadDashboard,
     pageerror,
     logout
 }

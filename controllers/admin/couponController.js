@@ -27,12 +27,10 @@ const getCoupons = async (req, res, next) => {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-
 const createCoupon = async (req, res, next) => {
   try {
     const { code, discountType, discountValue, minPurchase, expiryDate } = req.body;
 
-    // ✅ Validations
     if (!code || !discountType || !discountValue || !expiryDate) {
       return res
         .status(HTTP_STATUS.BAD_REQUEST)

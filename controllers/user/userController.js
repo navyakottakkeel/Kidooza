@@ -19,8 +19,9 @@ const loadHomepage = async (req, res, next) => {
         } else if (req.session.user) {
             user = await User.findById(req.session.user);
         }
+console.log("USER : ", user);
 
-        // Fetch categories (only not deleted)
+// Fetch categories (only not deleted)
         const categories = await Category.find({ isDeleted: false });
 
         // Fetch products (only not deleted)
@@ -294,11 +295,16 @@ const login = async (req, res, next) => {
             return res.status(HTTP_STATUS.FORBIDDEN).render("login", { message: "User is blocked by Admin" });
         }
 
+        if (findUser.googleId && !findUser.password) {
+            return res.status(HTTP_STATUS.BAD_REQUEST)
+              .render("login", { message: "This account was created using Google Sign-In. Please use 'Login with Google'." });
+          }   
+
         const passwordMatch = await bcrypt.compare(password, findUser.password);
         if (!passwordMatch) {
             return res.status(HTTP_STATUS.UNAUTHORIZED).render("login", { message: "Incorrect Password" });
         }
-
+ 
         req.session.user = findUser._id;
         console.log("Session set for user:", req.session.user);
         return res.redirect('/');
@@ -451,7 +457,6 @@ const changepassword = async (req, res, next) => {
         next(error);
     }
 };
-
 
 /////////////////////////////////////////////////////////////////////
 

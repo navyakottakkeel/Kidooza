@@ -189,7 +189,6 @@ async function getCartCount(userId) {
   const cart = await Cart.findOne({ userId });
   return cart ? cart.items.length : 0;
 }
-
   
 // -------------------------- Remove From Wishlist --------------------------------------------
 
@@ -211,7 +210,6 @@ const removeFromWishlist = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // -------------------------- Toggle Wishlist --------------------------------------------
 
@@ -261,7 +259,6 @@ const toggleWishlist = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // -------------------------- Get Variants By Product --------------------------------------------
 

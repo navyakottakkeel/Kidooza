@@ -3,7 +3,6 @@ const Order = require("../../models/orderSchema");
 const HTTP_STATUS = require("../../constants/httpStatus");
 
 
-
 // -------------------- Helper Function ----------------------------------
 
 function round2(num) {

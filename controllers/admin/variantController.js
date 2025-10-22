@@ -7,7 +7,6 @@ const path = require('path');
 const HTTP_STATUS = require('../../constants/httpStatus'); 
 
 
-
 // ==================== LOAD VARIANTS (list all variants of a product) ======================
 
 const loadVariant = async (req, res, next) => {
@@ -42,8 +41,6 @@ const loadVariant = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 // ============================= ADD VARIANT ===================================
 
@@ -104,8 +101,6 @@ const addVariant = async (req, res, next) => {
   }
 };
 
-
-
 // ================================ DELETE VARIANT ======================================
 
 const deleteVariant = async (req, res, next) => {
@@ -138,8 +133,6 @@ const deleteVariant = async (req, res, next) => {
     next(error);
   }
 };
-
-
  
 // ================================== UPDATE VARIANT =====================================
 
@@ -176,8 +169,6 @@ const updateVariant = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
