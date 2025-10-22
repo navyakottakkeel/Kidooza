@@ -105,14 +105,52 @@
         <div class="mt-3 d-flex justify-content-center">
           <nav>
             <ul class="pagination">
-              <% for (let i = 1; i <= totalPages; i++) { %>
+        
+              <% if (currentPage > 1) { %>
+                <li class="page-item">
+                  <a class="page-link" href="/admin/offers?page=<%= currentPage - 1 %>">Prev</a>
+                </li>
+              <% } %>
+        
+              <% 
+                let startPage = Math.max(1, currentPage - 1);
+                let endPage = Math.min(totalPages, currentPage + 1);
+        
+                if (startPage > 1) { %>
+                  <li class="page-item">
+                    <a class="page-link" href="/admin/offers?page=1">1</a>
+                  </li>
+                  <% if (startPage > 2) { %>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  <% } %>
+              <% } %>
+        
+              <% for (let i = startPage; i <= endPage; i++) { %>
                 <li class="page-item <%= i === currentPage ? 'active' : '' %>">
                   <a class="page-link" href="/admin/offers?page=<%= i %>"><%= i %></a>
                 </li>
               <% } %>
+        
+              <% if (endPage < totalPages) { %>
+                <% if (endPage < totalPages - 1) { %>
+                  <li class="page-item disabled"><span class="page-link">...</span></li>
+                <% } %>
+                <li class="page-item">
+                  <a class="page-link" href="/admin/offers?page=<%= totalPages %>"><%= totalPages %></a>
+                </li>
+              <% } %>
+        
+              <% if (currentPage < totalPages) { %>
+                <li class="page-item">
+                  <a class="page-link" href="/admin/offers?page=<%= currentPage + 1 %>">Next</a>
+                </li>
+              <% } %>
+        
             </ul>
           </nav>
         </div>
+
+        
       </div>
     </div>
   </div>

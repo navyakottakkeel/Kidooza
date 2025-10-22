@@ -4,7 +4,6 @@ const HTTP_STATUS = require("../../constants/httpStatus");
 
 ////////////////////////////////////////////////////////
 
-
 const customerInfo = async (req, res, next) => {
     try {
       const search = req.query.search || "";

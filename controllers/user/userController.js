@@ -6,11 +6,11 @@ const { creditMoney } = require("../user/walletController");
 const nodemailer = require("nodemailer");
 const env = require("dotenv").config();
 const bcrypt = require("bcrypt");
-
+const HTTP_STATUS = require("../../constants/httpStatus");
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-const loadHomepage = async (req, res) => {
+const loadHomepage = async (req, res, next) => {
     try {
         let user = null;
 
@@ -19,8 +19,9 @@ const loadHomepage = async (req, res) => {
         } else if (req.session.user) {
             user = await User.findById(req.session.user);
         }
+console.log("USER : ", user);
 
-        // Fetch categories (only not deleted)
+// Fetch categories (only not deleted)
         const categories = await Category.find({ isDeleted: false });
 
         // Fetch products (only not deleted)
@@ -38,24 +39,28 @@ const loadHomepage = async (req, res) => {
 
         res.locals.user = user;
 
-        res.render("home", {
-            categories,
-            allProducts,
-            categorizedProducts
-        });
+        return res
+            .status(HTTP_STATUS.OK)
+            .render("home", {
+                categories,
+                allProducts,
+                categorizedProducts
+            });
 
     } catch (error) {
-       next(error);
+        next(error);
     }
 };
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-const loadSignup = async (req, res) => {
+const loadSignup = async (req, res, next) => {
     try {
 
-        return res.render("signup")
+        return res
+            .status(HTTP_STATUS.OK)
+            .render("signup")
 
     } catch (error) {
         next(error);
@@ -64,14 +69,13 @@ const loadSignup = async (req, res) => {
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-const loadLogin = async (req, res) => {
+const loadLogin = async (req, res, next) => {
     try {
         if (!req.session.user) {
-            return res.render("login")
+            return res.status(HTTP_STATUS.OK).render("login")
         } else {
-            res.redirect('/');
+            return res.redirect('/');
         }
-
 
     } catch (error) {
         next(error);
@@ -80,38 +84,37 @@ const loadLogin = async (req, res) => {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-const signup = async (req, res) => {
+const signup = async (req, res, next) => {
     try {
 
-        const { name, phone, email, password, cpassword,referralCode } = req.body;
+        const { name, phone, email, password, cpassword, referralCode } = req.body;
 
         if (password !== cpassword) {
-            return res.render("signup");
+            return res.status(HTTP_STATUS.BAD_REQUEST).render("signup", { message: "Passwords do not match" });
         }
 
         const findUser = await User.findOne({ email });
         if (findUser) {
-            return res.render("signup", { message: "EmailId already exist" })
+            return res.status(HTTP_STATUS.CONFLICT).render("signup", { message: "EmailId already exist" })
         }
 
         const findUserbyMobile = await User.findOne({ phone });
         if (findUserbyMobile) {
-            return res.render("signup", { message: "Mobile Number already exist" })
+            return res.status(HTTP_STATUS.CONFLICT).render("signup", { message: "Mobile Number already exist" })
         }
 
         const otp = generateOtp();
         const emailSent = await sendVerificationEmail(email, otp);
 
         if (!emailSent) {
-            return res.json("email-error");
+            return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: "Failed to send OTP email" });
         }
 
         req.session.userOtp = otp;
         req.session.userData = { name, phone, email, password, referralCode };
 
-        res.render("verify-otp", { userData: req.session.userData });
         console.log("OTP sent", otp);
+        return res.status(HTTP_STATUS.OK).render("verify-otp", { userData: req.session.userData });
 
     } catch (error) {
         next(error);
@@ -176,75 +179,74 @@ const securePassword = async (password) => {
     }
 }
 
-const verifyOtp = async (req, res) => {
+const verifyOtp = async (req, res, next) => {
     try {
-      const { otp } = req.body;
-      const referralCode = req.session.userData.referralCode; // fetch from session
+        const { otp } = req.body;
+        const referralCode = req.session.userData.referralCode; // fetch from session
+       
+        if (otp !== req.session.userOtp) {
+                return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid OTP" });
+                count++;
+            }
+        
+        console.log("REF code : ", referralCode);
 
-      if (otp !== req.session.userOtp) {
-        return res.status(400).json({ success: false, message: "Invalid OTP" });
-      }
-  
-      console.log("REF code : ",referralCode);
+        const userData = req.session.userData;
+        const passwordHash = await securePassword(userData.password);
 
-      const userData = req.session.userData;
-      const passwordHash = await securePassword(userData.password);
-  
-      // Generate unique referral code
-      let newReferralCode;
-      while (true) {
-        newReferralCode = generateReferralCode();
-        const existingUser = await User.findOne({ referalcode: newReferralCode });
-        if (!existingUser) break;
-      }
-  
-      // Create new user
-      const newUser = await User.create({
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone,
-        password: passwordHash,
-        referalcode: newReferralCode,
-        redeemed: false,
-      });
-  
-      console.log("New user created:", newUser._id);
-  
-      // ✅ Referral logic
-      if (referralCode && referralCode.trim() !== "") {
-        console.log("Referral code received:", referralCode);
-  
-        const refUser = await User.findOneAndUpdate(
-          { referalcode: referralCode },
-          { $push: { redeemedUsers: newUser._id } },
-          { new: true }
-        );
-  
-        if (refUser) {
-          await User.findByIdAndUpdate(newUser._id, { redeemed: true });
-          console.log("Referral applied: ", {
-            referrer: refUser._id,
-            newUser: newUser._id,
-          });
-
-          // Credit wallets
-        await creditMoney(newUser._id, 50, "Referral signup bonus");
-        await creditMoney(refUser._id, 100, "Referral reward");
-
-        } else {
-          return res.status(400).json({ success: false, message: "Invalid referral code" });
+        // Generate unique referral code
+        let newReferralCode;
+        while (true) {
+            newReferralCode = generateReferralCode();
+            const existingUser = await User.findOne({ referalcode: newReferralCode });
+            if (!existingUser) break;
         }
-      }
-  
-      // Login user
-      req.session.user = newUser._id;
-      return res.json({ success: true, redirectUrl: "/" });
-  
+
+        // Create new user
+        const newUser = await User.create({
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone,
+            password: passwordHash,
+            referalcode: newReferralCode,
+            redeemed: false,
+        });
+
+        // ✅ Referral logic
+        if (referralCode && referralCode.trim() !== "") {
+            console.log("Referral code received:", referralCode);
+
+            const refUser = await User.findOneAndUpdate(
+                { referalcode: referralCode },
+                { $push: { redeemedUsers: newUser._id } },
+                { new: true }
+            );
+
+            if (refUser) {
+                await User.findByIdAndUpdate(newUser._id, { redeemed: true });
+                console.log("Referral applied: ", {
+                    referrer: refUser._id,
+                    newUser: newUser._id,
+                });
+
+                // Credit wallets
+                await creditMoney(newUser._id, 50, "Referral signup bonus");
+                await creditMoney(refUser._id, 100, "Referral reward");
+
+            } else {
+                return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid referral code" });
+            }
+        }
+
+        // Login user
+        req.session.user = newUser._id;
+        return res.status(HTTP_STATUS.OK).json({ success: true, redirectUrl: "/" });
+
     } catch (error) {
         next(error);
     }
-  };
-  
+};
+
 
 
 function generateReferralCode(length = 6) {
@@ -258,13 +260,13 @@ function generateReferralCode(length = 6) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const resendOtp = async (req, res) => {
+const resendOtp = async (req, res, next) => {
     try {
         const user = req.session.userData;
         const userEmail = user.email;
         console.log(userEmail);
         if (!userEmail) {
-            return res.status(400).json({ success: false, message: "Session expired. Please sign up again." });
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Session expired. Please sign up again." });
         }
 
         const newOtp = generateOtp();
@@ -272,8 +274,7 @@ const resendOtp = async (req, res) => {
 
         await sendVerificationEmail(userEmail, newOtp);
 
-        return res.json({ success: true, message: "OTP resent successfully" });
-
+        return res.status(HTTP_STATUS.OK).json({ success: true, message: "OTP resent successfully" });
     } catch (err) {
         next(error);
     }
@@ -281,27 +282,32 @@ const resendOtp = async (req, res) => {
 
 /////////////////////////////////////////////////////////////////////
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
     try {
 
         const { email, password } = req.body;
 
         const findUser = await User.findOne({ isAdmin: false, email: email });
         if (!findUser) {
-            return res.render("login", { message: "User not found" });
+            return res.status(HTTP_STATUS.NOT_FOUND).render("login", { message: "User not found" });
         }
         if (findUser.isBlocked) {
-            return res.render("login", { message: "User is blocked by Admin" });
+            return res.status(HTTP_STATUS.FORBIDDEN).render("login", { message: "User is blocked by Admin" });
         }
+
+        if (findUser.googleId && !findUser.password) {
+            return res.status(HTTP_STATUS.BAD_REQUEST)
+              .render("login", { message: "This account was created using Google Sign-In. Please use 'Login with Google'." });
+          }   
 
         const passwordMatch = await bcrypt.compare(password, findUser.password);
         if (!passwordMatch) {
-            return res.render("login", { message: "Incorrect Password" });
+            return res.status(HTTP_STATUS.UNAUTHORIZED).render("login", { message: "Incorrect Password" });
         }
-
+ 
         req.session.user = findUser._id;
         console.log("Session set for user:", req.session.user);
-        res.redirect('/');
+        return res.redirect('/');
 
     } catch (error) {
         next(error);
@@ -311,7 +317,7 @@ const login = async (req, res) => {
 
 //////////////////////////////////////////////////////////////////////
 
-const logout = async (req, res) => {
+const logout = async (req, res, next) => {
     try {
 
         req.session.destroy((err) => {
@@ -329,11 +335,9 @@ const logout = async (req, res) => {
 
 /////////////////////////////////////////////////////////////////////
 
-const loadForgotPassword = async (req, res) => {
+const loadForgotPassword = async (req, res, next) => {
     try {
-
-        return res.render("forgot-password")
-
+        return res.status(HTTP_STATUS.OK).render("forgot-password");
     } catch (error) {
         next(error);
     }
@@ -341,55 +345,46 @@ const loadForgotPassword = async (req, res) => {
 
 ////////////////////////////////////////////////////////////////////
 
-const forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res, next) => {
     try {
 
         const { email } = req.body;
         console.log(email);
         const findUser = await User.findOne({ email: email });
-        console.log(findUser);
-        if (findUser) {
+
+        if (!findUser) {
+            return res.status(HTTP_STATUS.NOT_FOUND).render("forgot-password", { message: "Email not found" });
+          }   
+
             const otp = generateOtp();
             const emailSent = await sendVerificationEmail(email, otp);
 
             if (!emailSent) {
-                return res.json("email-error");
+                return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: "Failed to send OTP email" });
             }
 
             req.session.forgotOtp = otp;
             req.session.userEmail = email;
 
-            res.render("otp-forgotpassword");
             console.log("Otp sent : ", otp);
-        } else {
-            return res.render("forgot-password", { message: "Email not exist" });
-        }
-
+            return res.status(HTTP_STATUS.OK).render("otp-forgotpassword");
 
     } catch (error) {
         next(error);
     }
 }
 
-
 //////////////////////////////////////////////////////////////////////
 
-const forgotPasswordOtp = async (req, res) => {
+const forgotPasswordOtp = async (req, res, next) => {
     try {
-
         const { otp } = req.body;
-        const combineOtp = otp;
-        console.log("combineotp : ", combineOtp);
-        console.log("session otp : ", req.session.forgotOtp);
 
-        if (combineOtp === req.session.forgotOtp) {
-            console.log("same")
-            res.json({ success: true, redirectUrl: "/changepassword" });
-            // return res.render("change-password");
-        } else {
-            console.log("not same");
-            return res.render("otp-forgotpassword", { message: "Invalid Otp" });
-        }
+        if (otp === req.session.forgotOtp) {
+            return res.status(HTTP_STATUS.OK).json({ success: true, redirectUrl: "/changepassword" });
+          } else {
+            return res.status(HTTP_STATUS.BAD_REQUEST).render("otp-forgotpassword", { message: "Invalid OTP" });
+          }
 
     } catch (error) {
         next(error);
@@ -398,12 +393,12 @@ const forgotPasswordOtp = async (req, res) => {
 
 //////////////////////////////////////////////////////////////////////
 
-const resendForgotPasswordOtp = async (req, res) => {
+const resendForgotPasswordOtp = async (req, res, next) => {
     try {
         const userEmail = req.session.userEmail;
-        console.log(userEmail);
+
         if (!userEmail) {
-            return res.status(400).json({ success: false, message: "Session expired. Please sign up again." });
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Session expired. Please try again." });
         }
 
         const newOtp = generateOtp();
@@ -411,7 +406,7 @@ const resendForgotPasswordOtp = async (req, res) => {
 
         await sendVerificationEmail(userEmail, newOtp);
 
-        return res.json({ success: true, message: "OTP resent successfully" });
+    return res.status(HTTP_STATUS.OK).json({ success: true, message: "OTP resent successfully" });
 
     } catch (err) {
         next(error);
@@ -420,11 +415,9 @@ const resendForgotPasswordOtp = async (req, res) => {
 
 /////////////////////////////////////////////////////////////////////
 
-const loadchangepassword = async (req, res) => {
+const loadchangepassword = async (req, res, next) => {
     try {
-
-        return res.render("change-password")
-
+        return res.status(HTTP_STATUS.OK).render("change-password");
     } catch (error) {
         next(error);
     }
@@ -432,58 +425,55 @@ const loadchangepassword = async (req, res) => {
 
 //////////////////////////////////////////////////////////////////////
 
-const changepassword = async (req, res) => {
+const changepassword = async (req, res, next) => {
     try {
 
         const userEmail = req.session.userEmail;
         const { password, cpassword } = req.body;
         const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!]).{8,}$/;
 
-        if (password === "") {
-            return res.render("change-password", { message: "Please Enter Password" });
-        } else if (cpassword === "") {
-            return res.render("change-password", { message: "Please enter Confirm Password" });
-        } else if (!passwordPattern.test(password)) {
-            return res.render("change-password", { message: "Password must be at least 8 characters and include uppercase, lowercase, number, and special character." })
-        } else if (password !== cpassword) {
-            return res.render("change-password", { message: "Password and Confirm Password do not match" });
-        }
+        if (!password || !cpassword) {
+            return res.status(HTTP_STATUS.BAD_REQUEST).render("change-password", { message: "Please fill all fields" });
+          }
+      
+          if (!passwordPattern.test(password)) {
+            return res.status(HTTP_STATUS.BAD_REQUEST).render("change-password", { message: "Password must be at least 8 characters and include uppercase, lowercase, number, and special character." });
+          }
+      
+          if (password !== cpassword) {
+            return res.status(HTTP_STATUS.BAD_REQUEST).render("change-password", { message: "Passwords do not match" });
+          }
 
         const passwordHash = await securePassword(password);
-        const updatedUser = await User.findOneAndUpdate(
-            { email: userEmail },
-            { $set: { password: passwordHash } }
-        );
+        await User.findOneAndUpdate({ email: userEmail },{ $set: { password: passwordHash } });
 
         // Clear session values after reset
         req.session.userEmail = null;
         req.session.forgotOtp = null;
 
-        res.render("login", { message: "Password reset successful. Please login." });
+        return res.status(HTTP_STATUS.OK).render("login", { message: "Password reset successful. Please login." });
 
     } catch (error) {
         next(error);
     }
 };
 
-
 /////////////////////////////////////////////////////////////////////
 
-const pageNotFound = async (req, res) => {
+const pageNotFound = async (req, res, next) => {
     try {
 
         const userId = req.user ? req.user._id : req.session.user;
 
         let user = null;
         if (req.user) {
-          user = req.user;
+            user = req.user;
         } else if (req.session.user) {
-          user = await User.findById(req.session.user);
+            user = await User.findById(req.session.user);
         }
-    
-        res.locals.user = user;
-        return res.render("page-404")
 
+        res.locals.user = user;
+        return res.status(HTTP_STATUS.NOT_FOUND).render("page-404");
     } catch (error) {
         next(error);
     }

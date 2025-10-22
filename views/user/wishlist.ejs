@@ -1,28 +1,5 @@
 <%- include("../../views/partials/user/header") %>
-
-  <style>
-    .discount-tag {
-      background-color: #5d8355;
-      color: #fff;
-      padding: 2px 8px;
-      font-size: 0.85rem;
-      border-radius: 5px;
-    }
-
-    .colour-box {
-      transition: transform 0.2s;
-    }
-
-    .colour-box:hover {
-      transform: scale(1.1);
-    }
-
-    .size-btn.active {
-      background: black !important;
-      color: white !important;
-    }
-  </style>
-
+  <link href="/css/wishlist.css" rel="stylesheet">
 
   <div class="container-fluid fruite py-5" style="margin-top:180px ;">
     <div class="container py-5">
@@ -75,8 +52,9 @@
                         <div class="d-flex justify-content-between flex-lg-wrap">
 
                           <p class="text-dark fs-5 fw-bold mb-0">
-                            <span class="sale-price" style="font-size:medium">₹<%= product.finalSalePrice.toLocaleString() %>
-                                </span>
+                            <span class="sale-price" style="font-size:medium">₹<%=
+                                product.finalSalePrice.toLocaleString() %>
+                            </span>
 
                             <s class="base-price" style="font-size:small">₹<%= product.basePrice.toLocaleString() %></s>
                             <span class="discount-tag">
@@ -94,8 +72,7 @@
                           <button style="font-size: 0.8rem;"
                             class="btn border border-success rounded-pill px-3 text-success add-to-cart"
                             data-product-id="<%= product._id %>" data-colour="<%= product.colour %>"
-                            data-sale-price="<%= product.salePrice %>"
-                            data-base-price="<%= product.basePrice %>"
+                            data-sale-price="<%= product.salePrice %>" data-base-price="<%= product.basePrice %>"
                             data-discount="<%= product.discount %>">
                             Add to Cart
                           </button>
@@ -207,6 +184,7 @@
             .then(res => res.json())
             .then(data => {
               if (data.success) {
+                const wishlistCountEl = document.getElementById("wishlist-count");
                 if (data.action === "removed") {
                   const card = this.closest(".col-md-6, .col-lg-4, .col-xl-2");
                   if (card) card.remove();
@@ -222,6 +200,15 @@
                     timerProgressBar: true,
 
                   });
+                  if (wishlistCountEl) {
+                    let count = parseInt(wishlistCountEl.textContent) || 0;
+                    count = Math.max(0, count - 1);
+                    if (count === 0) {
+                      wishlistCountEl.remove(); // hide badge if 0
+                    } else {
+                      wishlistCountEl.textContent = count;
+                    }
+                  }
                 }
               } else {
                 Swal.fire("Error", data.message || "Wishlist update failed", "error");
@@ -331,59 +318,54 @@
 
 
       // Confirm add to cart
-document.getElementById("confirmVariantAdd").addEventListener("click", async function () {
-    const variantId = this.dataset.variantId;
-    if (!variantId) {
-        alert("Please select colour and size");
-        return;
-    }
+      document.getElementById("confirmVariantAdd").addEventListener("click", async function () {
+        const variantId = this.dataset.variantId;
+        if (!variantId) {
+          alert("Please select colour and size");
+          return;
+        }
 
-    const productId = document.getElementById("variantModal").dataset.productId;
-    const productCard = document.querySelector(`[data-product-id='${productId}']`)?.closest(".fruite-item");
+        const productId = document.getElementById("variantModal").dataset.productId;
+        const productCard = document.querySelector(`[data-product-id='${productId}']`)?.closest(".fruite-item");
 
-    if (!productCard) {
-        Swal.fire("Error", "Product not found on page", "error");
-        return;
-    }
+        if (!productCard) {
+          Swal.fire("Error", "Product not found on page", "error");
+          return;
+        }
 
-    // Extract values from DOM
-    const saleValue = parseFloat(productCard.querySelector(".sale-price").innerText.replace(/[^0-9.-]+/g,""));
-    const baseValue = parseFloat(productCard.querySelector(".base-price").innerText.replace(/[^0-9.-]+/g,""));
-    const discount = parseInt(productCard.querySelector(".discount-tag").innerText.replace(/[^0-9]/g,""));
-    const quantity = 1;
+        // Extract values from DOM
+        const saleValue = parseFloat(productCard.querySelector(".sale-price").innerText.replace(/[^0-9.-]+/g, ""));
+        const baseValue = parseFloat(productCard.querySelector(".base-price").innerText.replace(/[^0-9.-]+/g, ""));
+        const discount = parseInt(productCard.querySelector(".discount-tag").innerText.replace(/[^0-9]/g, ""));
+        const quantity = 1;
 
-    try {
-        // 1️⃣ Add to cart
-        const cartResp = await fetch("/cart/add", {
+        try {
+          const cartResp = await fetch("/cart/add", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ productId, variantId, quantity, saleValue, baseValue, discount })
-        });
-        const cartResult = await cartResp.json();
+          });
+          const cartResult = await cartResp.json();
 
-        if (cartResult.error) {
+          if (cartResult.error) {
             Swal.fire("Error", cartResult.error, "error");
             return;
-        }
+          }
 
-        // 2️⃣ Remove from wishlist DB (use URL param, no body)
-        const wishlistResp = await fetch(`/wishlist/${productId}`, { method: "DELETE" });
-        const wishlistResult = await wishlistResp.json();
+          const wishlistResp = await fetch(`/wishlist/${productId}`, { method: "DELETE" });
+          const wishlistResult = await wishlistResp.json();
 
-        if (!wishlistResult.success) {
+          if (!wishlistResult.success) {
             Swal.fire("Error", wishlistResult.message || "Failed to remove from wishlist", "error");
             return;
-        }
+          }
 
-        // 3️⃣ Hide modal
-        bootstrap.Modal.getInstance(document.getElementById("variantModal")).hide();
+          bootstrap.Modal.getInstance(document.getElementById("variantModal")).hide();
 
-        // 4️⃣ Remove from DOM
-        const card = productCard.closest(".col-md-6, .col-lg-4, .col-xl-2");
-        if (card) card.remove();
+          const card = productCard.closest(".col-md-6, .col-lg-4, .col-xl-2");
+          if (card) card.remove();
 
-        // 5️⃣ Show success toast
-        Swal.fire({
+          Swal.fire({
             toast: true,
             position: "bottom-end",
             background: "#000",
@@ -393,16 +375,27 @@ document.getElementById("confirmVariantAdd").addEventListener("click", async fun
             showConfirmButton: false,
             timer: 4000,
             timerProgressBar: true
-        });
-
-    } catch (err) {
-        console.error(err);
-        Swal.fire("Error", "Something went wrong", "error");
-    }
-});
-
-
-
+          });
+          const cartCountEl = document.getElementById("cart-count");
+          if (cartCountEl) {
+            let count = parseInt(cartCountEl.textContent) || 0;
+            count++;
+            cartCountEl.textContent = count;
+          } else {
+            const newBadge = document.createElement("span");
+            newBadge.id = "cart-count";
+            newBadge.className =
+              "position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1";
+            newBadge.style.cssText =
+              "top: -5px; left: 15px; height: 20px; min-width: 20px; font-size: 0.8rem;";
+            newBadge.textContent = "1";
+            document.querySelector('a[href="/cart"]').appendChild(newBadge);
+          }
+        } catch (err) {
+          console.error(err);
+          Swal.fire("Error", "Something went wrong", "error");
+        }
+      });
     });
 
   </script>

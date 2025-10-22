@@ -1,6 +1,8 @@
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
+const HTTP_STATUS = require("../../constants/httpStatus");
+
 
 // Helper to get sales data grouped by date range
 const getSalesData = async (filter) => {
@@ -117,13 +119,17 @@ const getTopSellingData = async () => {
   return { productSales, categorySales, brandSales };
 };   
 
-exports.loadDashboard = async (req, res) => {
+///////////////////////////////////////////////////////////////////
+
+const loadDashboard = async (req, res, next) => {
   try {
     const filter = req.query.filter || "monthly";
     const salesData = await getSalesData(filter);
     const { productSales, categorySales, brandSales } = await getTopSellingData();
 
-    res.render("dashboard", {
+    return res
+    .status(HTTP_STATUS.OK)
+    .render("dashboard", {
       salesData,
       productSales,
       categorySales,
@@ -131,8 +137,10 @@ exports.loadDashboard = async (req, res) => {
       filter,
     });
   } catch (error) {
-    console.error("Error loading dashboard:", error);
-    res.status(500).send("Error loading dashboard");
+    next(error)
   }
 };
   
+module.exports = {
+  loadDashboard
+}

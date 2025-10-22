@@ -1,25 +1,7 @@
 <%-include("../../views/partials/user/header") %>
 
+<link href="/css/cart.css" rel="stylesheet">
 
-    <style>
-        .form-select-sm {
-            border-radius: 8px;
-            padding: 4px 8px;
-            width: 60px;
-            display: inline-block;
-        }
-
-        .btn-pink {
-            background-color: #a8db9e;
-            color: #fff;
-            border: none;
-        }
-
-        .btn-pink:hover {
-            background-color: #e0cf9c;
-            color: #fff;
-        }
-    </style>
 
     <div class="container py-5" style="margin-top:180px;">
 
@@ -298,13 +280,17 @@ document.getElementById("checkoutBtn").addEventListener("click", async (e) => {
 
   try {
     const res = await fetch("/cart/validate");
-    const data = await res.json();
-
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error("Invalid JSON response");
+    }
     if (!data.success) {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: data.message
+        text: data.message || "Something went wrong."
       });
     } else {
       // ✅ Proceed if valid
@@ -320,13 +306,6 @@ document.getElementById("checkoutBtn").addEventListener("click", async (e) => {
 });
 
 
-
-
     </script>
-
-
-
-
-
 
     <%-include("../../views/partials/user/footer") %>

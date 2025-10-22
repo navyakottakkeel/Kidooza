@@ -1,0 +1,109 @@
+
+    .btn-cancel-item {
+        border: 1px solid #ff3c1f;
+        color: #ff3c1f;
+        background: #fff;
+        padding: 10px 25px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+ 
+    .btn-cancel-item:hover {
+        background: #fff0ee;
+    }
+
+    .order-info-box {
+        background: #fff;
+        border: 1px solid #eee;
+        padding: 15px;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .order-info-box p {
+        margin: 6px 0;
+    }
+
+    .btn-cancel-order {
+        border: 1px solid #ff3c1f;
+        color: #ff3c1f;
+        background: #fff;
+        padding: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-cancel-order:hover {
+        background: #fff0ee;
+    }
+
+    .btn-review {
+        border: 1px solid #06712a;
+        color: #06712a;
+        background: #fff;
+        padding: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-review:hover {
+        background: #c3e8cb;
+    }
+
+    .order-failure-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        background: #fff4f4;
+        border: 1px solid #f5c2c7;
+        border-left: 5px solid #dc3545;
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .failure-icon {
+        font-size: 22px;
+        color: #dc3545;
+        margin-top: 3px;
+    }
+
+    .failure-content h4 {
+        margin: 0;
+        font-size: 16px;
+        color: #b02a37;
+        font-weight: 600;
+    }
+
+    .failure-content p {
+        margin: 6px 0 12px;
+        font-size: 14px;
+        color: #555;
+    }
+
+    .retry-btn {
+        display: inline-block;
+        padding: 8px 16px;
+        color: #2874f0;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background 0.2s ease;
+        width: 100%;
+        border-color: #2874f0;
+        border: 1px solid;
+        text-align: center;
+    }
+
+    .retry-btn:hover {
+        background-color: #96b9ee;
+    }

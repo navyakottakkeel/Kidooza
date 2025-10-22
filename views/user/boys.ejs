@@ -1,114 +1,6 @@
 <%-include("../../views/partials/user/header") %>
 
-
-  <style>
-    .pagination {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .page-item .page-link {
-      border-radius: 8px;
-      padding: 6px 12px;
-      color: #333;
-      border: 1px solid #ccc;
-      background-color: white;
-      transition: all 0.2s ease-in-out;
-    }
-
-    .page-item.active .page-link {
-      background-color: #8fcf7c;
-      border-color: #8fcf7c;
-      color: white;
-    }
-
-    .page-item.disabled .page-link {
-      color: #bbb;
-      pointer-events: none;
-      background-color: #f5f5f5;
-    }
-
-    .colour-circle-label {
-      display: inline-flex;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .colour-circle-label input {
-      display: none;
-      /* Hide the checkbox */
-    }
-
-    .colour-circle {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 1px solid #ccc;
-      display: inline-block;
-      transition: transform 0.2s ease;
-    }
-
-    .colour-circle-label input:checked+.colour-circle {
-      border: 2px solid #000;
-      /* Highlight when selected */
-      transform: scale(1.1);
-    }
-
-    .wishlist-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background-color: white;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease-in-out;
-      font-size: 22px;
-      color: gray;
-    }
-
-
-    .wishlist-btn.active i {
-      color: red;
-    }
-
-    .discount-tag {
-      background-color: #5d8355;
-      color: #fff;
-      padding: 2px 8px;
-      font-size: 0.85rem;
-      border-radius: 5px;
-    }
-    .swal2-popup.swal-toast-dark {
-  font-size: 15px;
-  border-radius: 8px;
-  font-weight: 500;
-}
-
-.product-image-wrapper {
-  position: relative;
-}
-
-.offer-badge {
-  position: absolute;
-  top: 21px;
-  left: 2px;
-  background-color: red;
-  color: white;
-  font-weight: bold;
-  padding: 4px 6px;
-  font-size: 0.75rem;
-  border-radius: 3px;
-  z-index: 10;
-  transform: rotate(-35deg); /* optional cross-like slant */
-}
-
-
-  </style>
-
+<link href="/css/boys.css" rel="stylesheet">
 
 
   <div class="container-fluid" style="margin-top:220px">
@@ -268,12 +160,6 @@
         <input type="hidden" name="search" value="<%= search %>">
         <input type="hidden" name="sort" value="<%= sort %>">
 
-
-
-
-
-
-
       </div>
     </div>
     <!-- Sidebar End -->
@@ -281,8 +167,6 @@
     <!-- Main Content (Already Included) -->
     <div class="col-lg-9">
       <!-- your right side product card code already exists here -->
-
-
 
       <div>
         <!-- Boys fashion Start-->
@@ -315,7 +199,6 @@
                                   class="img-fluid w-100 rounded-top" alt="">
                               </a>
                               </div>
-
 
                               <!-- Wishlist button -->
                              
@@ -373,9 +256,6 @@
 
                                 </p>
 
-                               
-                                
-
                               </div>
                             </div>
                           </div>
@@ -415,9 +295,7 @@
 
             <% for (let i=1; i <=totalPages; i++) { %>
               <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-                <a class="page-link" href="?page=<%= i %>&<%= baseQuery %>">
-                  <%= i %>
-                </a>
+                <a class="page-link" href="?page=<%= i %><%= baseQuery ? '&' + baseQuery : '' %>"><%= i %></a>
               </li>
               <% } %>
 
@@ -475,38 +353,64 @@
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              if (data.action === "added") {
-                this.classList.add('active');
-                Swal.fire({
-                  toast: true,
-                  position: "bottom-end",
-                  background: "#000",
-                  color: "#fff",
-                  icon: "success",
-                  title: "Added to your Wishlist",
-                  showConfirmButton: false,
-                  timer: 4000,
-                  timerProgressBar: true,
-                  customClass: {
-                    popup: 'swal-toast-dark'  // optional for more custom CSS
-                  }
-                });
-              } else if (data.action === "removed") {
-                this.classList.remove('active');
-                Swal.fire({
-                  toast: true,
-                  position: "bottom-end",
-                  background: "#000",
-                  color: "#fff",
-                  icon: "info",
-                  title: "Removed from your Wishlist",
-                  showConfirmButton: false,
-                  timer: 4000,
-                  timerProgressBar: true,
-                  
-                });
-              }
-            } else {
+  const wishlistCountEl = document.getElementById("wishlist-count");
+
+  if (data.action === "added") {
+    this.classList.add('active');
+    Swal.fire({
+      toast: true,
+      position: "bottom-end",
+      background: "#000",
+      color: "#fff",
+      icon: "success",
+      title: "Added to your Wishlist",
+      showConfirmButton: false,
+      timer: 4000,
+      timerProgressBar: true,
+    });
+
+    // ✅ Increment wishlist count
+    if (wishlistCountEl) {
+      let count = parseInt(wishlistCountEl.textContent) || 0;
+      count++;
+      wishlistCountEl.textContent = count;
+    } else {
+      // If the badge doesn’t exist (0 → 1), create it
+      const newBadge = document.createElement("span");
+      newBadge.id = "wishlist-count";
+      newBadge.className = "position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1";
+      newBadge.style.cssText = "top: -5px; left: 15px; height: 20px; min-width: 20px; font-size: 0.8rem;";
+      newBadge.textContent = "1";
+      document.querySelector('a[href="/wishlist"]').appendChild(newBadge);
+    }
+
+  } else if (data.action === "removed") {
+    this.classList.remove('active');
+    Swal.fire({
+      toast: true,
+      position: "bottom-end",
+      background: "#000",
+      color: "#fff",
+      icon: "info",
+      title: "Removed from your Wishlist",
+      showConfirmButton: false,
+      timer: 4000,
+      timerProgressBar: true,
+    });
+
+    // ✅ Decrement wishlist count
+    if (wishlistCountEl) {
+      let count = parseInt(wishlistCountEl.textContent) || 0;
+      count = Math.max(0, count - 1);
+      if (count === 0) {
+        wishlistCountEl.remove(); // hide badge if 0
+      } else {
+        wishlistCountEl.textContent = count;
+      }
+    }
+  }
+}
+ else {
               Swal.fire("Error", data.message || "Wishlist update failed", "error");
             }
           })
@@ -556,53 +460,6 @@
     });
 
   </script>
-
-
-  <style>
-    .colour-circle {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: inline-block;
-      cursor: pointer;
-      border: 2px solid transparent;
-    }
-
-    .colour-circle.active {
-      border: 2px solid #f27c1f;
-    }
-
-    .wishlist-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: white;
-      border: none;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .wishlist-btn i {
-      color: #555;
-      font-size: 18px;
-    }
-
-    .wishlist-btn.active {
-      background: red;
-    }
-
-    .wishlist-btn.active i {
-      color: white;
-    }
-  </style>
-
-
 
 
   <%-include("../../views/partials/user/footer") %>

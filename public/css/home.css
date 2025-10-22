@@ -1,0 +1,16 @@
+    .carousel-inner {
+      height: 600px; /* Fixed height */
+    }
+  
+    .carousel-item img {
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
+    }
+  
+    /* Optional: Adjust for smaller screens */
+    @media (max-width: 768px) {
+      .carousel-inner {
+        height: 250px;
+      }
+    }

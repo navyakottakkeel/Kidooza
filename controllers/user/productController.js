@@ -49,7 +49,6 @@ async function applyOfferToProducts(products) {
 
 // -------------------------- Load Boys Page --------------------------------------------
 
-
 const loadBoysPage = async (req, res, next) => {
   try {
     const userId = req.user?._id || req.session.user;
@@ -57,7 +56,7 @@ const loadBoysPage = async (req, res, next) => {
     res.locals.user = user;
 
     let filter = { isBlock: false };
-    const perPage = 9;
+    const perPage = 6;
     const page = parseInt(req.query.page) || 1;
 
     let { search = '', sort = '', category, minPrice, maxPrice } = req.query;
@@ -243,7 +242,7 @@ const loadBoysPage = async (req, res, next) => {
 
     const queryObj = { ...req.query };
     delete queryObj.page;
-    const baseQuery = new URLSearchParams(queryObj).toString();
+    const baseQuery = buildQueryString(req.query);
 
     const wishlistDoc = user ? await Wishlist.findOne({ userId }) : null;
     const wishlistItems = wishlistDoc
@@ -280,6 +279,21 @@ const loadBoysPage = async (req, res, next) => {
   }
 };
 
+//------------------
+
+function buildQueryString(query) {
+  const params = [];
+  for (const key in query) {
+    if (key === 'page') continue;
+    const value = query[key];
+    if (Array.isArray(value)) {
+      value.forEach(v => params.push(`${key}=${encodeURIComponent(v)}`));
+    } else if (value) {
+      params.push(`${key}=${encodeURIComponent(value)}`);
+    }
+  }
+  return params.join('&');
+}
 // -------------------------- Helper Apply Offer To Variants --------------------------------
 
 async function applyOfferToVariants(variants, product) {
@@ -366,10 +380,14 @@ const loadProductDetail = async (req, res, next) => {
     const sellingPrice = product.salePrice;
     const discountPercent = originalPrice > sellingPrice ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0;
 
-    const relatedProducts = await Product.find({
+    let relatedProducts = await Product.find({
       category: product.category._id,
+      isBlock: false,
       _id: { $ne: productId }
     }).limit(5);
+
+    relatedProducts = await applyOfferToProducts(relatedProducts);
+
 
     const defaultVariant = variants[0];
 
@@ -389,88 +407,9 @@ const loadProductDetail = async (req, res, next) => {
   }
 };
 
-// -------------------------- Load All Products --------------------------------------------
-
-const loadAllProducts = async (req, res, next) => {
-  try {
-    const perPage = 8;
-    const page = parseInt(req.query.page) || 1;
-
-    let user = req.user || (req.session.user && await User.findById(req.session.user));
-    const categories = await Category.find({ isDeleted: false });
-
-    const totalProducts = await Product.countDocuments({ isBlock: false });
-    const allProducts = await Product.find({ isBlock: false })
-      .populate("category")
-      .skip((page - 1) * perPage)
-      .limit(perPage);
-
-    const categorizedProducts = {};
-    categories.forEach(category => {
-      categorizedProducts[category._id] = allProducts.filter(
-        product => product.category?._id?.toString() === category._id.toString()
-      );
-    });
-
-    res.locals.user = user;
-
-    return res.status(HTTP_STATUS.OK).render("all-products", {
-      categories,
-      allProducts,
-      categorizedProducts,
-      currentPage: page,
-      totalPages: Math.ceil(totalProducts / perPage)
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-// -------------------------- Load New Arrivals --------------------------------------------
-
-const loadNewArrivals = async (req, res) => {
-  try {
-    const perPage = 8;
-    const page = parseInt(req.query.page) || 1;
-
-    let user = req.user || (req.session.user && await User.findById(req.session.user));
-    const categories = await Category.find({ isDeleted: false });
-
-    const totalProducts = await Product.countDocuments({ isBlock: false });
-    const allProducts = await Product.find({ isBlock: false })
-      .populate("category")
-      .skip((page - 1) * perPage)
-      .limit(perPage);
-
-    const categorizedProducts = {};
-    categories.forEach(category => {
-      categorizedProducts[category._id] = allProducts.filter(
-        product => product.category?._id?.toString() === category._id.toString()
-      );
-    });
-
-    res.locals.user = user;
-
-    return res.status(HTTP_STATUS.OK).render("new-arrivals", {
-      categories,
-      allProducts,
-      categorizedProducts,
-      currentPage: page,
-      totalPages: Math.ceil(totalProducts / perPage)
-    });
-
-  } catch (error) {
-    next(error);
-  }
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-  loadAllProducts,
-  loadNewArrivals,
   loadBoysPage,
   loadProductDetail,
 }

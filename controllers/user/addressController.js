@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const HTTP_STATUS = require('../../constants/httpStatus'); 
 
 
-
 // =========================== LOAD ADDRESS PAGE =============================
 
 const loadAddressPage = async (req, res, next) => {
@@ -234,8 +233,6 @@ const updateAddress = async (req, res, next) => {
     next(error);
   }
 };
-
-
  
 // ============================= DELETE ADDRESS ======================================
 
@@ -265,8 +262,6 @@ const deleteAddress = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 // ==================== EXPORT =====================
 

@@ -1,6 +1,5 @@
 const User = require("../../models/userSchema");
 const HTTP_STATUS = require("../../constants/httpStatus");
-const mongoose = require('mongoose');
 const bcrypt = require("bcrypt");
 
 ////////////////////////////////////////////////////////////////
@@ -15,7 +14,7 @@ const loadLogin = async (req, res, next) => {
     } catch (error) {
       next(error);
     }
-  };
+  };  
 
 /////////////////////////////////////////////////////////////////
 
@@ -46,16 +45,6 @@ const login = async (req, res, next) => {
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-// const loadDashboard = async (req, res, next) => {
-//     try {
-//       return res.status(HTTP_STATUS.OK).render("dashboard");
-//     } catch (error) {
-//       next(error);
-//     }
-//   };
-
-///////////////////////////////////////////////////////////////////////////////////////
-
 const pageerror = async (req, res, next) => {
     try {
       return res
@@ -85,13 +74,11 @@ const logout = async (req, res, next) => {
     }
   };
   
-
 ////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
     loadLogin,
     login,
-    // loadDashboard,
     pageerror,
     logout
 }

@@ -103,7 +103,6 @@ const addToCart = async (req, res, next) => {
   }
 };
 
-
 // ---------------------------- GET CART PAGE ------------------------------------------
 
 const getCartPage = async (req, res, next) => {
@@ -191,7 +190,6 @@ const getCartPage = async (req, res, next) => {
   }
 };
 
-
 // ------------------------------ UPDATE QUANTITY -----------------------------------
 
 const updateQuantity = async (req, res, next) => {
@@ -265,7 +263,6 @@ const updateQuantity = async (req, res, next) => {
   }
 };
 
-
 // ------------------------------ REMOVE FROM CART ----------------------------------------
 
 const removeFromCart = async (req, res, next) => {
@@ -289,7 +286,6 @@ const removeFromCart = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // ------------------------------ VALIDATE CART ----------------------------------------
 
@@ -326,7 +322,6 @@ const validateCart = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // ------------------------------ Exports ----------------------------------------
 

@@ -9,7 +9,6 @@ const Coupon = require("../../models/couponSchema");
 const HTTP_STATUS = require("../../constants/httpStatus");
 
 
-
 // -------------------- Helper Function ----------------------------------
 
 function round2(num) {
@@ -176,7 +175,6 @@ const couponList = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // -------------------------- Exports --------------------------------
 

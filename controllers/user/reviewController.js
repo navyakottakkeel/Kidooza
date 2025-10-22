@@ -129,7 +129,7 @@ const getProductReviews = async (req, res, next) => {
     }
 
     const reviews = await Review.find({ product: productId })
-      .populate("user", "name") // assuming user has a `name` field
+      .populate("user", "name") 
       .sort({ createdAt: -1 });
 
     return res
@@ -141,7 +141,7 @@ const getProductReviews = async (req, res, next) => {
     next(error);
   }
 };
- 
+  
 
 module.exports = { 
     addOrEditReview, 
