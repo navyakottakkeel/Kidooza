@@ -20,20 +20,20 @@
 
             <form action="/verify-otp" id="otpForm">
                 <div class="otp-box">
-                    <input type="text" id="otp1" name="otp" maxlength="1" />
-                    <input type="text" id="otp2" name="otp" maxlength="1" />
-                    <input type="text" id="otp3" name="otp" maxlength="1" />
-                    <input type="text" id="otp4" name="otp" maxlength="1" />
-                    <input type="text" id="otp5" name="otp" maxlength="1" />
-                    <input type="text" id="otp6" name="otp" maxlength="1" />
+                    <input type="text" id="otp1" name="otp" maxlength="1" class="otp-input form-control text-center" />
+                    <input type="text" id="otp2" name="otp" maxlength="1" class="otp-input form-control text-center" />
+                    <input type="text" id="otp3" name="otp" maxlength="1" class="otp-input form-control text-center" />
+                    <input type="text" id="otp4" name="otp" maxlength="1" class="otp-input form-control text-center" />
+                    <input type="text" id="otp5" name="otp" maxlength="1" class="otp-input form-control text-center" />
+                    <input type="text" id="otp6" name="otp" maxlength="1" class="otp-input form-control text-center" />
                 </div>
 
 
 
-                <div class="info">
-                    <div>Remaining Time: <span id="timer">01:00s</span></div>
-                    <div>Didn't receive code? <span onclick="resendOTP()">Resend</span></div>
-                </div>
+                <div class="info d-flex justify-content-between">
+                    <p class="mb-0">Remaining Time: <span id="timer"></span></p>
+                    <p class="mb-0"><span class="resend" onclick="resendOTP()">Didn't receive code? Resend</span></p>
+                </div>                
 
                 <button class="confirm-btn" type="submit">Confirm</button>
                 <a href="/signup" class="back-link">Go back to Signup page</a>
@@ -44,40 +44,71 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // Timer Script
-        let timeLeft = 60;
+        let timeLeft = 180;
+        let countdown;
         const timerEl = document.getElementById('timer');
+        const resendText = document.querySelector('.resend');
+    
+        // Hide "Resend" initially
+        resendText.style.visibility = "hidden"; 
+    
+        function startTimer() {
+            countdown = setInterval(() => {
+                timeLeft--;
+    
+                let minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+                let seconds = String(timeLeft % 60).padStart(2, '0');
+                timerEl.textContent = `${minutes}:${seconds}s`;
+    
+                // When timer ends
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timerEl.textContent = "00:00s";
+                    resendText.style.visibility = "visible"; // Show resend
+                }
+            }, 1000);
+        }
+    
+        startTimer();
+    
+            // ------------------------------------------------
+    // ⭐ AUTO MOVE TO NEXT OTP INPUT (ADD HERE)
+    // ------------------------------------------------
+    const inputs = document.querySelectorAll(".otp-input");
 
-        const countdown = setInterval(() => {
-            timeLeft--;
-            let minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-            let seconds = String(timeLeft % 60).padStart(2, '0');
-            timerEl.textContent = `${minutes}:${seconds}s`;
+inputs.forEach((input, index) => {
 
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                timerEl.textContent = "00:00s";
-            }
-        }, 1000);
+    // Move to next box
+    input.addEventListener("input", () => {
+        if (input.value.length === 1 && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+        }
+    });
+
+    // Backspace → move to previous box
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace" && input.value === "" && index > 0) {
+            inputs[index - 1].focus();
+        }
+    });
+});
 
 
-
-
+        // ------------------------------------------
+        // RESEND OTP
+        // ------------------------------------------
         function resendOTP() {
+            if (timeLeft > 0) return; // Can't resend while timer active
+    
             fetch("/resend-otp", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                }
+                headers: { "Content-Type": "application/json" }
             })
-                .then(res => {
-                    console.log("Fetch status:", res.status); // Add this line
-                    return res.json();
-                }).then(response => {
-                    console.log("Resend response:", response); // Add this line
+                .then(res => res.json())
+                .then(response => {
                     if (response.success) {
                         Swal.fire({
                             icon: "success",
@@ -86,22 +117,13 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
-
+    
                         // Reset timer
                         timeLeft = 60;
-                        timerEl.textContent = "01:00s";
-                        countdown = setInterval(() => {
-                            timeLeft--;
-                            let minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-                            let seconds = String(timeLeft % 60).padStart(2, '0');
-                            timerEl.textContent = `${minutes}:${seconds}s`;
-
-                            if (timeLeft <= 0) {
-                                clearInterval(countdown);
-                                timerEl.textContent = "00:00s";
-                            }
-                        }, 1000);
-
+                        resendText.style.visibility = "hidden";
+    
+                        // Restart timer
+                        startTimer();
                     } else {
                         Swal.fire({
                             icon: "error",
@@ -111,37 +133,40 @@
                     }
                 })
                 .catch(() => {
-                    console.error("Fetch error:", err);  // Add this too
-
                     Swal.fire({
                         icon: "error",
                         title: "Error",
-                        text: "Something went wrong. Try again."
+                        text: "Something went wrong."
                     });
                 });
         }
-
-
-
-
-
+    
+        // ------------------------------------------
+        // OTP SUBMIT
+        // ------------------------------------------
         document.getElementById("otpForm").addEventListener("submit", function (e) {
-            e.preventDefault(); // Stop HTML form submission
-
-            const otp1 = document.getElementById("otp1").value;
-            const otp2 = document.getElementById("otp2").value;
-            const otp3 = document.getElementById("otp3").value;
-            const otp4 = document.getElementById("otp4").value;
-            const otp5 = document.getElementById("otp5").value;
-            const otp6 = document.getElementById("otp6").value;
-
-            const otpInput = `${otp1}${otp2}${otp3}${otp4}${otp5}${otp6}`;
-
+            e.preventDefault();
+    
+            if (timeLeft <= 0) {
+                Swal.fire({
+                    icon: "error",
+                    title: "OTP Expired",
+                    text: "Please resend OTP"
+                });
+                return;
+            }
+    
+            const otpInput =
+                document.getElementById("otp1").value +
+                document.getElementById("otp2").value +
+                document.getElementById("otp3").value +
+                document.getElementById("otp4").value +
+                document.getElementById("otp5").value +
+                document.getElementById("otp6").value;
+    
             fetch("/verify-otp", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ otp: otpInput })
             })
                 .then(res => res.json())
@@ -149,16 +174,16 @@
                     if (response.success) {
                         Swal.fire({
                             icon: "success",
-                            title: "OTP Verified Successfully",
+                            title: "OTP Verified",
+                            timer: 1500,
                             showConfirmButton: false,
-                            timer: 1500
                         }).then(() => {
                             window.location.href = response.redirectUrl;
                         });
                     } else {
                         Swal.fire({
                             icon: "error",
-                            title: "Error",
+                            title: "Invalid OTP",
                             text: response.message
                         });
                     }
@@ -166,15 +191,13 @@
                 .catch(() => {
                     Swal.fire({
                         icon: "error",
-                        title: "Invalid Otp",
-                        text: "Please try again"
+                        title: "Error",
+                        text: "Something went wrong"
                     });
                 });
         });
-
-
     </script>
-
+    
 
 
 </body>

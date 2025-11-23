@@ -56,23 +56,26 @@
 
         <form id="editProfileForm" method="POST" class="p-4">
           <div class="row g-3">
-            <!-- Name -->
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Name</label>
-              <input type="text" name="name" class="form-control" value="<%= user.name %>" required>
-            </div>
-
-            <!-- Email -->
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Email</label>
-              <input type="email" name="email" class="form-control" value="<%= user.email %>" required>
-            </div>
-
-            <!-- Phone -->
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Mobile</label>
-              <input type="text" name="phone" class="form-control" value="<%= user.phone %>" required>
-            </div>
+               <!-- Name -->
+               <div class="col-md-6">
+                <label class="form-label fw-bold">Name</label>
+                <input type="text" id="nameid" name="name" class="form-control" value="<%= user.name %>" required>
+                <small id="error1" class="text-danger"></small>
+              </div>
+  
+              <!-- Email -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Email</label>
+                <input type="email" id="emailid" name="email" class="form-control" value="<%= user.email %>" required>
+                <small id="error2" class="text-danger"></small>
+              </div>
+  
+              <!-- Phone -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Mobile</label>
+                <input type="text" id="phoneid" name="phone" class="form-control" value="<%= user.phone %>" required>
+                <small id="error3" class="text-danger"></small>
+              </div>
 
             <!-- Buttons -->
             <div class="col-12 d-flex justify-content-end gap-2 mt-4">
@@ -92,11 +95,51 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 
+// ---------- VALIDATION FUNCTIONS ---------- //
+
+function nameValidateChecking() {
+    const nameval = nameid.value.trim();
+    const namePattern = /^[A-Za-z\s]+$/;
+
+    if (nameval === "") {
+        error1.textContent = "Please Enter Name";
+        return false;
+    } else if (!namePattern.test(nameval)) {
+        error1.textContent = "Name can contain alphabets and spaces only";
+        return false;
+    } else {
+        error1.textContent = "";
+        return true;
+    }
+}
+
+function phoneValidateChecking() {
+    const phoneval = phoneid.value.trim();
+    const phonePattern = /^[6-9]\d{9}$/;
+
+    if (phoneval === "") {
+        error3.textContent = "Please Enter Phone Number";
+        return false;
+    } else if (!phonePattern.test(phoneval)) {
+        error3.textContent = "Invalid Phone Number";
+        return false;
+    } else {
+        error3.textContent = "";
+        return true;
+    }
+}
+
+
 const originalEmail = "<%= user.email %>";
 
 document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+     // Validate Name & Phone before submitting
+     if (!nameValidateChecking() || !phoneValidateChecking()) {
+        return; // STOP submission if validation fails
+    }
+    
     const formData = new FormData(this);
     const name = formData.get('name');
     const email = formData.get('email');

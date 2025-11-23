@@ -128,8 +128,8 @@
             error6.style.display = "block";
             error6.innerHTML = "Please Enter Confirm Password";
         }else if(!passwordPattern.test(passwordval)){
-            error6.style.display = "block";
-            error6.innerHTML = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+            error5.style.display = "block";
+            error5.innerHTML = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
         }else if(passwordval !== cpasswordval){
             error6.style.display = "block";
             error6.innerHTML = "Password and Confirm Password do not match";

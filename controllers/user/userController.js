@@ -19,7 +19,6 @@ const loadHomepage = async (req, res, next) => {
         } else if (req.session.user) {
             user = await User.findById(req.session.user);
         }
-console.log("USER : ", user);
 
 // Fetch categories (only not deleted)
         const categories = await Category.find({ isDeleted: false });
@@ -189,8 +188,6 @@ const verifyOtp = async (req, res, next) => {
                 count++;
             }
         
-        console.log("REF code : ", referralCode);
-
         const userData = req.session.userData;
         const passwordHash = await securePassword(userData.password);
 
@@ -264,7 +261,6 @@ const resendOtp = async (req, res, next) => {
     try {
         const user = req.session.userData;
         const userEmail = user.email;
-        console.log(userEmail);
         if (!userEmail) {
             return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Session expired. Please sign up again." });
         }
@@ -306,7 +302,6 @@ const login = async (req, res, next) => {
         }
  
         req.session.user = findUser._id;
-        console.log("Session set for user:", req.session.user);
         return res.redirect('/');
 
     } catch (error) {
