@@ -128,10 +128,13 @@ const updateOrderStatus = async (req, res, next) => {
       order.deliveredAt = new Date();
     }
 
-    if (["Shipped", "Out for Delivery", "Delivered"].includes(status)) {
+    if (["Shipped", "Out for Delivery", "Delivered", "Ordered"].includes(status)) {
       order.orderedItems.forEach((item) => {
-        if (normalize(item.status) !== "cancelled") {
+        if (normalize(item.status) !== "cancelled" && normalize(item.status) !== "returned") {
           item.status = status;
+        }
+        if (normalize(status) === "delivered") {
+          item.deliveredOn = new Date();
         }
       });
     }
@@ -147,7 +150,7 @@ const updateOrderStatus = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}; 
 
 // --------------------- Update Individual Item Status ---------------------
 

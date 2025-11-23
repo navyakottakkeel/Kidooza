@@ -67,7 +67,7 @@
           <form id="wholeOrderForm">
             <div class="input-group input-group-sm">
               <select name="status" class="form-select">
-                <% ["Pending","Processing","Shipped","Out for Delivery","Delivered","Cancelled","Returned"].forEach(s => { %>
+                <% ["Pending","Ordered","Processing","Shipped","Out for Delivery","Delivered","Cancelled","Returned"].forEach(s => { %>
                   <option value="<%= s %>" <%= (order.status===s?'selected':'') %>><%= s %></option>
                 <% }) %>
               </select>

@@ -153,12 +153,12 @@ const updateVariant = async (req, res, next) => {
       { new: true }
     );
 
-    if (!updated) {
+    if (!updated) { 
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Variant not found",
       });
-    }
+    } 
 
     return res.status(HTTP_STATUS.OK).json({
       success: true,

@@ -81,9 +81,9 @@
             <th>Customer</th>
             <th>Product</th>
             <th>Quantity</th>
-            <th>Price</th>
-            <th>Total Price</th>
+            <th>Base Price</th>
             <th>Discount</th>
+            <th>Total Price</th>
             <th>Payment</th>
           </tr>
         </thead>
@@ -97,8 +97,8 @@
               <td><%= row.product %></td>
               <td><%= row.quantity %></td>
               <td>₹<%= row.price %></td>
-              <td>₹<%= row.totalPrice %></td>
               <td><span class="badge bg-warning text-dark">₹<%= row.discount.toFixed(2) %></span></td>
+              <td>₹<%= row.totalPrice %></td>
               <td><%= row.payment %></td>
             </tr>
           <% }) %>
