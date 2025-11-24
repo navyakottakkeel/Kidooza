@@ -33,18 +33,26 @@ async function applyOfferToProducts(products) {
       const bestOffer = offers.reduce((prev, curr) => curr.discountPercentage > prev.discountPercentage ? curr : prev);
       const originalDiscountAmount = (product.basePrice * originalDiscountPercent) / 100;
       const offerDiscountAmount = (product.basePrice * bestOffer.discountPercentage) / 100;
-      const totalDiscount = originalDiscountAmount + offerDiscountAmount;
-
-      product.salePrice = product.basePrice - totalDiscount;
-      product.totalDiscountPercent = originalDiscountPercent + bestOffer.discountPercentage;
-      product.appliedOffer = bestOffer;
+      
+      if(originalDiscountAmount < offerDiscountAmount){
+        const totalDiscount = offerDiscountAmount;
+        product.salePrice = product.basePrice - totalDiscount;
+        product.totalDiscountPercent = bestOffer.discountPercentage;
+        product.appliedOffer = bestOffer;
+      }else{
+        const totalDiscount = originalDiscountAmount;
+        product.salePrice = product.basePrice - totalDiscount;
+        product.totalDiscountPercent = originalDiscountPercent;
+        product.appliedOffer = null;
+      }
+      
     } else {
       product.totalDiscountPercent = originalDiscountPercent;
       product.appliedOffer = null;
     }
 
     return product;
-  }));
+  })); 
 }
 
 // -------------------------- Load Boys Page --------------------------------------------
@@ -324,11 +332,19 @@ async function applyOfferToVariants(variants, product) {
 
       const originalDiscountAmount = (variant.basePrice * originalDiscountPercent) / 100;
       const offerDiscountAmount = (variant.basePrice * bestOffer.discountPercentage) / 100;
-      const totalDiscount = originalDiscountAmount + offerDiscountAmount;
 
-      variant.salePrice = variant.basePrice - totalDiscount;
-      variant.totalDiscountPercent = originalDiscountPercent + bestOffer.discountPercentage;
-      variant.appliedOffer = bestOffer;
+      if(originalDiscountAmount < offerDiscountAmount ){
+        const totalDiscount = offerDiscountAmount;
+        variant.salePrice = variant.basePrice - totalDiscount;
+        variant.totalDiscountPercent = bestOffer.discountPercentage;
+        variant.appliedOffer = bestOffer;
+
+      }else{
+        const totalDiscount = originalDiscountAmount;
+        variant.salePrice = variant.basePrice - totalDiscount;
+        variant.totalDiscountPercent = originalDiscountPercent;
+        variant.appliedOffer = null;
+      }
 
     } else {
       variant.totalDiscountPercent = originalDiscountPercent;

@@ -137,9 +137,7 @@ const getWishlistPage = async (req, res, next) => {
       const now = new Date();
       const basePrice = product.basePrice;
 
-      const defaultDiscount = Math.round(
-        ((basePrice - product.salePrice) / basePrice) * 100
-      );
+      const defaultDiscount = Math.round(((basePrice - product.salePrice) / basePrice) * 100);
 
       const [productOffer, categoryOffer] = await Promise.all([
         Offer.findOne({
@@ -162,11 +160,19 @@ const getWishlistPage = async (req, res, next) => {
       const categoryDiscount = categoryOffer?.discountPercentage || 0;
 
       const bestDiscount = Math.max(productDiscount, categoryDiscount);
-      const finalDiscount = Math.round(defaultDiscount + bestDiscount);
 
-      product.finalSalePrice =
-        product.basePrice - (product.basePrice * finalDiscount) / 100;
-      product.finalDiscount = finalDiscount;
+      if(defaultDiscount < bestDiscount){
+        const finalDiscount = bestDiscount;
+        product.finalSalePrice = product.basePrice - (product.basePrice * finalDiscount) / 100;
+        product.finalDiscount = finalDiscount;
+
+      }else{
+        const finalDiscount = defaultDiscount;
+        product.finalSalePrice = product.basePrice - (product.basePrice * finalDiscount) / 100;
+        product.finalDiscount = finalDiscount;
+
+      }
+
     }
 
     const cartCount = await getCartCount(userId);
