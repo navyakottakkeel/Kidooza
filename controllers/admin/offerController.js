@@ -24,7 +24,7 @@ const getOffersPage = async (req, res, next) => {
     const totalPages = Math.ceil(totalOffers / limit);
 
     const products = await Product.find({}, "productName");
-    const categories = await Category.find({}, "name");
+    const categories = await Category.find({ isDeleted: false }, "name");
 
     return res.status(HTTP_STATUS.OK).render("offers", {
       offers,
@@ -154,7 +154,7 @@ const toggleOfferStatus = async (req, res, next) => {
     next(error)
   }
 };
-
+ 
 // --------------------------------------------------------------------------------------------------
 
 module.exports = {

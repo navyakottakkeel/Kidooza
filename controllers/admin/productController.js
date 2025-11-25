@@ -216,7 +216,7 @@ const loadEditProduct = async (req, res, next) => {
   try {
     const productId = req.query.id;
     const product = await Product.findById(productId).lean().populate("category");
-    const categories = await Category.find().lean();
+    const categories = await Category.find({ isDeleted: false }).lean();
 
     if (!product) {
       return res.redirect("/admin/products");
@@ -265,7 +265,7 @@ const editProduct = async (req, res, next) => {
     await product.save();
 
     const updatedProduct = await Product.findById(_id).populate("category").lean();
-    const categories = await Category.find().lean();
+    const categories = await Category.find({ isDeleted: false }).lean();
 
     res.status(HTTP_STATUS.OK).render("edit-product", {
       product: updatedProduct,
