@@ -1,6 +1,6 @@
 <%-include("../../views/partials/user/header") %>
 
-<link href="/css/address.css" rel="stylesheet">
+    <link href="/css/address.css" rel="stylesheet">
 
 
     <div class="container" style="margin-top:180px">
@@ -172,6 +172,9 @@
 
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
+            const onlyLetters = /^[A-Za-z\s]+$/;
+            const validPincode = /^[1-9][0-9]{5}$/;
+            const validPhone = /^[6-9]\d{9}$/;
 
             function saveAddress() {
 
@@ -199,29 +202,42 @@
                     return;
                 }
 
-                if (!/^\d{6}$/.test(data.pincode)) {
+                if (!onlyLetters.test(data.name) ||
+                    !onlyLetters.test(data.city) ||
+                    !onlyLetters.test(data.landmark) ||
+                    !onlyLetters.test(data.state)) {
+
+                    Swal.fire({
+                        icon: "error",
+                        title: "Invalid Input",
+                        text: "Name, City, Landmark and State must contain letters only."
+                    });
+                    return;
+                }
+
+                if (!validPincode.test(data.pincode)) {
                     Swal.fire({
                         icon: "error",
                         title: "Invalid Pincode",
-                        text: "Pincode must be a 6-digit number."
+                        text: "Pincode must be a valid 6-digit number and cannot start with 0."
                     });
                     return;
                 }
 
-                if (!/^\d{10}$/.test(data.phone)) {
+                if (!validPhone.test(data.phone)) {
                     Swal.fire({
                         icon: "error",
                         title: "Invalid Phone",
-                        text: "Phone number must be 10 digits."
+                        text: "Phone number must be a valid 10-digit Indian number."
                     });
                     return;
                 }
 
-                if (data.altPhone && !/^\d{10}$/.test(data.altPhone)) {
+                if (data.altPhone && !validPhone.test(data.altPhone)) {
                     Swal.fire({
                         icon: "error",
                         title: "Invalid Alt Phone",
-                        text: "Alt phone must be 10 digits."
+                        text: "Alt phone number must be a valid 10-digit number."
                     });
                     return;
                 }
@@ -372,6 +388,7 @@
                             preConfirm: () => {
                                 const name = document.getElementById('swal-name').value.trim();
                                 const city = document.getElementById('swal-city').value.trim();
+                                const landmark = document.getElementById('swal-landmark').value.trim();
                                 const state = document.getElementById('swal-state').value.trim();
                                 const pincode = document.getElementById('swal-pincode').value.trim();
                                 const phone = document.getElementById('swal-phone').value.trim();
@@ -382,26 +399,33 @@
                                     return false;
                                 }
 
-                                if (!/^\d{6}$/.test(pincode)) {
-                                    Swal.showValidationMessage("Pincode must be 6 digits.");
+                                if (!onlyLetters.test(name) || !onlyLetters.test(city) ||
+                                    !onlyLetters.test(landmark) || !onlyLetters.test(state)) {
+                                    Swal.showValidationMessage("Name, City, Landmark and State must contain letters only.");
                                     return false;
                                 }
 
-                                if (!/^\d{10}$/.test(phone)) {
-                                    Swal.showValidationMessage("Phone number must be 10 digits.");
+                                if (!validPincode.test(pincode)) {
+                                    Swal.showValidationMessage("Pincode must be 6 digits and cannot start with 0.");
                                     return false;
                                 }
 
-                                if (altPhone && !/^\d{10}$/.test(altPhone)) {
-                                    Swal.showValidationMessage("Alt phone must be 10 digits.");
+                                if (!validPhone.test(phone)) {
+                                    Swal.showValidationMessage("Phone number must be a valid 10-digit number.");
                                     return false;
                                 }
+
+                                if (altPhone && !validPhone.test(altPhone)) {
+                                    Swal.showValidationMessage("Alt phone number must be a valid 10-digit number.");
+                                    return false;
+                                }
+
 
                                 return {
                                     addressType: document.getElementById('swal-type').value,
                                     name,
                                     city,
-                                    landmark: document.getElementById('swal-landmark').value,
+                                    landmark,
                                     state,
                                     pincode,
                                     phone,

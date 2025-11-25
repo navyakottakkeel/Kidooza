@@ -18,12 +18,12 @@ app.use(express.static('public'));
 
 app.use('/uploads/products', express.static('public/uploads/products'));
 
-
+ 
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: {
+    cookie: {  
         secure: false,
         httpOnly: true,
         maxAge: 72 * 60 * 60 * 1000
