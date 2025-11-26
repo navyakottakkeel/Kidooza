@@ -137,7 +137,7 @@
                                             </small>
 
                                             <% } else if (item.status==="Delivered" ) { %>
-                                                <% let deliveredOn=new Date(order.deliveredAt); let returnValidUntil=new
+                                                <% let deliveredOn=new Date(item.deliveredOn); let returnValidUntil=new
                                                     Date(deliveredOn); returnValidUntil.setDate(deliveredOn.getDate() +
                                                     14); let today=new Date(); %>
 

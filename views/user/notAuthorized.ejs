@@ -1,0 +1,79 @@
+<%- include("../partials/user/header") %>
+
+<style>
+    .na-container {
+    height: 75vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f7f8fa;
+}
+
+.na-card {
+    background: #fff;
+    padding: 40px 30px;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 350px;
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+.na-icon {
+    font-size: 70px;
+    margin-bottom: 10px;
+    animation: bounce 1.5s infinite;
+}
+
+.na-card h2 {
+    color: #d9534f;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.na-card p {
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.na-btn {
+    display: inline-block;
+    background: #e0cf9c;
+    color: #fff !important;
+    padding: 10px 22px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.3s ease;
+}
+
+.na-btn:hover {
+    background: #e0cf9c;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+</style>
+        
+       
+        <div class="na-container">
+            <div class="na-card" style="margin-top: 150px">
+                <div class="na-icon">🚫</div>
+                <h2>Access Denied</h2>
+                <p>You do not have permission to view this page.</p>
+        
+                <a href="/" class="na-btn">Go Back Home</a>
+            </div>
+        </div>
+
+   
+    <%- include("../partials/user/footer") %>

@@ -74,10 +74,13 @@ const getOrders = async (req, res, next) => {
 
 const getOrderDetail = async (req, res, next) => {
   try {
+    const orderId = req.params.id;
+    const loggedUserId = req.session.user;
+
     const user = req.user || await User.findById(req.session.user);
     res.locals.user = user;
 
-    const order = await Order.findById(req.params.id)
+    const order = await Order.findById(orderId)
       .populate({
         path: "orderedItems.product",
         select: "productName images status",
@@ -88,8 +91,12 @@ const getOrderDetail = async (req, res, next) => {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: "Order not found" });
     }
 
+    if (order.user.toString() !== loggedUserId.toString()) {
+      return res.status(HTTP_STATUS.FORBIDDEN).render("notAuthorized"); 
+  }
+
     order.totalPrice = round2(order.totalPrice);
-    order.discount = round2(order.discount);
+    order.discount = round2(order.discount); 
     order.finalAmount = round2(order.finalAmount);
     order.shippingFee = round2(order.shippingFee);
 
