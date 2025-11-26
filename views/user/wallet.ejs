@@ -1,106 +1,298 @@
 <%- include("../partials/user/header") %>
 
-<div class="container " style="margin-top: 11rem;">
+<style>
+  .glass-effect-popup {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(15px) !important;
+  border-radius: 20px !important;
+  padding: 25px !important;
+}
+
+.wallet-confirm-btn {
+  background-color: #4c63e7 !important;
+  color: white !important;
+  border-radius: 12px !important;
+  padding: 10px 22px !important;
+  font-size: 16px !important;
+  border: none !important;
+}
+
+.wallet-confirm-btn:hover {
+  background-color: #3a4ed8 !important;
+}
+
+.wallet-cancel-btn {
+  background-color: #eee !important;
+  color: #333 !important;
+  border-radius: 12px !important;
+  padding: 10px 22px !important;
+  font-size: 16px !important;
+  border: none !important;
+  margin-right: 10px !important;
+}
+
+</style>
+
+<div class="container" style="margin-top: 11rem;">
 
   <div class="row">
 
-     <!-- Left Sidebar -->
-     <div class="col-md-3">
+    <!-- LEFT SIDEBAR  -->
+    <div class="col-md-3">
       <div class="list-group shadow-sm rounded-4 overflow-hidden" style="border: 1px solid #e0e0e0;">
-
-        <!-- Header -->
-        <div class="list-group-item fw-bold text-center py-3" style="background: linear-gradient(135deg, #f5f5f5, #e0e0e0); 
-       color: #444; 
-       font-size: 1.1rem; 
-       letter-spacing: 0.5px;">
+        <div class="list-group-item fw-bold text-center py-3"
+          style="background: linear-gradient(135deg, #f5f5f5, #e0e0e0); color: #444; font-size: 1.1rem; letter-spacing: 0.5px;">
           <i class="fas fa-user-circle me-2"></i> My Account
         </div>
 
-        <!-- Links -->
-        <a href="/userProfile" class="list-group-item list-group-item-action py-3"
-          style="border: none; font-size: 0.95rem;">
+        <a href="/userProfile" class="list-group-item list-group-item-action py-3">
           <i class="fas fa-user me-2 text-primary"></i> My Profile
         </a>
 
-        <a href="/address" class="list-group-item list-group-item-action py-3"
-          style="border: none; font-size: 0.95rem;">
+        <a href="/address" class="list-group-item list-group-item-action py-3">
           <i class="fas fa-map-marker-alt me-2 text-primary"></i> Address
         </a>
 
-        <a href="/orders" class="list-group-item list-group-item-action py-3"
-          style="border: none; font-size: 0.95rem;">
+        <a href="/orders" class="list-group-item list-group-item-action py-3">
           <i class="fas fa-box me-2 text-primary"></i> My Orders
         </a>
 
-        <a href="/wallet" class="list-group-item list-group-item-action py-3"
-          style="border: none; font-size: 0.95rem;">
+        <a href="/wallet" class="list-group-item list-group-item-action py-3">
           <i class="fas fa-wallet me-2 text-primary"></i> Wallet
         </a>
 
-        <a href="/profile-change-password" class="list-group-item list-group-item-action py-3"
-          style="border: none; font-size: 0.95rem;">
+        <a href="/profile-change-password" class="list-group-item list-group-item-action py-3">
           <i class="fas fa-key me-2 text-primary"></i> Change Password
         </a>
 
-        <a href="/logout" class="list-group-item list-group-item-action text-danger py-3 fw-bold"
-          style="border: none; font-size: 0.95rem;">
+        <a href="/logout" class="list-group-item list-group-item-action text-danger py-3 fw-bold">
           <i class="fas fa-sign-out-alt me-2"></i> Logout
         </a>
       </div>
     </div>
 
-    <div class="col-md-7 mx-auto">
-      <div class="card shadow-lg border-0 rounded-4">
-        <div class="card-header bg-primary text-white text-center rounded-top-4">
-          <h4>💳 My Wallet</h4>
+    <!-- RIGHT SIDE WALLET SECTION -->
+    <div class="col-md-8 mx-auto">
+      <div class="card border-0 shadow rounded-4"
+           style="background: #fdfdfd; border-radius: 20px; overflow: hidden;">
+    
+        <!-- FULL-WIDTH HEADER (touching top + left + right) -->
+        <div class="rounded-top-4"
+          style="
+            background: linear-gradient(135deg, #d9f7e9, #a8db9e, #e5fff4);
+            padding: 1.4rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          ">
+          <h3 class="fw-bold m-0" style="color:#2b3d53;font-family: unset">My Wallet</h3>
+    
+          <a href="#" 
+   class="btn btn-success px-4 py-2 rounded-pill fw-semibold shadow-sm"
+   style="background:#0f9d6e; border:none;"
+   onclick="addMoney()">
+  + Add Money
+</a>
+
         </div>
-        <div class="card-body">
-          <h5 class="text-center mb-3">Current Balance</h5>
-          <h2 class="text-center text-success mb-4">₹<%= wallet.balance %></h2>
-
-          <!-- Add Money Form (for testing/demo) -->
-          <form action="/wallet/add" method="POST" class="d-flex gap-2 mb-4 justify-content-center">
-            <input type="number" name="amount" class="form-control w-50" placeholder="Enter amount" required>
-            <button type="submit" class="btn btn-success">Add Money</button>
-          </form>
-
-          <h5 class="mt-4">Transaction History</h5>
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead class="table-light">
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Amount</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if(wallet.transactions.length === 0) { %>
-                  <tr>
-                    <td colspan="4" class="text-center text-muted">No transactions yet.</td>
-                  </tr>
-                <% } else { %>
-                  <% wallet.transactions.slice().reverse().forEach(txn => { %>
-                    <tr>
-                      <td><%= txn.date.toDateString() %></td>
-                      <td>
-                        <span class="<%= txn.type === 'credit' ? 'text-success' : 'text-danger' %> fw-bold">
-                          <%= txn.type %>
-                        </span>
-                      </td>
-                      <td>₹<%= txn.amount %></td>
-                      <td><%= txn.reason || '-' %></td>
-                    </tr>
-                  <% }) %>
-                <% } %>
-              </tbody>
-            </table>
+    
+        <!-- BODY WITHOUT TOP PADDING -->
+        <div class="p-4">
+    
+          <!-- Balance Card -->
+          <div class="d-flex align-items-center justify-content-between p-4 mb-3">
+    
+            <div class="col-4"
+              style="background: #e0cf9c; border-radius: 18px; color: #fff; 
+                     position: relative; overflow: hidden; padding: 2.5rem; margin-bottom: 1rem;">
+              <p class="m-0 opacity-75">Total Balance</p>
+              <h2 class="fw-bold mt-1" style="font-family: math">
+                ₹ <%= Number(wallet.balance).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+              </h2>
+            </div>
+    
+            <div class="col-8">
+              <img src="/img/piggy.avif" style="width: 75%; float: right; border-radius: 15px;">
+            </div>
+    
           </div>
+    
+          <!-- Recent Transactions -->
+          <h5 class="fw-bold mb-3">Recent Transactions</h5>
+    
+          <% if(wallet.transactions.length === 0) { %>
+            <p class="text-muted text-center">No transactions yet.</p>
+          <% } else { %>
+    
+            <% wallet.transactions.slice().reverse().forEach(txn => { %>
+    
+              <div class="d-flex justify-content-between align-items-center p-3 mb-2 shadow-sm"
+                   style="background: #fff; border-radius: 12px;">
+    
+                <!-- Icon -->
+                <div>
+                  <% if(txn.type === 'credit') { %>
+                    <span class="bg-success text-white rounded-circle p-2">
+                      <i class="fas fa-arrow-down"></i>
+                    </span>
+                  <% } else { %>
+                    <span class="bg-danger text-white rounded-circle p-2">
+                      <i class="fas fa-arrow-up"></i>
+                    </span>
+                  <% } %>
+                </div>
+    
+                <!-- Details -->
+                <div class="ms-3" style="flex:1;">
+                  <p class="m-0 fw-semibold"><%= txn.reason || "Transaction" %></p>
+                  <small class="text-muted"><%= txn.date.toDateString() %></small>
+                </div>
+    
+                <!-- Amount -->
+                <div class="text-end">
+                  <h6 class="<%= txn.type === 'credit' ? 'text-success' : 'text-danger' %> fw-bold">
+                    <%= txn.type === "credit" ? "+" : "-" %>₹<%= txn.amount %>
+                  </h6>
+                  <small class="text-muted">Completed</small>
+                </div>
+    
+              </div>
+    
+            <% }) %>
+    
+          <% } %>
+    
         </div>
+    
       </div>
     </div>
+    
   </div>
 </div>
+
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  function addMoney() {
+  
+    // Improved SWEETALERT design
+    Swal.fire({
+      title: "Add Money",
+      html: `
+  <div style="padding: 10px; text-align: left;">
+    <label style="
+      font-size: 15px; 
+      font-weight: 600; 
+      margin-bottom: 8px; 
+      display: block;
+      color: #444;
+    ">
+      Enter Amount
+    </label>
+
+    <input 
+      type="number" 
+      id="walletAmount" 
+      placeholder="₹ Enter amount"
+      class="swal2-input"
+      style="
+        width: 92%;
+        border-radius: 10px;
+        border: 1px solid #d1d1d1;
+        padding: 12px 14px;
+        font-size: 16px;
+        box-sizing: border-box;
+        background: white;
+      "
+    />
+  </div>
+`,
+
+      showCancelButton: true,
+      confirmButtonText: "Proceed",
+      cancelButtonText: "Cancel",
+      backdrop: `rgba(0,0,0,0.4)`,
+      customClass: {
+        popup: "glass-effect-popup",
+        confirmButton: "wallet-confirm-btn",
+        cancelButton: "wallet-cancel-btn",
+      },
+      buttonsStyling: false,
+    })
+    .then(async (result) => {
+  
+      if (!result.isConfirmed) return;
+  
+      const amount = document.getElementById("walletAmount").value;
+  
+      if (!amount || amount <= 0) {
+        return Swal.fire("Error", "Please enter a valid amount", "error");
+      }
+  
+      // ===============================
+      // 1️⃣ Create order on backend
+      // ===============================
+      const res = await fetch("/wallet/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount })
+      });
+  
+      const order = await res.json();
+  
+      if (!order.success) {
+        return Swal.fire("Error", "Failed to create order", "error");
+      }
+  
+      // ===============================
+      // 2️⃣ Razorpay Checkout Opens
+      // ===============================
+      var options = {
+        "key": order.key,
+        "amount": order.amount,
+        "currency": "INR",
+        "name": "Wallet Top-up",
+        "description": "Add money to wallet",
+        "order_id": order.orderId,
+  
+        "handler": async function (response) {
+  
+          // ===============================
+          // 3️⃣ VERIFY PAYMENT
+          // ===============================
+          const verifyRes = await fetch("/wallet/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: order.orderId,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              amount
+            })
+          });
+  
+          const verifyData = await verifyRes.json();
+  
+          if (verifyData.success) {
+            Swal.fire("Success!", "Money added to wallet!", "success")
+              .then(() => location.reload());
+          } else {
+            Swal.fire("Failed!", "Payment verification failed", "error");
+          }
+        }
+      };
+  
+      var rzp = new Razorpay(options);
+      rzp.open();
+  
+    });
+  }
+  </script>
+  
+
+
 
 <%- include("../partials/user/footer") %>

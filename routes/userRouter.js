@@ -108,7 +108,8 @@ router.post("/order/:orderId/return-item/:itemId", orderController.returnItem);
 
 //wallet management
 router.get("/wallet", walletController.getWalletPage);
-router.post("/wallet/add", walletController.addMoney);
+router.post("/wallet/create-order", walletController.createOrder);
+router.post("/wallet/verify-payment", walletController.verifyPayment);
 
 // Razorpay create + verify
 router.post("/payment/razorpay/create",orderController.createRazorpayOrder);
