@@ -96,8 +96,11 @@
             <thead class="text-white" style="background-color: #000;">
               <tr>
                 <th>Sl.No</th>
+                <th>Image</th>
                 <th>Size</th>
-                <th>Colour</th>
+                <th>Base Price</th>
+                <th>Sale Price</th>
+                <!-- <th>Colour</th> -->
                 <th>Stock</th>
                 <th>Actions</th>
               </tr>
@@ -109,10 +112,21 @@
                     <%= (currentPage - 1) * 6 + i + 1 %>
                   </td>
                   <td>
+                    <% if (data[i].productImage && data[i].productImage.length> 0) { %>
+                      <img src="<%= data[i].productImage[0] %>" alt="Product Image"
+                        style="height: 80px; width: 80px; object-fit: cover; border-radius: 8px;">
+                      <% } else { %>
+                        <span>No image</span>
+                        <% } %>
+                  </td>
+                  <td>
                     <%=data[i].size%>
                   </td>
                   <td>
-                    <%=data[i].colour%>
+                    <%=data[i].basePrice%>
+                  </td>
+                  <td>
+                    <%=data[i].salePrice%>
                   </td>
                   <td>
                     <%=data[i].stock%>
