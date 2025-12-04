@@ -73,7 +73,7 @@ const getSalesReportPage = async (req, res, next) => {
     const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
     const reportData = calculateProductReport(rows);
 
-    res.status(HTTP_STATUS.OK).render("sales-report", {
+    const responseData = {
       orders: paginatedRows,
       moment,
       reportData,
@@ -81,7 +81,9 @@ const getSalesReportPage = async (req, res, next) => {
       page,
       totalPages,
       skip
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).render("sales-report", responseData);
   } catch (error) {
     next(error);
   }
@@ -184,7 +186,7 @@ const filterSalesReport = async (req, res, next) => {
     const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
     const reportData = calculateProductReport(rows);
 
-    res.status(HTTP_STATUS.OK).render("sales-report", {
+    const responseData = {
       orders: paginatedRows,
       moment,
       reportData,
@@ -192,8 +194,10 @@ const filterSalesReport = async (req, res, next) => {
       page,
       totalPages,
       skip,
-      errorMessage: null, // ✅ for frontend handling
-    });
+      errorMessage: null,
+    }
+
+    res.status(HTTP_STATUS.OK).render("sales-report", responseData);
   } catch (error) {
     next(error);
   }

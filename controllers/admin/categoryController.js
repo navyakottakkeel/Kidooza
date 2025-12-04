@@ -20,14 +20,17 @@ const categoryInfo = async (req, res, next) => {
       .limit(limit);
 
     const count = await Category.countDocuments(query);
+    const totalPages = Math.ceil(count / limit);
 
-    return res.status(HTTP_STATUS.OK).render("categories", {
+    const responseData = {
       data: categories,
       search,
       currentPage: page,
-      totalPages: Math.ceil(count / limit),
-      msg: req.query.msg || null
-    });
+      totalPages,
+      msg: req.query.msg || null,
+    };
+
+    return res.status(HTTP_STATUS.OK).render("categories", responseData);
 
   } catch (error) {
     next(error);

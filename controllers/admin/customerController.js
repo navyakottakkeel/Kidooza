@@ -24,13 +24,16 @@ const customerInfo = async (req, res, next) => {
         .limit(limit);
   
       const count = await User.countDocuments(query);
-  
-      return res.status(HTTP_STATUS.OK).render("customers", {
+      const totalPages = Math.ceil(count / limit);
+      
+      const responseData = {
         data: userData,
         currentPage: page,
-        totalPages: Math.ceil(count / limit),
+        totalPages,
         search,
-      });
+      }
+  
+      return res.status(HTTP_STATUS.OK).render("customers", responseData);
     } catch (error) {
       next(error)
     }

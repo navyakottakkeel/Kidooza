@@ -79,13 +79,15 @@ const listOrders = async (req, res, next) => {
       Order.countDocuments(findQuery),
     ]);
  
-    return res.status(HTTP_STATUS.OK).render("order-list", {
+    const responseData = {
       orders,
       total,
       page: pageNum,
       pages: Math.ceil(total / pageSize),
       query: { search, status, sort, limit: pageSize },
-    });
+    }
+
+    return res.status(HTTP_STATUS.OK).render("order-list", responseData);
   } catch (error) {
     next(error);
   }
@@ -141,12 +143,14 @@ const updateOrderStatus = async (req, res, next) => {
 
     await order.save();
 
-    return res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       message: "Order status updated successfully",
       previousStatus: oldStatus,
       currentStatus: order.status,
-    });
+    }
+
+    return res.status(HTTP_STATUS.OK).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -190,13 +194,15 @@ const updateItemStatus = async (req, res, next) => {
 
     await order.save();
 
-    return res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       message: "Item status updated successfully",
       oldStatus,
       newStatus: item.status,
       orderStatus: order.status,
-    });
+    }
+
+    return res.status(HTTP_STATUS.OK).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -269,12 +275,14 @@ const verifyReturn = async (req, res, next) => {
 
     await order.save();
 
-    return res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       message: `Return ${action} successfully processed`,
       itemStatus: item.status,
       orderStatus: order.status,
-    });
+    }
+
+    return res.status(HTTP_STATUS.OK).json(responseData);
   } catch (error) {
     next(error);
   }

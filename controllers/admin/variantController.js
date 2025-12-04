@@ -27,7 +27,7 @@ const loadVariant = async (req, res, next) => {
 
     const count = await Variants.countDocuments({ productId });
 
-    res.status(HTTP_STATUS.OK).render("product-variant", {
+    const responseData = {
       data: variants,
       currentPage: page,
       totalPages: Math.ceil(count / limit),
@@ -35,7 +35,9 @@ const loadVariant = async (req, res, next) => {
       productId,
       productName,
       success: req.query.success === "true"
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).render("product-variant", responseData);
 
   } catch (error) {
     next(error);
@@ -169,7 +171,7 @@ const updateVariant = async (req, res, next) => {
     next(error);
   }
 };
-
+ 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {

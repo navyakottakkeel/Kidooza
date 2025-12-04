@@ -127,15 +127,17 @@ const loadDashboard = async (req, res, next) => {
     const salesData = await getSalesData(filter);
     const { productSales, categorySales, brandSales } = await getTopSellingData();
 
-    return res
-    .status(HTTP_STATUS.OK)
-    .render("dashboard", {
+    const responseData = {
       salesData,
       productSales,
       categorySales,
       brandSales,
       filter,
-    });
+    }
+
+    return res
+    .status(HTTP_STATUS.OK)
+    .render("dashboard", responseData);
   } catch (error) {
     next(error)
   }

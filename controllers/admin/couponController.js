@@ -15,11 +15,15 @@ const getCoupons = async (req, res, next) => {
       .skip(skip)
       .limit(limit);
 
-    return res.status(HTTP_STATUS.OK).render("coupons", {
+    const totalPages =  Math.ceil(totalCoupons / limit);
+
+    const responseData = {
       coupons,
       currentPage: page,
-      totalPages: Math.ceil(totalCoupons / limit),
-    });
+      totalPages
+    }
+
+    return res.status(HTTP_STATUS.OK).render("coupons", responseData);
   } catch (error) {
     next(error);
   }

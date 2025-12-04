@@ -26,13 +26,15 @@ const getOffersPage = async (req, res, next) => {
     const products = await Product.find({}, "productName");
     const categories = await Category.find({ isDeleted: false }, "name");
 
-    return res.status(HTTP_STATUS.OK).render("offers", {
+    const responseData = {
       offers,
       currentPage: page,
       totalPages,
       products,
       categories,
-    });
+    }
+
+    return res.status(HTTP_STATUS.OK).render("offers", responseData);
   } catch (error) {
     next(error)
   }

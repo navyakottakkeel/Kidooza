@@ -65,10 +65,13 @@ const addProduct = async (req, res, next) => {
     await product.save();
 
     const categories = await Category.find();
-    return res.status(HTTP_STATUS.CREATED).render("add-product", {
+
+    const responseData = {
       categories,
       success: "Product added successfully!"
-    });
+    }
+
+    return res.status(HTTP_STATUS.CREATED).render("add-product", responseData);
   } catch (error) {
     next(error);
   }
@@ -135,16 +138,20 @@ const loadProducts = async (req, res, next) => {
     ]);
 
     const total = countAggregate[0] ? countAggregate[0].total : 0;
+    const totalPages = Math.ceil(total / limit);
+
     const categories = await Category.find({ isDeleted: false });
 
-    res.status(HTTP_STATUS.OK).render("list-products", {
+    const responseData = {
       data: products,
-      currentPage: page,
-      totalPages: Math.ceil(total / limit),
-      search,
       categories,
-      msg: req.query.msg
-    });
+      currentPage: page,
+      totalPages,
+      search,
+      msg: req.query.msg || null
+    };
+
+    res.status(HTTP_STATUS.OK).render("list-products", responseData);
   } catch (error) {
     next(error);
   }
@@ -200,11 +207,13 @@ const updateProductImage = async (req, res, next) => {
 
     if (oldImagePath && fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
 
-    res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       message: "Image updated successfully",
       imageUrl: `/uploads/products/${fileName}`
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -267,11 +276,13 @@ const editProduct = async (req, res, next) => {
     const updatedProduct = await Product.findById(_id).populate("category").lean();
     const categories = await Category.find({ isDeleted: false }).lean();
 
-    res.status(HTTP_STATUS.OK).render("edit-product", {
+    const responseData = {
       product: updatedProduct,
       categories,
       success: "Product updated successfully!"
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).render("edit-product", responseData);
   } catch (error) {
     next(error);
   }
@@ -326,11 +337,13 @@ const addProductImage = async (req, res, next) => {
     product.productImage.push(imageUrl);
     await product.save();
 
-    res.status(HTTP_STATUS.CREATED).json({
+    const responseData = {
       success: true,
       message: "Image added successfully",
       imageUrl
-    });
+    }
+
+    res.status(HTTP_STATUS.CREATED).json(responseData);
   } catch (error) {
     next(error);
   }
