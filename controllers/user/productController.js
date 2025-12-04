@@ -260,8 +260,8 @@ const loadBoysPage = async (req, res, next) => {
         }))
       : [];
 
-    return res.status(HTTP_STATUS.OK).render("boys", {
-      categories,
+      const responseData = {
+        categories,
       allProducts,
       categorizedProducts,
       brands,
@@ -281,7 +281,9 @@ const loadBoysPage = async (req, res, next) => {
         maxPrice
       },
       wishlistItems
-    });
+      }
+
+    return res.status(HTTP_STATUS.OK).render("boys", responseData);
   } catch (error) {
     next(error);
   }
@@ -407,7 +409,7 @@ const loadProductDetail = async (req, res, next) => {
 
     const defaultVariant = variants[0];
 
-    return res.status(HTTP_STATUS.OK).render('product-detail', {
+    const responseData = {
       product,
       colours,
       sizes: [...new Set(variants.map(v => v.size))],
@@ -416,7 +418,9 @@ const loadProductDetail = async (req, res, next) => {
       variants,
       wishlistItems,
       defaultVariant
-    });
+    }
+
+    return res.status(HTTP_STATUS.OK).render('product-detail', responseData);
 
   } catch (error) {
     next(error);

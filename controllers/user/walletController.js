@@ -37,12 +37,14 @@ const getWalletPage = async (req, res, next) => {
       .reverse()      // latest first
       .slice(skip, skip + limit);
 
-    return res.status(HTTP_STATUS.OK).render("wallet", { 
-      wallet,
-      transactions: paginatedTransactions,
-      currentPage: page,
-      totalPages,
-     });
+      const responseData = {
+        wallet,
+        transactions: paginatedTransactions,
+        currentPage: page,
+        totalPages,
+      }
+
+    return res.status(HTTP_STATUS.OK).render("wallet", responseData);
   } catch (error) {
     next(error);
   }
@@ -65,12 +67,14 @@ const createOrder = async (req, res, next) => {
 
     const order = await razorpay.orders.create(options);
 
-    return res.json({
+    const responseData = {
       success: true,
       orderId: order.id,
       amount: order.amount,
       key: process.env.RAZORPAY_KEY_ID,
-    });
+    }
+
+    return res.json(responseData);
 
   } catch (error) {
     console.log(error);

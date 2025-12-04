@@ -80,15 +80,17 @@ const applyCoupon = async (req, res, next) => {
       grandTotal,
     };
 
-    return res
-      .status(HTTP_STATUS.OK)
-      .json({
-        success: true,
+    const responseData = {
+      success: true,
         message: "Coupon applied successfully",
         couponDiscount,
         grandTotal,
         code: coupon.code,
-      });
+    }
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(responseData);
   } catch (error) {
     next(error);
   }
@@ -108,14 +110,16 @@ const removeCoupon = async (req, res, next) => {
     // ✅ Grand total without coupon
     const grandTotal = Math.max(priceAfterItemDiscount + platformFee + shippingFee, 0);
 
-    return res
-      .status(HTTP_STATUS.OK)
-      .json({
-        success: true,
+    const responseData = {
+      success: true,
         message: "Coupon removed successfully",
         couponDiscount: 0,
         grandTotal,
-      });
+    }
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(responseData);
   } catch (error) {
     next(error);
   }

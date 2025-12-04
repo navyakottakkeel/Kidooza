@@ -22,10 +22,12 @@ const loadAddressPage = async (req, res, next) => {
 
     res.locals.user = user;
 
-    res.status(HTTP_STATUS.OK).render("address", {
+    const responseData = {
       addresses,
       user: req.user || null
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).render("address", responseData);
 
   } catch (error) {
     next(error);
@@ -91,10 +93,12 @@ const saveAddress = async (req, res, next) => {
 
     await userAddressDoc.save();
 
-    return res.status(HTTP_STATUS.CREATED).json({
+    const responseData = {
       success: true,
       message: "Address saved successfully"
-    });
+    }
+
+    return res.status(HTTP_STATUS.CREATED).json(responseData);
 
   } catch (error) {
     next(error);
@@ -125,10 +129,12 @@ const setDefaultAddress = async (req, res, next) => {
       });
     }
 
-    res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       message: "Default address updated"
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).json(responseData);
 
   } catch (error) {
     next(error);
@@ -154,10 +160,12 @@ const getAddressById = async (req, res, next) => {
       });
     }
 
-    res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       address: userAddressDoc.addresses[0]
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).json(responseData);
 
   } catch (error) {
     next(error);
@@ -224,10 +232,12 @@ const updateAddress = async (req, res, next) => {
       });
     }
 
-    res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       message: "Address updated successfully"
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).json(responseData);
 
   } catch (error) {
     next(error);
@@ -253,10 +263,12 @@ const deleteAddress = async (req, res, next) => {
       });
     }
 
-    res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       message: "Address deleted successfully"
-    });
+    }
+
+    res.status(HTTP_STATUS.OK).json(responseData);
 
   } catch (error) {
     next(error);

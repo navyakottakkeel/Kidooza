@@ -175,7 +175,7 @@ const getCartPage = async (req, res, next) => {
     const shippingFee = totalItemPrice > 599 ? 0 : 30;
     const total = totalItemPrice - itemDiscount + platformFee + shippingFee;
 
-    res.render("cart", {
+    const responseData = {
       cartItems,
       totalItemPrice,
       itemDiscount,
@@ -184,7 +184,9 @@ const getCartPage = async (req, res, next) => {
       total,
       totalItems,
       soldOutItems
-    });
+    }
+
+    res.render("cart", responseData);
   } catch (error) {
     next(error);
   }

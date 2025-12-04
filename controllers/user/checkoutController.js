@@ -130,21 +130,23 @@ const getCheckoutPage = async (req, res, next) => {
       addressId: defaultAddress ? defaultAddress._id : null,
     };
 
+    const responseData = {
+      defaultAddress,
+      otherAddresses,
+      cartItems,
+      totalItemPrice,
+      itemDiscount,
+      platformFee,
+      shippingFee,
+      total,
+      user,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      walletBalance: wallet ? wallet.balance : 0,
+    }
+
     return res
       .status(HTTP_STATUS.OK)
-      .render("checkout", {
-        defaultAddress,
-        otherAddresses,
-        cartItems,
-        totalItemPrice,
-        itemDiscount,
-        platformFee,
-        shippingFee,
-        total,
-        user,
-        razorpayKeyId: process.env.RAZORPAY_KEY_ID,
-        walletBalance: wallet ? wallet.balance : 0,
-      });
+      .render("checkout", responseData);
   } catch (error) {
     next(error);
   }
@@ -161,7 +163,7 @@ const couponList = async (req, res, next) => {
       expiryDate: { $gte: today },
     }).lean();
 
-    return res.status(HTTP_STATUS.OK).json({
+    const responseData = {
       success: true,
       coupons: coupons.map((c) => ({
         code: c.code,
@@ -170,7 +172,9 @@ const couponList = async (req, res, next) => {
         minPurchase: c.minPurchase,
         expiryDate: c.expiryDate,
       })),
-    });
+    }
+
+    return res.status(HTTP_STATUS.OK).json(responseData);
   } catch (error) {
     next(error);
   }
