@@ -42,6 +42,20 @@
                           data-orderid="<%= order._id %>" data-itemid="<%= it._id %>">Reject</button>
                 </div>
               <% } %>
+
+              <% if (it.returnRejectReason) { %>
+                <div class="mt-2">
+                  <span class="badge bg-danger">Return Rejected</span>
+                  <div class="small text-danger mt-1">
+                    <strong>Reject Reason:</strong> <%= it.returnRejectReason %>
+                  </div>
+                  <div class="text-muted small">
+                    Rejected on: <%= new Date(it.returnRejectedAt).toLocaleString("en-IN") %>
+                  </div>
+                </div>
+              <% } %>
+
+              
             </div>
           </div>
         </div>
@@ -82,6 +96,8 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.querySelectorAll(".apply-item-status").forEach(btn=>{
   btn.addEventListener("click", async (e)=>{
@@ -117,20 +133,52 @@ document.getElementById("wholeOrderForm")?.addEventListener("submit", async (e)=
   else alert(data.message || "Failed");
 });
 
-document.querySelectorAll(".verify-return").forEach(btn=>{
-  btn.addEventListener("click", async ()=>{
+document.querySelectorAll(".verify-return").forEach(btn => {
+  btn.addEventListener("click", async () => {
     const orderId = btn.dataset.orderid;
     const itemId = btn.dataset.itemid;
     const action = btn.dataset.action; // accept | reject
-    const res = await fetch(`/admin/orders/${orderId}/returns/${itemId}/verify`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action })
+
+    let reason = "";
+
+    // ✅ If REJECT → Ask reason using Swal
+    if (action === "reject") {
+      const result = await Swal.fire({
+        title: "Reject Return?",
+        input: "textarea",
+        inputLabel: "Reason for rejection",
+        inputPlaceholder: "Enter reason...",
+        inputValidator: (value) => {
+          if (!value) return "Rejection reason is required!";
+        },
+        showCancelButton: true,
+        confirmButtonText: "Reject",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#d33"
+      });
+
+      if (!result.isConfirmed) return;
+      reason = result.value;
+    }
+
+    // ✅ API Call
+    const res = await fetch(`/admin/orders/${orderId}/returns/${itemId}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, reason })
     });
+
     const data = await res.json();
-    if(data.success) location.reload();
-    else alert(data.message || "Failed");
+
+    if (data.success) {
+      Swal.fire("Success", data.message || "Updated successfully", "success")
+        .then(() => location.reload());
+    } else {
+      Swal.fire("Error", data.message || "Failed", "error");
+    }
   });
 });
+
+
 </script>
 

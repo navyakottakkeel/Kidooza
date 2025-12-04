@@ -1,6 +1,6 @@
 <%- include("../partials/user/header") %>
 
-<link href="/css/orderDetail.css" rel="stylesheet">
+    <link href="/css/orderDetail.css" rel="stylesheet">
 
     <div class="container " style="margin-top:10rem;">
 
@@ -187,6 +187,17 @@
                                                                         </button>
                                                                     </div>
                                                                     <% } %>
+
+                                                                    <% if (item.returnRejectReason) { %>
+                                                                        <div class="alert alert-danger mt-2 p-2">
+                                                                          <strong>Return Rejected</strong><br>
+                                                                          Reason: <%= item.returnRejectReason %><br>
+                                                                          <small class="text-muted">
+                                                                            Rejected on: <%= new Date(item.returnRejectedAt).toLocaleString("en-IN") %>
+                                                                          </small>
+                                                                        </div>
+                                                                      <% } %>
+                                                                      
 
                                                                         <% } %>
 

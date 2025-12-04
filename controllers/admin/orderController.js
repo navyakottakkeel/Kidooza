@@ -213,7 +213,7 @@ const updateItemStatus = async (req, res, next) => {
 const verifyReturn = async (req, res, next) => {
   try {
     const { orderId, itemId } = req.params;
-    const { action } = req.body; // "accept" | "reject"
+    const { action, reason } = req.body; // "accept" | "reject"
 
     const order = await Order.findById(orderId);
     if (!order)
@@ -267,6 +267,8 @@ const verifyReturn = async (req, res, next) => {
       });
       await wallet.save();
     } else {
+      item.returnRejectReason = reason;
+      item.returnRejectedAt = new Date();
       item.status = "Delivered"; // rejected
     }
 

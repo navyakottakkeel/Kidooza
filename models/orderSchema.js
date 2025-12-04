@@ -64,6 +64,13 @@ const orderSchema = new Schema(
         },
         deliveredOn: {
           type: Date,
+        },
+        returnRejectReason: {
+          type: String,
+          default: "",
+        },
+        returnRejectedAt: {
+          type: Date,
         }
       },
     ],
