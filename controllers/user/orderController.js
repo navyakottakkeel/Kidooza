@@ -345,12 +345,29 @@ function round2(num) {
 }
 
 // ------------------ Helper: compute order snapshot (shared) ------------------
-async function buildOrderSnapshot(userId, addressId, couponCode) {
-  const cart = await Cart.findOne({ userId })
-    .populate("items.productId")
-    .populate("items.variantId");
 
-  if (!cart || cart.items.length === 0) throw new Error("Cart is empty");
+async function buildOrderSnapshot(userId, addressId, couponCode) {
+
+  const cart = await Cart.findOne({ userId })
+  .populate("items.productId")
+  .populate("items.variantId");
+
+if (!cart || cart.items.length === 0) {
+  throw new Error("Cart is empty");
+}
+
+// ✅ STOCK VALIDATION
+for (const item of cart.items) {
+  if (!item.variantId) {
+    throw new Error(`Variant missing for product ${item.productId.productName}`);
+  }
+
+  if (item.variantId.stock < item.quantity) {
+    throw new Error(
+      `Only ${item.variantId.stock} left for ${item.productId.productName}`
+    );
+  }
+}
 
   const addressDoc = await Address.findOne({ userId });
   const address = addressDoc?.addresses?.id(addressId);
@@ -435,6 +452,8 @@ const placeOrder = async (req, res, next) => {
       couponApplied,
       couponDiscount
     } = await buildOrderSnapshot(userId, addressId, couponCode);
+
+
 
     // ---------------- COD ----------------
     if (paymentMethod === "COD") {
@@ -540,10 +559,13 @@ const placeOrder = async (req, res, next) => {
 
   } catch (error) {
     console.error("Error placing order:", error);
-    res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Server error while placing order." });
+  
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: error.message || "Server error while placing order.",
+    });
   }
+  
 };
 // ------------------ 2) Create Razorpay order + create Pending DB order ------------------
 
