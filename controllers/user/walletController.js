@@ -15,16 +15,34 @@ const razorpay = new Razorpay({
 const getWalletPage = async (req, res, next) => {
   try {
     const userId = req.user ? req.user._id : req.session.user;
+    
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const skip = (page - 1) * limit;
 
     let user = req.user || (await User.findById(req.session.user));
     res.locals.user = user;
 
     let wallet = await Wallet.findOne({ userId });
+
     if (!wallet) {
       wallet = await Wallet.create({ userId, balance: 0 });
     }
 
-    return res.status(HTTP_STATUS.OK).render("wallet", { wallet });
+    const totalTransactions = wallet.transactions.length;
+    const totalPages = Math.ceil(totalTransactions / limit);
+
+    const paginatedTransactions = wallet.transactions
+      .slice()        // copy
+      .reverse()      // latest first
+      .slice(skip, skip + limit);
+
+    return res.status(HTTP_STATUS.OK).render("wallet", { 
+      wallet,
+      transactions: paginatedTransactions,
+      currentPage: page,
+      totalPages,
+     });
   } catch (error) {
     next(error);
   }
